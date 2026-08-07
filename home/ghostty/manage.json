@@ -1,0 +1,7 @@
+{
+  "source": ["./config"],
+  "target": {
+    "macos": "~/Library/Application Support/com.mitchellh.ghostty",
+    "linux": "~/.config/ghostty"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "source": ["./.tmux.conf"],
+  "target": {
+    "macos": "~",
+    "linux": "~"
+  }
+}
