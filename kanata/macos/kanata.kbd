@@ -1,0 +1,143 @@
+;; defsrc is still necessary
+(defcfg
+  process-unmapped-keys yes
+  macos-dev-names-include (
+    "Apple Internal Keyboard / Trackpad"
+    "Keychron K2"
+  )
+)
+
+(defsrc
+  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
+  tab caps e r y u i o p
+  a s d f h j k l ;
+  lsft c v n m , .
+  spc
+  fn
+)
+(defvar
+  tap-time 150
+  hold-time 200
+  duo-time 30
+)
+
+(defalias
+  escctrl (tap-hold $tap-time $hold-time esc (layer-toggle symbols))
+  shnum (tap-hold $tap-time $hold-time lsft (layer-toggle nums))
+  a (tap-hold $tap-time $hold-time a lmet)
+  s (tap-hold $tap-time $hold-time s lalt)
+  d (tap-hold $tap-time $hold-time d lsft)
+  f (tap-hold $tap-time $hold-time f lctl)
+  j (tap-hold $tap-time $hold-time j rctl)
+  k (tap-hold $tap-time $hold-time k rsft)
+  l (tap-hold $tap-time $hold-time l ralt)
+  ; (tap-hold $tap-time $hold-time ; rmet)
+  spcl (tap-hold $tap-time $hold-time spc (layer-toggle nav))
+  fnl (tap-hold 200 200 fn (layer-toggle fn))
+
+  erly (layer-toggle er)
+  numly (layer-toggle nums)
+  symly (layer-toggle symbols)
+  che (chord er e)
+  chr (chord er r)
+  chc (chord cv c)
+  chv (chord cv v)
+  chd (chord fd d)
+  chf (chord fd f)
+  chj (chord jk j)
+  chk (chord jk k)
+  chu (chord ui u)
+  chi (chord ui i)
+  chm (chord mcomma m)
+  chcomma (chord mcomma comma)
+)
+
+(deflayer base
+  brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
+  tab @escctrl @che @chr y @chu @chi o p
+  @a @s @chd @chf h @chj @chk @l @;
+  @shnum @chc @chv n @chm @chcomma .
+  @spcl
+  @fnl
+)
+
+(deflayer fn
+  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
+  tab @escctrl _ _ _ _ _ _ _
+  _ _ _ _ _ _ _ _ _
+  @shnum _ _ _ _ _ _
+  spc
+  fn
+)
+
+(deflayer nav
+  _    _    _    _    _    _   _     _   _    _     _     _
+  _    _    _    _    _    _    _   _     _
+  _    _    _    _    left down up    rght _
+  _    _    _    _    _    _    _
+  spc
+  fn
+)
+
+(deflayer er
+  _    _    _    _    _    _   _     _    _      _     _     _
+  _    _    _    _    _    S-min S-4  _    _
+  _    _    _    _    _     _    _    _    _
+  _    _    _    S-2  S-5   S-8  S-3
+  spc
+  fn
+)
+
+(deflayer nums
+  _    _    _    _    _    _   _     _    _    _     _     _
+  _    _    _    _    _    7    8    9    _
+  _    _    _    _    _    4    5    6    _
+  _    _    _    0    1    2    3
+  spc
+  fn
+)
+
+(deflayer symbols
+  _    _    _    _    _    _   _       _      _    _     _     _
+  _    _    _    _     S-min S-lbrc S-rbrc S-,  S-.
+  _    S-4  _    _     min   S-9    S-0    S-apos apos
+  _    _    _    S-7  lbrc  rbrc   S-bksl
+  spc
+  fn
+)
+
+(defchords er $duo-time
+  (e  ) e
+  (  r) r
+  (e r) @erly
+)
+
+(defchords cv $duo-time
+  (c  ) c
+  (  v) v
+  (c v) @numly
+)
+
+(defchords fd $duo-time
+  (f  ) @f
+  (  d) @d
+  (f d) @symly
+)
+
+(defchords jk $duo-time
+  (j  ) @j
+  (  k) @k
+  (j k) esc
+)
+
+(defchords ui $duo-time
+  (u  ) u
+  (  i) i
+  (u i) bspc
+)
+
+(defchords mcomma $duo-time
+  (m    ) m
+  (    comma) ,
+  (m   comma) ret
+)
