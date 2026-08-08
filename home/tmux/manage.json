@@ -1,7 +1,4 @@
 {
-  "source": ["./.tmux.conf"],
-  "targets": {
-    "macos": ["~"],
-    "linux": ["~"]
-  }
+  "platforms": ["macos", "linux"],
+  "targets": ["~"]
 }

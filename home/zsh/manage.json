@@ -1,7 +1,0 @@
-{
-  "source": ["./.zshrc", "./.p10k.zsh"],
-  "targets": {
-    "macos": [],
-    "linux": ["~"]
-  }
-}

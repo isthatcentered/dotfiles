@@ -1,7 +1,4 @@
 {
-  "source": ["./niri"],
-  "targets": {
-    "macos": ["~/.config"],
-    "linux": ["~/.config"]
-  }
+  "platforms": ["macos", "linux"],
+  "targets": ["~/.config"]
 }

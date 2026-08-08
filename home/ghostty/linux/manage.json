@@ -1,0 +1,4 @@
+{
+  "platforms": ["linux"],
+  "targets": ["~/.config/ghostty"]
+}

@@ -2,7 +2,7 @@
 
 This repository contains a small Go program that installs configuration files by creating symbolic links from your home directory back into this repository.
 
-It deliberately does one job: read package manifests from `home/*/manage.json`, select the targets for `macos` or `linux`, and link every matching source into every selected target directory. It does not copy files, install applications, manage secrets, or modify an existing destination.
+It deliberately does one job: recursively discover `manage.json` files under `home/`, activate the manifests that support `macos` or `linux`, and link every adjacent managed entry into every target directory. It does not copy files, install applications, manage secrets, or modify an existing destination.
 
 ## Requirements
 
@@ -13,7 +13,7 @@ Run commands from the repository root.
 
 ## Repository layout
 
-Each direct child of `home/` is an independently named package. The package name is only for humans; it does not affect the destination path.
+Directories under `home/` may group related configurations however you find useful. A directory becomes a manifest container when it contains `manage.json`.
 
 ```text
 .
@@ -23,57 +23,58 @@ Each direct child of `home/` is an independently named package. The package name
     ├── tmux/
     │   ├── manage.json
     │   └── .tmux.conf
-    ├── neovim/
+    ├── nvim/
     │   ├── manage.json
     │   └── nvim/
     │       ├── init.lua
     │       └── lua/
-    └── ghostty/
-        ├── manage.json
-        └── config
+    └── zsh/
+        └── linux/
+            ├── manage.json
+            ├── .zshrc
+            └── .p10k.zsh
 ```
 
-The manager only discovers manifests at this depth:
+Manifests may appear at any depth beneath `home/`:
 
 ```text
-home/<package>/manage.json
+home/**/manage.json
 ```
 
-Names such as `tmux`, `neovim`, and `ghostty` are conventional. Any directory name is valid.
+Discovery does not follow directory symlinks. Once a directory containing `manage.json` is found, that directory is a discovery boundary: its descendants are managed content and are not searched for additional manifests. Names such as `tmux`, `nvim`, `linux`, and `macos` are conventional; only the manifest controls activation.
 
 ## Manifest format
 
-Every package contains a strict JSON manifest with two fields:
+Every manifest is strict JSON with two fields:
 
 ```json
 {
-  "source": ["./file", "./folder", "./*.config"],
-  "targets": {
-    "macos": ["~/some/directory", "~/another/directory"],
-    "linux": ["~/some/directory"]
-  }
+  "platforms": ["macos", "linux"],
+  "targets": ["~/some/directory", "~/another/directory"]
 }
 ```
 
-`source` is a non-empty list of paths or glob patterns relative to the package directory. Each matched file or directory is linked into every selected target using its basename:
+`platforms` is a non-empty array containing `macos`, `linux`, or both. Duplicate and unsupported values are rejected. A manifest is active when the command's selected platform appears in this array.
+
+`targets` is a non-empty array of destination directories shared by every platform in the manifest. Targets must use an absolute path, `~`, or a path beginning with `~/`. Environment variables and named-user forms such as `~alice` are not expanded. Targets are unordered, and two paths in one active manifest may not resolve to the same effective directory.
+
+Every immediate child of an active manifest container other than `manage.json` is a managed entry. Each managed entry is linked into every target using its name:
 
 ```text
-<package>/<matched source> → <target>/<source basename>
+<container>/<managed entry> → <target>/<managed entry name>
 ```
 
 For example:
 
 ```text
-home/neovim/nvim → ~/.config/nvim
+home/nvim/nvim → ~/.config/nvim
 ```
 
-Source patterns support Go filepath globs such as `*`, `?`, and character ranges. They do not recursively cross directory separators. To manage a complete directory tree, match the directory itself and the manager will link that directory as one unit.
+This includes regular files, directories, dotfiles, symlinks, ignored files, and untracked files. Directories are linked as whole units. `manage.json` is reserved and cannot itself be deployed. An active container containing only `manage.json` is invalid.
 
-Sources must remain inside their package. Absolute patterns, `..` traversal, broken links, and source symlinks that resolve outside the package are rejected.
+Managed entries must resolve within their container. Broken symlinks and symlinks that resolve outside the container are rejected.
 
-`targets` maps each supported operating-system name to an array of destination directories. Every array must contain strings; scalar paths, `null`, and the former singular `target` field are invalid. Only `macos` and `linux` keys are supported. Targets must use an absolute path, `~`, or a path beginning with `~/`. Environment variables and named-user forms such as `~alice` are not expanded.
-
-Only the selected operating system needs a non-empty target array, although defining both makes a package portable. Paths for the unselected operating system are not inspected. Target arrays are unordered: output is sorted by destination, and declaration order gives no target priority. Within the selected array, two paths may not resolve to the same effective directory.
+Every discovered manifest must have valid JSON and a valid schema, including inactive manifests. Entries and target paths belonging to inactive manifests are not inspected. If different platforms need different targets or content, give each platform its own manifest container.
 
 ## Examples
 
@@ -83,11 +84,8 @@ Only the selected operating system needs a non-empty target array, although defi
 
 ```json
 {
-  "source": ["./.tmux.conf"],
-  "targets": {
-    "macos": ["~"],
-    "linux": ["~"]
-  }
+  "platforms": ["macos", "linux"],
+  "targets": ["~"]
 }
 ```
 
@@ -99,49 +97,56 @@ Result:
 
 ### Neovim
 
-`home/neovim/manage.json`:
+`home/nvim/manage.json`:
 
 ```json
 {
-  "source": ["./nvim"],
-  "targets": {
-    "macos": ["~/.config"],
-    "linux": ["~/.config"]
-  }
+  "platforms": ["macos", "linux"],
+  "targets": ["~/.config"]
 }
 ```
 
 Result:
 
 ```text
-~/.config/nvim → <repository>/home/neovim/nvim
+~/.config/nvim → <repository>/home/nvim/nvim
 ```
 
-### Ghostty
+### Platform-specific Zsh
 
-`home/ghostty/manage.json`:
+Linux and macOS configurations can use separate containers. The current Linux container is `home/zsh/linux/`:
 
 ```json
 {
-  "source": ["./config"],
-  "targets": {
-    "macos": ["~/Library/Application Support/com.mitchellh.ghostty"],
-    "linux": ["~/.config/ghostty"]
-  }
+  "platforms": ["linux"],
+  "targets": ["~"]
 }
 ```
 
-Results:
+Running for Linux links only that container's siblings:
 
 ```text
-# macOS
-~/Library/Application Support/com.mitchellh.ghostty/config
-    → <repository>/home/ghostty/config
-
-# Linux
-~/.config/ghostty/config
-    → <repository>/home/ghostty/config
+~/.zshrc → <repository>/home/zsh/linux/.zshrc
+~/.p10k.zsh → <repository>/home/zsh/linux/.p10k.zsh
 ```
+
+An eventual macOS variant can live independently at `home/zsh/macos/` with its own manifest and files.
+
+### Platform-specific Ghostty targets
+
+Ghostty uses separate containers because its target directory differs by platform:
+
+```text
+home/ghostty/
+├── macos/
+│   ├── manage.json
+│   └── config
+└── linux/
+    ├── manage.json
+    └── config
+```
+
+The macOS manifest targets `~/Library/Application Support/com.mitchellh.ghostty`; the Linux manifest targets `~/.config/ghostty`. Only the selected platform's container is applied.
 
 ## Usage
 
@@ -184,7 +189,7 @@ exists     /target/config -> /repository/home/example/config
 
 ## Migrating an existing configuration
 
-The manager intentionally refuses to overwrite existing files or directories. Move or copy the configuration into its package, preserve a backup, and only then create the link.
+The manager intentionally refuses to overwrite existing files or directories. Move or copy the configuration into its manifest container, preserve a backup, and only then create the link.
 
 For example, a cautious Tmux migration could be:
 
@@ -202,8 +207,8 @@ After verifying that Tmux works through the symlink, the backup can be removed m
 For a directory such as Neovim, copy it recursively and move the original aside:
 
 ```bash
-mkdir -p home/neovim
-cp -R ~/.config/nvim home/neovim/nvim
+mkdir -p home/nvim
+cp -R ~/.config/nvim home/nvim/nvim
 mv ~/.config/nvim ~/.config/nvim.before-dotfiles
 
 go run . --dry-run macos
@@ -217,12 +222,12 @@ Review files for credentials and tokens before committing them to Git. A private
 Before creating any link, the manager validates the complete plan:
 
 - Every manifest must be valid JSON with only recognized fields.
-- Every source pattern must match at least one entry.
-- Sources may not escape their package.
-- Planned destinations may not be placed inside a managed source.
-- Package-directory discovery errors are reported instead of silently skipping a package.
-- Duplicate effective target directories within one package and platform are rejected.
-- Two different sources may not claim the same destination, including through target-directory symlink aliases.
+- Every active manifest container must contain at least one managed entry.
+- Managed entries may not be broken or escape their container.
+- Planned destinations may not be placed inside a managed entry.
+- Manifest discovery is confined to real directories beneath `home/`; directory symlinks are not followed.
+- Duplicate effective target directories within one active manifest are rejected.
+- Two different managed entries may not claim the same destination, including through target-directory symlink aliases.
 - A planned destination may not be nested below another planned destination, because every destination becomes a symlink.
 - Dangling symlinks and non-directory components in target-directory paths are rejected before links are created.
 - Existing regular files and directories are never replaced.
@@ -242,7 +247,8 @@ There is no `--force` option. Resolve a conflict yourself, then run the command 
 - No secret storage or encryption
 - No automatic backups or removal of obsolete links
 - No transactional rollback: if an unexpected filesystem error occurs while applying a validated plan, links created earlier in that run remain in place
-- Sources are placed directly into the target by basename rather than preserving their package-relative path
+- No overlay or precedence between active manifests; conflicting destinations are rejected
+- Managed entries are placed directly into the target rather than preserving their grouping-directory names
 
 These constraints are intentional for the first version.
 
@@ -261,6 +267,4 @@ go test -race ./...
 go vet ./...
 ```
 
-Before a release, follow the isolated [manual QA plan](MANUAL_QA_PLAN.md). It builds a disposable repository, redirects `HOME` to a fake directory, and uses only dummy sources and targets.
-
-Tests call `Run` directly and use temporary repositories, source files, directories, targets, and symlinks. They do not interact with your real home-directory configuration.
+Tests call `Run` directly and use temporary repositories, manifest containers, managed entries, targets, and symlinks. They do not interact with your real home-directory configuration.

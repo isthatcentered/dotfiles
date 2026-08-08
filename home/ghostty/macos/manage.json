@@ -1,0 +1,4 @@
+{
+  "platforms": ["macos"],
+  "targets": ["~/Library/Application Support/com.mitchellh.ghostty"]
+}
