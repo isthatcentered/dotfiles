@@ -19,9 +19,9 @@ func TestRunLinksMatchedDummyFileAndFolder(t *testing.T) {
 	writeTestFile(t, filepath.Join(packageDirectory, "folder", "nested.txt"), "nested content\n")
 	writeTestManifest(t, packageDirectory, testManifest{
 		Source: []string{"./*.config", "./folder"},
-		Target: map[string]string{
-			"macos": targetDirectory,
-			"linux": targetDirectory,
+		Targets: map[string][]string{
+			"macos": {targetDirectory},
+			"linux": {targetDirectory},
 		},
 	})
 
@@ -61,6 +61,42 @@ func TestRunLinksMatchedDummyFileAndFolder(t *testing.T) {
 	}
 }
 
+func TestRunFansOutEverySourceToEveryTarget(t *testing.T) {
+	repository := t.TempDir()
+	packageDirectory := filepath.Join(repository, "home", "dummy")
+	targetRoot := t.TempDir()
+	firstTarget := filepath.Join(targetRoot, "a-target")
+	secondTarget := filepath.Join(targetRoot, "z-target")
+	firstSource := filepath.Join(packageDirectory, "a.config")
+	secondSource := filepath.Join(packageDirectory, "z.config")
+
+	writeTestFile(t, firstSource, "first\n")
+	writeTestFile(t, secondSource, "second\n")
+	writeTestManifest(t, packageDirectory, testManifest{
+		Source: []string{"./*.config"},
+		Targets: map[string][]string{
+			"macos": {secondTarget, firstTarget},
+		},
+	})
+
+	var stdout bytes.Buffer
+	if err := Run(repository, []string{"macos"}, &stdout, &bytes.Buffer{}); err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+
+	for _, target := range []string{firstTarget, secondTarget} {
+		assertSymlink(t, filepath.Join(target, "a.config"), firstSource)
+		assertSymlink(t, filepath.Join(target, "z.config"), secondSource)
+	}
+	want := "linked     " + filepath.Join(firstTarget, "a.config") + " -> " + firstSource + "\n" +
+		"linked     " + filepath.Join(firstTarget, "z.config") + " -> " + secondSource + "\n" +
+		"linked     " + filepath.Join(secondTarget, "a.config") + " -> " + firstSource + "\n" +
+		"linked     " + filepath.Join(secondTarget, "z.config") + " -> " + secondSource + "\n"
+	if got := stdout.String(); got != want {
+		t.Fatalf("stdout = %q, want %q", got, want)
+	}
+}
+
 func TestRunDryRunReportsLinksWithoutChangingFilesystem(t *testing.T) {
 	repository := t.TempDir()
 	packageDirectory := filepath.Join(repository, "home", "dummy")
@@ -70,8 +106,8 @@ func TestRunDryRunReportsLinksWithoutChangingFilesystem(t *testing.T) {
 
 	writeTestFile(t, source, "dummy\n")
 	writeTestManifest(t, packageDirectory, testManifest{
-		Source: []string{"./dummy.config"},
-		Target: map[string]string{"macos": targetDirectory},
+		Source:  []string{"./dummy.config"},
+		Targets: map[string][]string{"macos": {targetDirectory}},
 	})
 
 	var stdout bytes.Buffer
@@ -103,8 +139,8 @@ func TestRunIsIdempotentForCorrectExistingSymlink(t *testing.T) {
 
 	writeTestFile(t, source, "dummy\n")
 	writeTestManifest(t, packageDirectory, testManifest{
-		Source: []string{"./dummy.config"},
-		Target: map[string]string{"macos": targetDirectory},
+		Source:  []string{"./dummy.config"},
+		Targets: map[string][]string{"macos": {targetDirectory}},
 	})
 	if err := os.Symlink(source, destination); err != nil {
 		t.Fatalf("create existing symlink: %v", err)
@@ -174,8 +210,8 @@ func TestRunRefusesDestinationCollisionsBeforeMakingChanges(t *testing.T) {
 			writeTestFile(t, firstSource, "first\n")
 			writeTestFile(t, conflictingSource, "conflict\n")
 			writeTestManifest(t, packageDirectory, testManifest{
-				Source: []string{"./*.config"},
-				Target: map[string]string{"macos": targetDirectory},
+				Source:  []string{"./*.config"},
+				Targets: map[string][]string{"macos": {targetDirectory}},
 			})
 			test.makeTarget(t, conflictingDestination)
 
@@ -207,9 +243,9 @@ func TestRunSelectsOnlyRequestedOperatingSystemTarget(t *testing.T) {
 	writeTestFile(t, source, "dummy\n")
 	writeTestManifest(t, packageDirectory, testManifest{
 		Source: []string{"./dummy.config"},
-		Target: map[string]string{
-			"macos": macOSTarget,
-			"linux": linuxTarget,
+		Targets: map[string][]string{
+			"macos": {macOSTarget},
+			"linux": {linuxTarget},
 		},
 	})
 
@@ -220,6 +256,27 @@ func TestRunSelectsOnlyRequestedOperatingSystemTarget(t *testing.T) {
 	if _, err := os.Lstat(filepath.Join(macOSTarget, "dummy.config")); !os.IsNotExist(err) {
 		t.Fatalf("macOS destination stat error = %v, want not-exist", err)
 	}
+}
+
+func TestRunDoesNotValidateUnselectedTargetPaths(t *testing.T) {
+	repository := t.TempDir()
+	packageDirectory := filepath.Join(repository, "home", "dummy")
+	macOSTarget := t.TempDir()
+	source := filepath.Join(packageDirectory, "dummy.config")
+
+	writeTestFile(t, source, "dummy\n")
+	writeTestManifest(t, packageDirectory, testManifest{
+		Source: []string{"./dummy.config"},
+		Targets: map[string][]string{
+			"macos": {macOSTarget},
+			"linux": {"relative/path", ""},
+		},
+	})
+
+	if err := Run(repository, []string{"macos"}, &bytes.Buffer{}, &bytes.Buffer{}); err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	assertSymlink(t, filepath.Join(macOSTarget, "dummy.config"), source)
 }
 
 func TestRunExpandsHomeTarget(t *testing.T) {
@@ -253,8 +310,8 @@ func TestRunExpandsHomeTarget(t *testing.T) {
 
 			writeTestFile(t, filepath.Join(packageDirectory, "dummy.config"), "dummy\n")
 			writeTestManifest(t, packageDirectory, testManifest{
-				Source: []string{"./dummy.config"},
-				Target: map[string]string{"macos": test.target},
+				Source:  []string{"./dummy.config"},
+				Targets: map[string][]string{"macos": {test.target}},
 			})
 
 			var stdout bytes.Buffer
@@ -277,8 +334,8 @@ func TestRunAbsoluteTargetDoesNotRequireHomeEnvironment(t *testing.T) {
 
 	writeTestFile(t, filepath.Join(packageDirectory, "dummy.config"), "dummy\n")
 	writeTestManifest(t, packageDirectory, testManifest{
-		Source: []string{"./dummy.config"},
-		Target: map[string]string{"macos": targetDirectory},
+		Source:  []string{"./dummy.config"},
+		Targets: map[string][]string{"macos": {targetDirectory}},
 	})
 
 	if err := Run(repository, []string{"--dry-run", "macos"}, &bytes.Buffer{}, &bytes.Buffer{}); err != nil {
@@ -348,8 +405,8 @@ func TestRunReportsBrokenPackageDirectoryInsteadOfSkippingIt(t *testing.T) {
 	validPackage := filepath.Join(homeDirectory, "valid")
 	writeTestFile(t, filepath.Join(validPackage, "config"), "valid\n")
 	writeTestManifest(t, validPackage, testManifest{
-		Source: []string{"./config"},
-		Target: map[string]string{"macos": targetDirectory},
+		Source:  []string{"./config"},
+		Targets: map[string][]string{"macos": {targetDirectory}},
 	})
 	if err := os.Symlink(filepath.Join(repository, "missing-package"), filepath.Join(homeDirectory, "broken")); err != nil {
 		t.Fatalf("create broken package directory: %v", err)
@@ -387,90 +444,117 @@ func TestRunRejectsInvalidManifests(t *testing.T) {
 		{
 			name: "unknown field",
 			manifest: func(target string) string {
-				return fmt.Sprintf(`{"source":["./dummy.config"],"target":{"macos":%q},"typo":true}`, target)
+				return fmt.Sprintf(`{"source":["./dummy.config"],"targets":{"macos":[%q]},"typo":true}`, target)
+			},
+			wantErr: "invalid JSON",
+		},
+		{
+			name: "legacy singular target field",
+			manifest: func(target string) string {
+				return fmt.Sprintf(`{"source":["./dummy.config"],"target":{"macos":%q}}`, target)
 			},
 			wantErr: "invalid JSON",
 		},
 		{
 			name: "trailing JSON value",
 			manifest: func(target string) string {
-				return fmt.Sprintf(`{"source":["./dummy.config"],"target":{"macos":%q}} {}`, target)
+				return fmt.Sprintf(`{"source":["./dummy.config"],"targets":{"macos":[%q]}} {}`, target)
 			},
 			wantErr: "invalid JSON",
 		},
 		{
 			name: "missing source",
 			manifest: func(target string) string {
-				return fmt.Sprintf(`{"target":{"macos":%q}}`, target)
+				return fmt.Sprintf(`{"targets":{"macos":[%q]}}`, target)
 			},
 			wantErr: "source must contain",
 		},
 		{
 			name: "null source",
 			manifest: func(target string) string {
-				return fmt.Sprintf(`{"source":null,"target":{"macos":%q}}`, target)
+				return fmt.Sprintf(`{"source":null,"targets":{"macos":[%q]}}`, target)
 			},
 			wantErr: "source must contain",
 		},
 		{
 			name: "source is not an array",
 			manifest: func(target string) string {
-				return fmt.Sprintf(`{"source":"./dummy.config","target":{"macos":%q}}`, target)
+				return fmt.Sprintf(`{"source":"./dummy.config","targets":{"macos":[%q]}}`, target)
 			},
 			wantErr: "invalid JSON",
 		},
 		{
 			name: "source contains non-string",
 			manifest: func(target string) string {
-				return fmt.Sprintf(`{"source":[42],"target":{"macos":%q}}`, target)
+				return fmt.Sprintf(`{"source":[42],"targets":{"macos":[%q]}}`, target)
 			},
 			wantErr: "invalid JSON",
 		},
 		{
 			name: "empty source",
 			manifest: func(target string) string {
-				return fmt.Sprintf(`{"source":[],"target":{"macos":%q}}`, target)
+				return fmt.Sprintf(`{"source":[],"targets":{"macos":[%q]}}`, target)
 			},
 			wantErr: "source must contain",
 		},
 		{
-			name:     "missing target",
+			name:     "missing targets",
 			manifest: func(string) string { return `{"source":["./dummy.config"]}` },
-			wantErr:  "target must contain",
+			wantErr:  "targets must contain",
 		},
 		{
-			name:     "null target",
-			manifest: func(string) string { return `{"source":["./dummy.config"],"target":null}` },
-			wantErr:  "target must contain",
+			name:     "null targets",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":null}` },
+			wantErr:  "targets must contain",
 		},
 		{
-			name:     "target is not an object",
-			manifest: func(string) string { return `{"source":["./dummy.config"],"target":"/tmp"}` },
+			name:     "targets is not an object",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":"/tmp"}` },
 			wantErr:  "invalid JSON",
 		},
 		{
-			name:     "target contains non-string",
-			manifest: func(string) string { return `{"source":["./dummy.config"],"target":{"macos":42}}` },
+			name:     "platform targets is not an array",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"macos":"/tmp"}}` },
 			wantErr:  "invalid JSON",
 		},
 		{
-			name:     "missing platform target",
-			manifest: func(string) string { return `{"source":["./dummy.config"],"target":{"linux":"/tmp"}}` },
-			wantErr:  "no target configured for macos",
+			name:     "null platform targets",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"macos":null}}` },
+			wantErr:  "must be an array",
 		},
 		{
-			name:     "empty platform target",
-			manifest: func(string) string { return `{"source":["./dummy.config"],"target":{"macos":""}}` },
-			wantErr:  "no target configured for macos",
+			name:     "targets contains non-string",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"macos":[42]}}` },
+			wantErr:  "invalid JSON",
+		},
+		{
+			name:     "unknown platform",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"windows":["/tmp"]}}` },
+			wantErr:  "unsupported target operating system",
+		},
+		{
+			name:     "missing platform targets",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"linux":["/tmp"]}}` },
+			wantErr:  "no targets configured for macos",
+		},
+		{
+			name:     "empty platform targets",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"macos":[]}}` },
+			wantErr:  "no targets configured for macos",
+		},
+		{
+			name:     "empty target path",
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"macos":[""]}}` },
+			wantErr:  "must not be empty",
 		},
 		{
 			name:     "relative target",
-			manifest: func(string) string { return `{"source":["./dummy.config"],"target":{"macos":"relative/path"}}` },
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"macos":["relative/path"]}}` },
 			wantErr:  "target must start with ~ or /",
 		},
 		{
 			name:     "named user home target",
-			manifest: func(string) string { return `{"source":["./dummy.config"],"target":{"macos":"~someone/config"}}` },
+			manifest: func(string) string { return `{"source":["./dummy.config"],"targets":{"macos":["~someone/config"]}}` },
 			wantErr:  "~user paths are not supported",
 		},
 	}
@@ -529,8 +613,8 @@ func TestRunRejectsInvalidSourcePatterns(t *testing.T) {
 			packageDirectory := filepath.Join(repository, "home", "dummy")
 			writeTestFile(t, filepath.Join(packageDirectory, "dummy.config"), "dummy\n")
 			writeTestManifest(t, packageDirectory, testManifest{
-				Source: []string{test.pattern(repository)},
-				Target: map[string]string{"macos": t.TempDir()},
+				Source:  []string{test.pattern(repository)},
+				Targets: map[string][]string{"macos": {t.TempDir()}},
 			})
 
 			err := Run(repository, []string{"--dry-run", "macos"}, &bytes.Buffer{}, &bytes.Buffer{})
@@ -555,8 +639,8 @@ func TestRunRejectsSourceSymlinkThatEscapesPackage(t *testing.T) {
 		t.Fatalf("create escaping source symlink: %v", err)
 	}
 	writeTestManifest(t, packageDirectory, testManifest{
-		Source: []string{"./external.config"},
-		Target: map[string]string{"macos": t.TempDir()},
+		Source:  []string{"./external.config"},
+		Targets: map[string][]string{"macos": {t.TempDir()}},
 	})
 
 	err := Run(repository, []string{"--dry-run", "macos"}, &bytes.Buffer{}, &bytes.Buffer{})
@@ -577,8 +661,8 @@ func TestRunRejectsBrokenSourceSymlink(t *testing.T) {
 		t.Fatalf("create broken source symlink: %v", err)
 	}
 	writeTestManifest(t, packageDirectory, testManifest{
-		Source: []string{"./broken.config"},
-		Target: map[string]string{"macos": t.TempDir()},
+		Source:  []string{"./broken.config"},
+		Targets: map[string][]string{"macos": {t.TempDir()}},
 	})
 
 	err := Run(repository, []string{"--dry-run", "macos"}, &bytes.Buffer{}, &bytes.Buffer{})
@@ -594,8 +678,8 @@ func TestRunRejectsHomeTargetWhenHomeIsUnavailable(t *testing.T) {
 
 	writeTestFile(t, filepath.Join(packageDirectory, "dummy.config"), "dummy\n")
 	writeTestManifest(t, packageDirectory, testManifest{
-		Source: []string{"./dummy.config"},
-		Target: map[string]string{"macos": "~"},
+		Source:  []string{"./dummy.config"},
+		Targets: map[string][]string{"macos": {"~"}},
 	})
 
 	err := Run(repository, []string{"--dry-run", "macos"}, &bytes.Buffer{}, &bytes.Buffer{})
@@ -614,15 +698,15 @@ func TestRunValidatesUnusableTargetBeforeMakingChanges(t *testing.T) {
 	firstPackage := filepath.Join(repository, "home", "first")
 	writeTestFile(t, filepath.Join(firstPackage, "first.config"), "first\n")
 	writeTestManifest(t, firstPackage, testManifest{
-		Source: []string{"./first.config"},
-		Target: map[string]string{"macos": goodTarget},
+		Source:  []string{"./first.config"},
+		Targets: map[string][]string{"macos": {goodTarget}},
 	})
 
 	secondPackage := filepath.Join(repository, "home", "second")
 	writeTestFile(t, filepath.Join(secondPackage, "second.config"), "second\n")
 	writeTestManifest(t, secondPackage, testManifest{
-		Source: []string{"./second.config"},
-		Target: map[string]string{"macos": blockedTarget},
+		Source:  []string{"./second.config"},
+		Targets: map[string][]string{"macos": {blockedTarget}},
 	})
 	writeTestFile(t, blockedParent, "not a directory\n")
 
@@ -644,8 +728,8 @@ func TestRunDeduplicatesOverlappingSourcePatterns(t *testing.T) {
 
 	writeTestFile(t, source, "dummy\n")
 	writeTestManifest(t, packageDirectory, testManifest{
-		Source: []string{"./dummy.config", "./*.config"},
-		Target: map[string]string{"macos": targetDirectory},
+		Source:  []string{"./dummy.config", "./*.config"},
+		Targets: map[string][]string{"macos": {targetDirectory}},
 	})
 
 	var stdout bytes.Buffer
@@ -655,6 +739,65 @@ func TestRunDeduplicatesOverlappingSourcePatterns(t *testing.T) {
 	assertSymlink(t, destination, source)
 	if got, want := strings.Count(stdout.String(), destination), 1; got != want {
 		t.Fatalf("destination appears %d times in stdout, want %d: %q", got, want, stdout.String())
+	}
+}
+
+func TestRunRejectsDuplicateEffectiveTargetsBeforeMakingChanges(t *testing.T) {
+	tests := []struct {
+		name          string
+		duplicatePath func(t *testing.T, target string) string
+	}{
+		{
+			name: "same path",
+			duplicatePath: func(t *testing.T, target string) string {
+				t.Helper()
+				return target
+			},
+		},
+		{
+			name: "symlink alias",
+			duplicatePath: func(t *testing.T, target string) string {
+				t.Helper()
+				alias := filepath.Join(filepath.Dir(target), "alias")
+				if err := os.Symlink(target, alias); err != nil {
+					t.Fatalf("create target alias: %v", err)
+				}
+				return alias
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repository := t.TempDir()
+			packageDirectory := filepath.Join(repository, "home", "dummy")
+			targetRoot := t.TempDir()
+			goodTarget := filepath.Join(targetRoot, "a-good")
+			duplicateTarget := filepath.Join(targetRoot, "duplicate")
+			if err := os.Mkdir(duplicateTarget, 0o755); err != nil {
+				t.Fatalf("create duplicate target: %v", err)
+			}
+
+			writeTestFile(t, filepath.Join(packageDirectory, "dummy.config"), "dummy\n")
+			writeTestManifest(t, packageDirectory, testManifest{
+				Source: []string{"./dummy.config"},
+				Targets: map[string][]string{
+					"macos": {goodTarget, duplicateTarget, test.duplicatePath(t, duplicateTarget)},
+				},
+			})
+
+			var stdout bytes.Buffer
+			err := Run(repository, []string{"macos"}, &stdout, &bytes.Buffer{})
+			if err == nil || !strings.Contains(err.Error(), "resolve to the same directory") {
+				t.Fatalf("Run() error = %v, want duplicate-target error", err)
+			}
+			if _, err := os.Lstat(filepath.Join(goodTarget, "dummy.config")); !os.IsNotExist(err) {
+				t.Fatalf("good target changed before validation completed: %v", err)
+			}
+			if got := stdout.String(); got != "" {
+				t.Fatalf("stdout = %q, want empty", got)
+			}
+		})
 	}
 }
 
@@ -670,8 +813,8 @@ func TestRunRejectsDifferentSourcesClaimingSameDestination(t *testing.T) {
 				writeTestFile(t, filepath.Join(packageDirectory, "one", "config"), "one\n")
 				writeTestFile(t, filepath.Join(packageDirectory, "two", "config"), "two\n")
 				writeTestManifest(t, packageDirectory, testManifest{
-					Source: []string{"./one/config", "./two/config"},
-					Target: map[string]string{"macos": targetDirectory},
+					Source:  []string{"./one/config", "./two/config"},
+					Targets: map[string][]string{"macos": {targetDirectory}},
 				})
 			},
 		},
@@ -682,8 +825,8 @@ func TestRunRejectsDifferentSourcesClaimingSameDestination(t *testing.T) {
 					packageDirectory := filepath.Join(repository, "home", packageName)
 					writeTestFile(t, filepath.Join(packageDirectory, "config"), packageName+"\n")
 					writeTestManifest(t, packageDirectory, testManifest{
-						Source: []string{"./config"},
-						Target: map[string]string{"macos": targetDirectory},
+						Source:  []string{"./config"},
+						Targets: map[string][]string{"macos": {targetDirectory}},
 					})
 				}
 			},
@@ -719,15 +862,15 @@ func TestRunRejectsDestinationNestedUnderAnotherPlannedLink(t *testing.T) {
 	nvimSource := filepath.Join(nvimPackage, "nvim")
 	writeTestFile(t, filepath.Join(nvimSource, "init.lua"), "-- init\n")
 	writeTestManifest(t, nvimPackage, testManifest{
-		Source: []string{"./nvim"},
-		Target: map[string]string{"macos": targetRoot},
+		Source:  []string{"./nvim"},
+		Targets: map[string][]string{"macos": {targetRoot}},
 	})
 
 	pluginPackage := filepath.Join(repository, "home", "plugin")
 	writeTestFile(t, filepath.Join(pluginPackage, "plugin"), "plugin\n")
 	writeTestManifest(t, pluginPackage, testManifest{
-		Source: []string{"./plugin"},
-		Target: map[string]string{"macos": filepath.Join(targetRoot, "nvim")},
+		Source:  []string{"./plugin"},
+		Targets: map[string][]string{"macos": {filepath.Join(targetRoot, "nvim")}},
 	})
 
 	var stdout bytes.Buffer
@@ -740,6 +883,58 @@ func TestRunRejectsDestinationNestedUnderAnotherPlannedLink(t *testing.T) {
 	}
 	if _, err := os.Lstat(filepath.Join(nvimSource, "plugin")); !os.IsNotExist(err) {
 		t.Fatalf("nested link was created inside managed source: %v", err)
+	}
+	if got := stdout.String(); got != "" {
+		t.Fatalf("stdout = %q, want empty", got)
+	}
+}
+
+func TestRunRejectsNestedDestinationsCreatedByFanOut(t *testing.T) {
+	repository := t.TempDir()
+	targetRoot := t.TempDir()
+	packageDirectory := filepath.Join(repository, "home", "neovim")
+	source := filepath.Join(packageDirectory, "nvim")
+	writeTestFile(t, filepath.Join(source, "init.lua"), "-- init\n")
+	writeTestManifest(t, packageDirectory, testManifest{
+		Source: []string{"./nvim"},
+		Targets: map[string][]string{
+			"macos": {targetRoot, filepath.Join(targetRoot, "nvim", "plugins")},
+		},
+	})
+
+	var stdout bytes.Buffer
+	err := Run(repository, []string{"macos"}, &stdout, &bytes.Buffer{})
+	if err == nil || !strings.Contains(err.Error(), "nested") {
+		t.Fatalf("Run() error = %v, want nested-destination error", err)
+	}
+	if _, err := os.Lstat(filepath.Join(targetRoot, "nvim")); !os.IsNotExist(err) {
+		t.Fatalf("target changed before validation completed: %v", err)
+	}
+	if got := stdout.String(); got != "" {
+		t.Fatalf("stdout = %q, want empty", got)
+	}
+}
+
+func TestRunRejectsDestinationInsideManagedSource(t *testing.T) {
+	repository := t.TempDir()
+	packageDirectory := filepath.Join(repository, "home", "dummy")
+	source := filepath.Join(packageDirectory, "config")
+	target := filepath.Join(source, "generated")
+	writeTestFile(t, filepath.Join(source, "settings.conf"), "settings\n")
+	writeTestManifest(t, packageDirectory, testManifest{
+		Source: []string{"./config"},
+		Targets: map[string][]string{
+			"macos": {target},
+		},
+	})
+
+	var stdout bytes.Buffer
+	err := Run(repository, []string{"macos"}, &stdout, &bytes.Buffer{})
+	if err == nil || !strings.Contains(err.Error(), "inside managed source") {
+		t.Fatalf("Run() error = %v, want managed-source error", err)
+	}
+	if _, err := os.Lstat(target); !os.IsNotExist(err) {
+		t.Fatalf("managed source changed before validation completed: %v", err)
 	}
 	if got := stdout.String(); got != "" {
 		t.Fatalf("stdout = %q, want empty", got)
@@ -761,15 +956,15 @@ func TestRunRejectsDifferentSourcesClaimingTargetDirectoryAliases(t *testing.T) 
 	firstPackage := filepath.Join(repository, "home", "first")
 	writeTestFile(t, filepath.Join(firstPackage, "config"), "first\n")
 	writeTestManifest(t, firstPackage, testManifest{
-		Source: []string{"./config"},
-		Target: map[string]string{"macos": realTarget},
+		Source:  []string{"./config"},
+		Targets: map[string][]string{"macos": {realTarget}},
 	})
 
 	secondPackage := filepath.Join(repository, "home", "second")
 	writeTestFile(t, filepath.Join(secondPackage, "config"), "second\n")
 	writeTestManifest(t, secondPackage, testManifest{
-		Source: []string{"./config"},
-		Target: map[string]string{"macos": aliasTarget},
+		Source:  []string{"./config"},
+		Targets: map[string][]string{"macos": {aliasTarget}},
 	})
 
 	var stdout bytes.Buffer
@@ -797,15 +992,15 @@ func TestRunRejectsDanglingTargetAncestorBeforeMakingChanges(t *testing.T) {
 	firstPackage := filepath.Join(repository, "home", "first")
 	writeTestFile(t, filepath.Join(firstPackage, "first.config"), "first\n")
 	writeTestManifest(t, firstPackage, testManifest{
-		Source: []string{"./first.config"},
-		Target: map[string]string{"macos": goodTarget},
+		Source:  []string{"./first.config"},
+		Targets: map[string][]string{"macos": {goodTarget}},
 	})
 
 	secondPackage := filepath.Join(repository, "home", "second")
 	writeTestFile(t, filepath.Join(secondPackage, "second.config"), "second\n")
 	writeTestManifest(t, secondPackage, testManifest{
-		Source: []string{"./second.config"},
-		Target: map[string]string{"macos": filepath.Join(danglingAncestor, "nested")},
+		Source:  []string{"./second.config"},
+		Targets: map[string][]string{"macos": {filepath.Join(danglingAncestor, "nested")}},
 	})
 
 	var stdout bytes.Buffer
@@ -836,15 +1031,15 @@ func TestRunRejectsCanonicalNestedDestinationsRegardlessOfAliasSortOrder(t *test
 	nvimPackage := filepath.Join(repository, "home", "neovim")
 	writeTestFile(t, filepath.Join(nvimPackage, "nvim", "init.lua"), "-- init\n")
 	writeTestManifest(t, nvimPackage, testManifest{
-		Source: []string{"./nvim"},
-		Target: map[string]string{"macos": aliasTarget},
+		Source:  []string{"./nvim"},
+		Targets: map[string][]string{"macos": {aliasTarget}},
 	})
 
 	pluginPackage := filepath.Join(repository, "home", "plugin")
 	writeTestFile(t, filepath.Join(pluginPackage, "plugin"), "plugin\n")
 	writeTestManifest(t, pluginPackage, testManifest{
-		Source: []string{"./plugin"},
-		Target: map[string]string{"macos": filepath.Join(realTarget, "nvim")},
+		Source:  []string{"./plugin"},
+		Targets: map[string][]string{"macos": {filepath.Join(realTarget, "nvim")}},
 	})
 
 	var stdout bytes.Buffer
@@ -861,8 +1056,8 @@ func TestRunRejectsCanonicalNestedDestinationsRegardlessOfAliasSortOrder(t *test
 }
 
 type testManifest struct {
-	Source []string          `json:"source"`
-	Target map[string]string `json:"target"`
+	Source  []string            `json:"source"`
+	Targets map[string][]string `json:"targets"`
 }
 
 func writeTestManifest(t *testing.T, packageDirectory string, manifest testManifest) {

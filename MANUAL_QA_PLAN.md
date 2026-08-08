@@ -161,13 +161,13 @@ printf '%s\n' '-- dummy module' >home/neovim/nvim/lua/dummy.lua
 printf 'theme = dummy\n' >home/ghostty/config
 
 cat >home/tmux/manage.json <<'JSON'
-{"source":["./.tmux.conf"],"target":{"macos":"~","linux":"~"}}
+{"source":["./.tmux.conf"],"targets":{"macos":["~"],"linux":["~"]}}
 JSON
 cat >home/neovim/manage.json <<'JSON'
-{"source":["./nvim"],"target":{"macos":"~/.config","linux":"~/.config"}}
+{"source":["./nvim"],"targets":{"macos":["~/.config"],"linux":["~/.config"]}}
 JSON
 cat >home/ghostty/manage.json <<'JSON'
-{"source":["./config"],"target":{"macos":"~/Library/Application Support/com.mitchellh.ghostty","linux":"~/.config/ghostty"}}
+{"source":["./config"],"targets":{"macos":["~/Library/Application Support/com.mitchellh.ghostty"],"linux":["~/.config/ghostty"]}}
 JSON
 ```
 
@@ -336,11 +336,11 @@ printf '%s\n' "$status" >"$QA_ROOT/evidence/status"
 - Expected: every planned destination is under `$QA_ROOT/fake-home`; search output for `$REAL_HOME_FOR_QA` and require no match; real-home sentinel hashes taken before the QA session remain unchanged.
 - Do not recursively snapshot the real home. Use only preselected, non-sensitive sentinels if this independent check is desired.
 
-### QA-P0-26 — Platform selection touches only one target
+### QA-P0-26 — Platform selection touches only one target set
 
-- Setup: one source with distinct absolute macOS and Linux targets under `$QA_ROOT`.
+- Setup: one source with distinct absolute macOS and Linux target arrays under `$QA_ROOT`. Include an invalid relative path in the unselected array.
 - Action: run selected platform.
-- Expected: only its target is created. The unselected path may be malformed or blocked and must not be inspected because only the selected target is relevant.
+- Expected: only the selected platform's targets are created. Unselected paths must not be expanded, resolved, or inspected.
 - Repeat with the other platform in a fresh sandbox.
 
 ### QA-P0-27 — Apply-time permission failure is contained and documented
@@ -367,6 +367,21 @@ printf '%s\n' "$status" >"$QA_ROOT/evidence/status"
 - Setup: create a large dummy plan under `$QA_ROOT/targets`.
 - Action: start apply in the background, wait until at least one link exists, send `TERM`; if it completes too quickly, enlarge the fixture and retry.
 - Expected: process exits due to interruption or completes normally. There are no temporary files because the CLI uses direct symlink creation. Every created entry is a valid symlink to an unchanged source; pre-existing objects remain unchanged. A rerun safely completes the plan.
+
+### QA-P0-31 — Every source fans out to every selected target
+
+- Setup: one package with two matched sources and three selected targets declared in non-lexical order.
+- Expected: six links are created, one for every source-target pair. Output is sorted by destination rather than declaration order, and a rerun reports all six as `exists`.
+
+### QA-P0-32 — Duplicate effective targets are rejected
+
+- Setup: one package declares a valid target plus the same effective directory twice, first using identical path text and then using a directory symlink alias.
+- Expected: both variants fail before mutation with a duplicate-target error; no link is created in the otherwise valid target.
+
+### QA-P0-33 — A target inside a managed source is rejected
+
+- Setup: manage a source directory and configure a target directory beneath that source.
+- Expected: the run fails before creating the target directory or any link, and the complete source snapshot remains unchanged.
 
 ## P1 test cases: validation depth and filesystem behavior
 
@@ -412,13 +427,15 @@ For each row, include one earlier valid package to prove full-plan validation pr
 | QA-P1-24 | Missing, `null`, or empty `source` | At least one source pattern required |
 | QA-P1-25 | `source` is a string rather than array | Invalid JSON type |
 | QA-P1-26 | `source` contains a number, object, boolean, or null | Invalid JSON type |
-| QA-P1-27 | Missing or `null` `target` | OS targets required |
-| QA-P1-28 | `target` is a string or array | Invalid JSON type |
-| QA-P1-29 | Selected platform value is non-string, missing, or empty | Invalid type or no configured selected target |
-| QA-P1-30 | Relative target `relative/path` | Must start with `~` or `/` |
-| QA-P1-31 | Named-user target `~someone/config` | Named-user home unsupported |
-| QA-P1-32 | Environment-variable target `$HOME/config` | Not expanded; rejected as relative |
-| QA-P1-33 | Valid selected platform plus unknown map key | Accepted; map keys other than the selected platform do not affect the plan |
+| QA-P1-27 | Missing or `null` `targets` | OS targets required |
+| QA-P1-28 | Legacy singular `target`, or `targets` is a string or array | Invalid JSON / unknown field or type |
+| QA-P1-29 | Platform value is a scalar or `null` | An array of strings is mandatory |
+| QA-P1-30 | Platform array contains a number, object, boolean, or `null` | Invalid JSON type |
+| QA-P1-31 | Selected platform key is missing or its array is empty | No configured targets for selected platform |
+| QA-P1-32 | Selected array contains an empty, relative, named-user, or environment-variable path | Appropriate path validation error |
+| QA-P1-33 | `targets` contains a key other than `macos` or `linux` | Unsupported target operating system |
+| QA-P1-34 | Unselected platform has empty or otherwise invalid paths | Selected platform still succeeds; unselected paths are not inspected |
+| QA-P1-35 | Selected array contains two textual paths resolving to one directory | Duplicate effective target error before mutation |
 
 ### Source matching
 

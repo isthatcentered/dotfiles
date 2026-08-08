@@ -2,7 +2,7 @@
 
 This repository contains a small Go program that installs configuration files by creating symbolic links from your home directory back into this repository.
 
-It deliberately does one job: read package manifests from `home/*/manage.json`, select the target for `macos` or `linux`, and link every matching source into that target directory. It does not copy files, install applications, manage secrets, or modify an existing destination.
+It deliberately does one job: read package manifests from `home/*/manage.json`, select the targets for `macos` or `linux`, and link every matching source into every selected target directory. It does not copy files, install applications, manage secrets, or modify an existing destination.
 
 ## Requirements
 
@@ -48,14 +48,14 @@ Every package contains a strict JSON manifest with two fields:
 ```json
 {
   "source": ["./file", "./folder", "./*.config"],
-  "target": {
-    "macos": "~/some/directory",
-    "linux": "~/some/directory"
+  "targets": {
+    "macos": ["~/some/directory", "~/another/directory"],
+    "linux": ["~/some/directory"]
   }
 }
 ```
 
-`source` is a non-empty list of paths or glob patterns relative to the package directory. Each matched file or directory is linked into the selected target using its basename:
+`source` is a non-empty list of paths or glob patterns relative to the package directory. Each matched file or directory is linked into every selected target using its basename:
 
 ```text
 <package>/<matched source> → <target>/<source basename>
@@ -71,9 +71,9 @@ Source patterns support Go filepath globs such as `*`, `?`, and character ranges
 
 Sources must remain inside their package. Absolute patterns, `..` traversal, broken links, and source symlinks that resolve outside the package are rejected.
 
-`target` maps an operating-system name to a destination directory. Targets must use an absolute path, `~`, or a path beginning with `~/`. Environment variables and named-user forms such as `~alice` are not expanded.
+`targets` maps each supported operating-system name to an array of destination directories. Every array must contain strings; scalar paths, `null`, and the former singular `target` field are invalid. Only `macos` and `linux` keys are supported. Targets must use an absolute path, `~`, or a path beginning with `~/`. Environment variables and named-user forms such as `~alice` are not expanded.
 
-Only the selected operating system needs a configured target, although defining both makes a package portable.
+Only the selected operating system needs a non-empty target array, although defining both makes a package portable. Paths for the unselected operating system are not inspected. Target arrays are unordered: output is sorted by destination, and declaration order gives no target priority. Within the selected array, two paths may not resolve to the same effective directory.
 
 ## Examples
 
@@ -84,9 +84,9 @@ Only the selected operating system needs a configured target, although defining 
 ```json
 {
   "source": ["./.tmux.conf"],
-  "target": {
-    "macos": "~",
-    "linux": "~"
+  "targets": {
+    "macos": ["~"],
+    "linux": ["~"]
   }
 }
 ```
@@ -104,9 +104,9 @@ Result:
 ```json
 {
   "source": ["./nvim"],
-  "target": {
-    "macos": "~/.config",
-    "linux": "~/.config"
+  "targets": {
+    "macos": ["~/.config"],
+    "linux": ["~/.config"]
   }
 }
 ```
@@ -124,9 +124,9 @@ Result:
 ```json
 {
   "source": ["./config"],
-  "target": {
-    "macos": "~/Library/Application Support/com.mitchellh.ghostty",
-    "linux": "~/.config/ghostty"
+  "targets": {
+    "macos": ["~/Library/Application Support/com.mitchellh.ghostty"],
+    "linux": ["~/.config/ghostty"]
   }
 }
 ```
@@ -219,7 +219,9 @@ Before creating any link, the manager validates the complete plan:
 - Every manifest must be valid JSON with only recognized fields.
 - Every source pattern must match at least one entry.
 - Sources may not escape their package.
+- Planned destinations may not be placed inside a managed source.
 - Package-directory discovery errors are reported instead of silently skipping a package.
+- Duplicate effective target directories within one package and platform are rejected.
 - Two different sources may not claim the same destination, including through target-directory symlink aliases.
 - A planned destination may not be nested below another planned destination, because every destination becomes a symlink.
 - Dangling symlinks and non-directory components in target-directory paths are rejected before links are created.
@@ -234,7 +236,6 @@ There is no `--force` option. Resolve a conflict yourself, then run the command 
 
 ## Current limitations
 
-- One target directory per operating system and package
 - Symlinks only; no copying or templating
 - No automatic operating-system detection
 - No package installation or `Brewfile` handling

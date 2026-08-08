@@ -13,13 +13,14 @@ import (
 )
 
 type Manifest struct {
-	Source []string          `json:"source"`
-	Target map[string]string `json:"target"`
+	Source  []string            `json:"source"`
+	Targets map[string][]string `json:"targets"`
 }
 
 type Link struct {
 	Source               string
 	Destination          string
+	canonicalSource      string
 	canonicalDestination string
 }
 
@@ -103,20 +104,44 @@ func buildPlan(repository, platform string) ([]Link, error) {
 			return nil, err
 		}
 
-		targetValue, ok := manifest.Target[platform]
-		if !ok || targetValue == "" {
-			return nil, fmt.Errorf("%s: no target configured for %s", manifestPath, platform)
+		targetValues, ok := manifest.Targets[platform]
+		if !ok || len(targetValues) == 0 {
+			return nil, fmt.Errorf("%s: no targets configured for %s", manifestPath, platform)
 		}
-		targetDirectory, err := expandHome(targetValue)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", manifestPath, err)
+		type targetDirectory struct {
+			path      string
+			canonical string
 		}
-		if !filepath.IsAbs(targetDirectory) {
-			return nil, fmt.Errorf("%s: target must start with ~ or /", manifestPath)
-		}
-		canonicalTargetDirectory, err := canonicalizeTargetDirectory(targetDirectory)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", manifestPath, err)
+		targetDirectories := make([]targetDirectory, 0, len(targetValues))
+		seenTargets := make(map[string]string, len(targetValues))
+		for _, targetValue := range targetValues {
+			if targetValue == "" {
+				return nil, fmt.Errorf("%s: target for %s must not be empty", manifestPath, platform)
+			}
+			targetPath, err := expandHome(targetValue)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", manifestPath, err)
+			}
+			if !filepath.IsAbs(targetPath) {
+				return nil, fmt.Errorf("%s: target must start with ~ or /", manifestPath)
+			}
+			canonicalTarget, err := canonicalizeTargetDirectory(targetPath)
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", manifestPath, err)
+			}
+			if previous, exists := seenTargets[canonicalTarget]; exists {
+				return nil, fmt.Errorf(
+					"%s: targets %s and %s resolve to the same directory",
+					manifestPath,
+					previous,
+					targetPath,
+				)
+			}
+			seenTargets[canonicalTarget] = targetPath
+			targetDirectories = append(targetDirectories, targetDirectory{
+				path:      targetPath,
+				canonical: canonicalTarget,
+			})
 		}
 		packageDirectory := filepath.Dir(manifestPath)
 		realPackageDirectory, err := filepath.EvalSymlinks(packageDirectory)
@@ -150,20 +175,23 @@ func buildPlan(repository, platform string) ([]Link, error) {
 				if relative == ".." || strings.HasPrefix(relative, ".."+string(os.PathSeparator)) {
 					return nil, fmt.Errorf("%s: source escapes its package: %s", manifestPath, realSource)
 				}
-				destination := filepath.Join(targetDirectory, filepath.Base(source))
-				canonicalDestination := filepath.Join(canonicalTargetDirectory, filepath.Base(source))
-				if previous, exists := destinations[canonicalDestination]; exists && previous.Source != source {
-					return nil, fmt.Errorf(
-						"%s is claimed by both %s and %s",
-						destination,
-						previous.Source,
-						source,
-					)
-				}
-				destinations[canonicalDestination] = Link{
-					Source:               source,
-					Destination:          destination,
-					canonicalDestination: canonicalDestination,
+				for _, target := range targetDirectories {
+					destination := filepath.Join(target.path, filepath.Base(source))
+					canonicalDestination := filepath.Join(target.canonical, filepath.Base(source))
+					if previous, exists := destinations[canonicalDestination]; exists && previous.Source != source {
+						return nil, fmt.Errorf(
+							"%s is claimed by both %s and %s",
+							destination,
+							previous.Source,
+							source,
+						)
+					}
+					destinations[canonicalDestination] = Link{
+						Source:               source,
+						Destination:          destination,
+						canonicalSource:      realSource,
+						canonicalDestination: canonicalDestination,
+					}
 				}
 			}
 		}
@@ -176,6 +204,17 @@ func buildPlan(repository, platform string) ([]Link, error) {
 	sort.Slice(plan, func(i, j int) bool {
 		return plan[i].Destination < plan[j].Destination
 	})
+	for _, link := range plan {
+		for _, source := range plan {
+			if pathIsInside(source.canonicalSource, link.canonicalDestination) {
+				return nil, fmt.Errorf(
+					"planned destination %s is inside managed source %s",
+					link.Destination,
+					source.Source,
+				)
+			}
+		}
+	}
 	for i, parent := range plan {
 		for _, child := range plan[i+1:] {
 			if pathIsInside(parent.canonicalDestination, child.canonicalDestination) {
@@ -293,8 +332,16 @@ func loadManifest(path string) (Manifest, error) {
 	if len(manifest.Source) == 0 {
 		return Manifest{}, fmt.Errorf("%s: source must contain at least one pattern", path)
 	}
-	if manifest.Target == nil {
-		return Manifest{}, fmt.Errorf("%s: target must contain operating system paths", path)
+	if manifest.Targets == nil {
+		return Manifest{}, fmt.Errorf("%s: targets must contain operating system paths", path)
+	}
+	for platform, targets := range manifest.Targets {
+		if platform != "macos" && platform != "linux" {
+			return Manifest{}, fmt.Errorf("%s: unsupported target operating system %q", path, platform)
+		}
+		if targets == nil {
+			return Manifest{}, fmt.Errorf("%s: targets for %s must be an array", path, platform)
+		}
 	}
 	return manifest, nil
 }
