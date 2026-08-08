@@ -1,0 +1,7 @@
+interface:
+  display_name: "Spin Up Claude Code"
+  short_description: "Run autonomous Claude Code agents via CLI"
+  default_prompt: "Use $spin-up-claude to run Claude Code autonomously for this task."
+
+policy:
+  allow_implicit_invocation: false
