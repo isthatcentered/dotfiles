@@ -1,6 +1,9 @@
 (defcfg
   process-unmapped-keys yes
   linux-device-detect-mode keyboard-only
+  linux-dev-names-include (
+    "Sonsei-BLE - 2 Keyboard"
+  )
 )
 
 (defsrc
