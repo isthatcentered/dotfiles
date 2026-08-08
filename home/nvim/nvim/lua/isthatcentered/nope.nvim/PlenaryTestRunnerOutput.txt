@@ -1,0 +1,127 @@
+nvim --headless --noplugin --clean -u scripts/minimal_init.vim -c "PlenaryBustedDirectory lua/ {minimal_init = 'scripts/minimal_init.vim'}"
+Scheduling: lua/nope/configuration_picker_spec.lua
+Scheduling: lua/nope/EventEmitter_spec.lua
+Scheduling: lua/nope/stream_buffer_spec.lua
+Scheduling: lua/nope/job_manager_spec.lua
+Scheduling: lua/nope/observable_spec.lua
+Scheduling: lua/nope/fixtures/other_spec.lua
+Scheduling: lua/nope/fixtures/long_running_test_spec.lua
+Scheduling: lua/nope/find_file_strategy_spec.lua
+Scheduling: lua/nope/BufferConsumer_spec.lua
+Scheduling: lua/nope/json_parser_spec.lua
+Scheduling: lua/nope/DiagnosticsConsumer_spec.lua
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/fixtures/other_spec.lua	
+[32mSuccess[0m	||	Other test suite Nested test suite Nested test passing	
+[32mSuccess[0m	||	Other test suite Nested test suite Nested test failing	
+[32mSuccess[0m	||	Other test suite Completes immediately	
+[31mFail[0m	||	Other test suite Fails	
+            ...nin/Test/nvim/nope.nvim/lua/nope/fixtures/other_spec.lua:17: Expected objects to be the same.
+            Passed in:
+            (boolean) true
+            Expected:
+            (boolean) false
+            
+            stack traceback:
+            	...nin/Test/nvim/nope.nvim/lua/nope/fixtures/other_spec.lua:17: in function <...nin/Test/nvim/nope.nvim/lua/nope/fixtures/other_spec.lua:16>
+            	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	1	
+[31mErrors : [0m	0	
+========================================	
+Tests Failed. Exit: 1	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua	
+got:	hello	
+	
+[32mSuccess: [0m	0	
+[31mFailed : [0m	0	
+[31mErrors : [0m	1	
+========================================	
+We had an unexpected error: 	{ {
+    descriptions = { "EventEmitter" },
+    msg = "...penin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua:41: attempt to call global 'test' (a nil value)\n\nstack traceback:\n\t...penin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua:41: in function <...penin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua:40>\n"
+  } }	{
+  errs = { {
+      descriptions = { "EventEmitter" },
+      msg = "...penin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua:41: attempt to call global 'test' (a nil value)\n\nstack traceback:\n\t...penin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua:41: in function <...penin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua:40>\n"
+    } },
+  fail = {},
+  pass = {}
+}	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/DiagnosticsConsumer_spec.lua	
+[32mSuccess[0m	||	DiagnosticsConsumer new() creates a new consumer with namespace	
+[32mSuccess[0m	||	DiagnosticsConsumer start() clears all diagnostics	
+[32mSuccess[0m	||	DiagnosticsConsumer stop() clears all diagnostics	
+[32mSuccess[0m	||	DiagnosticsConsumer update() creates no diagnostics for passing tests	
+[32mSuccess[0m	||	DiagnosticsConsumer update() creates diagnostic for failed test at correct position	
+[32mSuccess[0m	||	DiagnosticsConsumer update() creates diagnostics for multiple failed tests in same file	
+[32mSuccess[0m	||	DiagnosticsConsumer update() creates diagnostics for failed tests in nested suites	
+[32mSuccess[0m	||	DiagnosticsConsumer update() clears previous diagnostics on update	
+[32mSuccess[0m	||	DiagnosticsConsumer update() skips failed tests without location	
+[32mSuccess[0m	||	DiagnosticsConsumer update() uses first line of multi-line error message	
+[32mSuccess[0m	||	DiagnosticsConsumer update() uses default message when failure has no message	
+	
+[32mSuccess: [0m	11	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/BufferConsumer_spec.lua	
+[32mSuccess[0m	||	BufferConsumer new creates a new BufferConsumer instance	
+[32mSuccess[0m	||	BufferConsumer new stores the win_config	
+[32mSuccess[0m	||	BufferConsumer open creates buffers when opened	
+[32mSuccess[0m	||	BufferConsumer open creates windows when opened	
+[32mSuccess[0m	||	BufferConsumer open renders last state if available	
+[32mSuccess[0m	||	BufferConsumer open does nothing if window is already open	
+[32mSuccess[0m	||	BufferConsumer close closes open windows	
+[32mSuccess[0m	||	BufferConsumer close does nothing if window is not open	
+[32mSuccess[0m	||	BufferConsumer close can be called multiple times safely	
+[32mSuccess[0m	||	BufferConsumer toggle opens window when closed	
+[32mSuccess[0m	||	BufferConsumer toggle closes window when open	
+[32mSuccess[0m	||	BufferConsumer toggle can be toggled multiple times	
+[32mSuccess[0m	||	BufferConsumer update stores the state	
+[32mSuccess[0m	||	BufferConsumer update updates state when window is closed	
+[32mSuccess[0m	||	BufferConsumer update renders state when window is open	
+[32mSuccess[0m	||	BufferConsumer update updates multiple times	
+[32mSuccess[0m	||	BufferConsumer update remembers state after closing and reopening	
+[32mSuccess[0m	||	BufferConsumer buffer properties creates non-modifiable buffers	
+[32mSuccess[0m	||	BufferConsumer buffer properties creates unlisted buffers	
+[32mSuccess[0m	||	BufferConsumer multiple instances supports multiple independent consumers	
+[32mSuccess[0m	||	BufferConsumer rendering format renders status correctly	
+[32mSuccess[0m	||	BufferConsumer rendering format renders files list correctly	
+[32mSuccess[0m	||	BufferConsumer rendering format handles empty files	
+[32mSuccess[0m	||	BufferConsumer rendering format handles all status types	
+[32mSuccess[0m	||	BufferConsumer tree navigation builds tree items from state	
+	
+[32mSuccess: [0m	25	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/fixtures/long_running_test_spec.lua	
+[32mSuccess[0m	||	Long running test suite name Takes time to complete	
+[32mSuccess[0m	||	Long running test suite name Completes immediately	
+[31mFail[0m	||	Long running test suite name Fails	
+            ...m/nope.nvim/lua/nope/fixtures/long_running_test_spec.lua:17: Expected objects to be the same.
+            Passed in:
+            (boolean) true
+            Expected:
+            (boolean) false
+            
+            stack traceback:
+            	...m/nope.nvim/lua/nope/fixtures/long_running_test_spec.lua:17: in function <...m/nope.nvim/lua/nope/fixtures/long_running_test_spec.lua:16>
+            	
+	
+[32mSuccess: [0m	2	
+[31mFailed : [0m	1	
+[31mErrors : [0m	0	
+========================================	
+Tests Failed. Exit: 1	

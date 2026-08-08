@@ -1,0 +1,11 @@
+describe("failing suite", function()
+  it("first failing test", function()
+    print("LOG: first failing test executed")
+    assert.are.equal(1 + 1, 3)
+  end)
+
+  it("second failing test", function()
+    print("LOG: second failing test executed")
+    assert.are.same({ a = 1 }, { a = 2 })
+  end)
+end)

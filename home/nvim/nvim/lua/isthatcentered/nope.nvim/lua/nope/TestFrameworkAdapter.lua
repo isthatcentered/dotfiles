@@ -1,0 +1,5 @@
+---@class FrameworkAdapter
+---@field name string
+---@field config_glob_pattern string?
+---@field is_test_file fun(self: FrameworkAdapter, buffer_id: integer): boolean
+---@field get_runner fun(self: FrameworkAdapter, configuration: RunConfiguration): Runner

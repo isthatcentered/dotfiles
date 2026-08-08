@@ -1,0 +1,26 @@
+local PlenaryRunner = require("nope.plenary.PlenaryRunner")
+
+describe("PlenaryRunner", function()
+  describe("new", function()
+    it("creates runner with command", function()
+      local runner = PlenaryRunner.new({ "echo", "test" })
+      assert.is_not_nil(runner)
+    end)
+  end)
+
+  describe("listen", function()
+    it("returns unsubscribe function", function()
+      local runner = PlenaryRunner.new({ "echo", "test" })
+      local unsub = runner:listen(function() end)
+      assert.is_function(unsub)
+    end)
+  end)
+
+  describe("stop", function()
+    it("can be called without starting", function()
+      local runner = PlenaryRunner.new({ "echo", "test" })
+      runner:stop()
+      -- Should not error
+    end)
+  end)
+end)

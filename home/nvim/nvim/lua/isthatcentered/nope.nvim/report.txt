@@ -1,0 +1,3 @@
+{"status":"pending","results":[]}
+{"status":"pending","results":[{"file_name":"/Users/edouardpenin/Test/nvim/nope.nvim/src/index.test.ts"}]}
+{"status":"done","results":[{"file_name":"/Users/edouardpenin/Test/nvim/nope.nvim/src/index.test.ts"}]}

@@ -1,0 +1,474 @@
+nvim --headless --noplugin --clean -u scripts/minimal_init.vim -c "PlenaryBustedDirectory lua/ {minimal_init = 'scripts/minimal_init.vim'}"
+Starting...Scheduling: lua/nope/configuration_picker_spec.lua
+Scheduling: lua/nope/FileWatcher/init_spec.lua
+Scheduling: lua/nope/Signal_spec.lua
+Scheduling: lua/nope/StreamBuffer_spec.lua
+Scheduling: lua/nope/String_spec.lua
+Scheduling: lua/nope/EventEmitter_spec.lua
+Scheduling: lua/nope/debounce_spec.lua
+Scheduling: lua/nope/Job_spec.lua
+Scheduling: lua/nope/plenary/WatchController_spec.lua
+Scheduling: lua/nope/plenary/PlenaryOutputParser_spec.lua
+Scheduling: lua/nope/plenary/PlenaryRunner_spec.lua
+Scheduling: lua/nope/plenary/PlenaryAdapter_spec.lua
+Scheduling: lua/nope/consumers/buffer_consumer/TreeModel_spec.lua
+Scheduling: lua/nope/consumers/buffer_consumer/FoldManager_spec.lua
+Scheduling: lua/nope/consumers/buffer_consumer/init_spec.lua
+Scheduling: lua/nope/consumers/buffer_consumer/Renderer_spec.lua
+Scheduling: lua/nope/consumers/DiagnosticsConsumer_spec.lua
+Scheduling: lua/nope/Gen_spec.lua
+Scheduling: lua/nope/examples/solidjs_signals/init_spec.lua
+Scheduling: lua/nope/find_file_strategy_spec.lua
+Scheduling: lua/nope/Orchestrator2_spec.lua
+Scheduling: lua/nope/json_parser_spec.lua
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/String_spec.lua	
+[32mSuccess[0m	||	String pad_end pads with spaces by default	
+[32mSuccess[0m	||	String pad_end pads with custom char	
+[32mSuccess[0m	||	String pad_end returns original if already at target length	
+[32mSuccess[0m	||	String pad_end returns original if exceeding target length	
+[32mSuccess[0m	||	String pad_end pads empty string	
+[32mSuccess[0m	||	String pad_start pads with spaces by default	
+[32mSuccess[0m	||	String pad_start pads with custom char	
+[32mSuccess[0m	||	String pad_start returns original if already at target length	
+[32mSuccess[0m	||	String pad_start returns original if exceeding target length	
+[32mSuccess[0m	||	String pad_start pads empty string	
+[32mSuccess[0m	||	String split splits string into chunks of specified length	
+[32mSuccess[0m	||	String split returns single element when string shorter than length	
+[32mSuccess[0m	||	String split handles exact multiples of length	
+[32mSuccess[0m	||	String split returns empty table for empty string	
+[32mSuccess[0m	||	String split handles length of 1	
+[32mSuccess[0m	||	String trim removes leading spaces	
+[32mSuccess[0m	||	String trim removes trailing spaces	
+[32mSuccess[0m	||	String trim removes both leading and trailing spaces	
+[32mSuccess[0m	||	String trim handles empty string	
+[32mSuccess[0m	||	String trim returns string unchanged if no whitespace	
+[32mSuccess[0m	||	String trim handles tabs and newlines	
+[32mSuccess[0m	||	String trim preserves internal whitespace	
+[32mSuccess[0m	||	String crop crops string to specified length	
+[32mSuccess[0m	||	String crop returns original if shorter than length	
+[32mSuccess[0m	||	String crop returns original if equal to length	
+[32mSuccess[0m	||	String crop handles empty string	
+[32mSuccess[0m	||	String crop handles length of 0	
+	
+[32mSuccess: [0m	27	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/Signal_spec.lua	
+[32mSuccess[0m	||	Signal new creates empty signal with no listeners	
+[32mSuccess[0m	||	Signal listen returns unsubscribe function	
+[32mSuccess[0m	||	Signal listen listener receives emitted value	
+[32mSuccess[0m	||	Signal listen multiple listeners all called	
+[32mSuccess[0m	||	Signal listen listeners called in registration order	
+[32mSuccess[0m	||	Signal emit calls all listeners	
+[32mSuccess[0m	||	Signal emit passes value to listeners	
+[32mSuccess[0m	||	Signal emit works with no listeners	
+[32mSuccess[0m	||	Signal emit works with nil value	
+[32mSuccess[0m	||	Signal emit works with complex table value	
+[32mSuccess[0m	||	Signal off removes all listeners	
+[32mSuccess[0m	||	Signal off no error when no listeners exist	
+[32mSuccess[0m	||	Signal unsubscribe unsubscribed listener no longer receives events	
+[32mSuccess[0m	||	Signal unsubscribe other listeners still work after one unsubscribes	
+[32mSuccess[0m	||	Signal unsubscribe unsubscribe is idempotent	
+[32mSuccess[0m	||	Signal unsubscribe unsubscribe during emit does not break iteration	
+[32mSuccess[0m	||	Signal edge cases listener throws error - propagates and stops further listeners	
+[32mSuccess[0m	||	Signal edge cases listener subscribes new listener during emit	
+[32mSuccess[0m	||	Signal edge cases listener emits during emit (re-entrant)	
+[32mSuccess[0m	||	Signal listener_count returns 0 for empty signal	
+[32mSuccess[0m	||	Signal listener_count counts all listeners	
+[32mSuccess[0m	||	Signal listener_count decrements after unsubscribe	
+[32mSuccess[0m	||	Signal listener_count returns 0 after off()	
+	
+[32mSuccess: [0m	23	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/consumers/buffer_consumer/Renderer_spec.lua	
+[32mSuccess[0m	||	Renderer render_tree returns lines for each node	
+[32mSuccess[0m	||	Renderer render_tree indents children correctly	
+[32mSuccess[0m	||	Renderer render_tree collects highlights for each node	
+[32mSuccess[0m	||	Renderer render_details returns summary header when summary provided	
+[32mSuccess[0m	||	Renderer render_details includes node details	
+[32mSuccess[0m	||	Renderer render_details returns empty lines for nil node	
+[32mSuccess[0m	||	Renderer apply sets buffer lines and highlights	
+[32mSuccess[0m	||	Renderer render_help returns keyboard shortcuts	
+[32mSuccess[0m	||	Renderer render_help includes all expected shortcuts	
+[32mSuccess[0m	||	Renderer render_help includes title highlight	
+[32mSuccess[0m	||	Renderer render_footer returns help hint	
+[32mSuccess[0m	||	Renderer render_footer has comment highlight	
+[32mSuccess[0m	||	Renderer render_tab_bar returns empty result for no tabs	
+[32mSuccess[0m	||	Renderer render_tab_bar renders single tab	
+[32mSuccess[0m	||	Renderer render_tab_bar renders multiple tabs with separator	
+[32mSuccess[0m	||	Renderer render_tab_bar highlights active tab with brackets	
+[32mSuccess[0m	||	Renderer render_tab_bar shows status icons	
+[32mSuccess[0m	||	Renderer render_tab_bar includes column-based highlights for each tab	
+	
+[32mSuccess: [0m	18	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/EventEmitter_spec.lua	
+[32mSuccess[0m	||	EventEmitter new creates empty emitter with no listeners	
+[32mSuccess[0m	||	EventEmitter on returns unsubscribe function	
+[32mSuccess[0m	||	EventEmitter on listener receives emitted event args	
+[32mSuccess[0m	||	EventEmitter on multiple listeners for same event all called	
+[32mSuccess[0m	||	EventEmitter on listeners called in registration order	
+[32mSuccess[0m	||	EventEmitter on different events are independent	
+[32mSuccess[0m	||	EventEmitter on listener not called for other events	
+[32mSuccess[0m	||	EventEmitter emit calls all listeners for event	
+[32mSuccess[0m	||	EventEmitter emit passes all arguments to listeners	
+[32mSuccess[0m	||	EventEmitter emit works with no listeners	
+[32mSuccess[0m	||	EventEmitter emit works with multiple args	
+[32mSuccess[0m	||	EventEmitter emit works with zero args	
+[32mSuccess[0m	||	EventEmitter once listener called only once then removed	
+[32mSuccess[0m	||	EventEmitter once returns unsubscribe function	
+[32mSuccess[0m	||	EventEmitter once unsubscribe before emit prevents call	
+[32mSuccess[0m	||	EventEmitter once receives arguments	
+[32mSuccess[0m	||	EventEmitter off removes all listeners for specific event	
+[32mSuccess[0m	||	EventEmitter off removes all listeners when no event specified	
+[32mSuccess[0m	||	EventEmitter off no error when removing from event with no listeners	
+[32mSuccess[0m	||	EventEmitter unsubscribe unsubscribed listener no longer receives events	
+[32mSuccess[0m	||	EventEmitter unsubscribe other listeners still work after one unsubscribes	
+[32mSuccess[0m	||	EventEmitter unsubscribe unsubscribe is idempotent	
+[32mSuccess[0m	||	EventEmitter unsubscribe unsubscribe during emit does not break iteration	
+[32mSuccess[0m	||	EventEmitter edge cases listener throws error - propagates and stops further listeners	
+[32mSuccess[0m	||	EventEmitter edge cases listener subscribes new listener during emit	
+[32mSuccess[0m	||	EventEmitter edge cases listener emits same event during emit (re-entrant)	
+[32mSuccess[0m	||	EventEmitter edge cases event names can be any string including empty	
+[32mSuccess[0m	||	EventEmitter memory unsubscribed listeners removed from internal list	
+[32mSuccess[0m	||	EventEmitter listener_count returns 0 for empty emitter	
+[32mSuccess[0m	||	EventEmitter listener_count counts listeners across multiple events	
+[32mSuccess[0m	||	EventEmitter listener_count decrements after unsubscribe	
+[32mSuccess[0m	||	EventEmitter listener_count decrements after off(event)	
+[32mSuccess[0m	||	EventEmitter listener_count returns 0 after off()	
+	
+[32mSuccess: [0m	33	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/plenary/PlenaryOutputParser_spec.lua	
+[32mSuccess[0m	||	PlenaryOutputParser initial state starts with idle status	
+[32mSuccess[0m	||	PlenaryOutputParser initial state starts with empty files	
+[32mSuccess[0m	||	PlenaryOutputParser initial state starts with zero summary	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line parses Testing: line to start file	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line parses Success result correctly	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line parses Fail result correctly	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line captures error message for failed test	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line extracts line number from error message	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line handles multiple files in sequence	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line accumulates summary across files	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line sets file status to failed when has failing tests	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line sets file status to passed when all tests pass	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line creates pending file from scheduling line	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line creates multiple pending files from scheduling lines	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line reuses scheduled file when Testing: line is parsed	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line matches relative scheduled path to absolute Testing path	
+[32mSuccess[0m	||	PlenaryOutputParser parse_line handles unexpected error block	
+[32mSuccess[0m	||	PlenaryOutputParser complete sets status to done	
+[32mSuccess[0m	||	PlenaryOutputParser complete finalizes pending error collection	
+[32mSuccess[0m	||	PlenaryOutputParser reset resets to initial state	
+	
+[32mSuccess: [0m	20	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/Gen_spec.lua	
+[32mSuccess[0m	||	Gen constant always returns the same value	
+[32mSuccess[0m	||	Gen constant works with any type	
+[32mSuccess[0m	||	Gen constant does not consume randomness	
+[32mSuccess[0m	||	Gen integer returns a positive integer	
+[32mSuccess[0m	||	Gen int_between returns value within bounds (inclusive min, exclusive max)	
+[32mSuccess[0m	||	Gen int_between handles single value range	
+[32mSuccess[0m	||	Gen number returns float between 0 and 1	
+[32mSuccess[0m	||	Gen string returns string of correct length	
+[32mSuccess[0m	||	Gen string returns alphanumeric characters only	
+[32mSuccess[0m	||	Gen one_of picks from list of generators	
+[32mSuccess[0m	||	Gen one_of with single generator always returns that value	
+[32mSuccess[0m	||	Gen list_of produces list of correct length	
+[32mSuccess[0m	||	Gen list_of uses length generator	
+[32mSuccess[0m	||	Gen map transforms the generated value	
+[32mSuccess[0m	||	Gen map chains multiple maps	
+[32mSuccess[0m	||	Gen flat_map chains generators	
+[32mSuccess[0m	||	Gen flat_map allows dependent generation	
+[32mSuccess[0m	||	Gen run is equivalent to calling gen directly	
+[32mSuccess[0m	||	Gen run uses default random when called without args	
+[32mSuccess[0m	||	Gen run_with returns value and next random	
+[32mSuccess[0m	||	Gen run_with returns different random after consuming	
+[32mSuccess[0m	||	Gen nillable returns nil or the value	
+[32mSuccess[0m	||	Gen sequence runs each generator and returns list of results	
+[32mSuccess[0m	||	Gen sequence works with empty list	
+[32mSuccess[0m	||	Gen sequence preserves order	
+[32mSuccess[0m	||	Gen sequence threads random through generators	
+[32mSuccess[0m	||	Gen determinism same seed produces same results	
+	
+[32mSuccess: [0m	27	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/consumers/DiagnosticsConsumer_spec.lua	
+[32mSuccess[0m	||	DiagnosticsConsumer new() creates a new consumer with namespace	
+[32mSuccess[0m	||	DiagnosticsConsumer start() clears all diagnostics and subscribes to autocmds	
+[32mSuccess[0m	||	DiagnosticsConsumer stop() clears all diagnostics and unsubscribes	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd creates no diagnostics for passing tests	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd creates diagnostic for failed test at correct position	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd creates diagnostics for multiple failed tests in same file	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd creates diagnostics for failed tests in nested suites	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd clears previous diagnostics on update	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd skips failed tests without location	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd uses first line of multi-line error message	
+[32mSuccess[0m	||	DiagnosticsConsumer receives NopeTestRunResults autocmd uses default message when failure has no message	
+[32mSuccess[0m	||	DiagnosticsConsumer parallel runs tracks diagnostics from multiple runs with different files	
+[32mSuccess[0m	||	DiagnosticsConsumer parallel runs clears previous diagnostics when same run restarts	
+[32mSuccess[0m	||	DiagnosticsConsumer parallel runs does not clear diagnostics from other runs when one restarts	
+	
+[32mSuccess: [0m	14	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/Orchestrator2_spec.lua	
+[32mSuccess[0m	||	Orchestrator start_run No matching adapter fails	
+[32mSuccess[0m	||	Orchestrator start_run Notifies on process start	
+[32mSuccess[0m	||	Orchestrator start_run Notifies on test run update	
+[32mSuccess[0m	||	Orchestrator start_run Notifies on process end	
+[32mSuccess[0m	||	Orchestrator stop No matching run does nothing	
+[32mSuccess[0m	||	Orchestrator stop Run already completed does nothing	
+[32mSuccess[0m	||	Orchestrator stop Stops given run	
+[32mSuccess[0m	||	Orchestrator stop_all No pending test does nothing	
+[32mSuccess[0m	||	Orchestrator stop_all Stops all pendings runs	
+	
+[32mSuccess: [0m	9	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/StreamBuffer_spec.lua	
+[32mSuccess[0m	||	StreamBuffer emits single complete line	
+[32mSuccess[0m	||	StreamBuffer emits multiple complete lines from single callback	
+[32mSuccess[0m	||	StreamBuffer buffers partial line without emitting	
+[32mSuccess[0m	||	StreamBuffer emits when partial line is completed	
+[32mSuccess[0m	||	StreamBuffer assembles line from multiple partial chunks	
+[32mSuccess[0m	||	StreamBuffer handles mix of complete and partial lines	
+[32mSuccess[0m	||	StreamBuffer preserves empty lines	
+[32mSuccess[0m	||	StreamBuffer flush emits remaining buffered content	
+[32mSuccess[0m	||	StreamBuffer flush does nothing when buffer is empty	
+[32mSuccess[0m	||	StreamBuffer multiple flushes only emit once	
+	
+[32mSuccess: [0m	10	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/consumers/buffer_consumer/FoldManager_spec.lua	
+[32mSuccess[0m	||	FoldManager new creates instance with empty state	
+[32mSuccess[0m	||	FoldManager get_fold_level returns 0 for header	
+[32mSuccess[0m	||	FoldManager get_fold_level returns fold start for file node	
+[32mSuccess[0m	||	FoldManager get_fold_level returns fold start for suite node	
+[32mSuccess[0m	||	FoldManager get_fold_level returns depth for test node	
+[32mSuccess[0m	||	FoldManager get_fold_level returns 0 for out of bounds	
+[32mSuccess[0m	||	FoldManager update_display sets fold to closed by default for files	
+[32mSuccess[0m	||	FoldManager update_display sets fold to open for failed files	
+[32mSuccess[0m	||	FoldManager update_display respects manually toggled folds	
+[32mSuccess[0m	||	FoldManager update_display does not set fold for test nodes	
+[32mSuccess[0m	||	FoldManager reset clears all state	
+	
+[32mSuccess: [0m	11	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/plenary/PlenaryRunner_spec.lua	
+[32mSuccess[0m	||	PlenaryRunner new creates runner with command	
+[32mSuccess[0m	||	PlenaryRunner listen returns unsubscribe function	
+[32mSuccess[0m	||	PlenaryRunner stop can be called without starting	
+	
+[32mSuccess: [0m	3	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/plenary/PlenaryAdapter_spec.lua	
+[32mSuccess[0m	||	PlenaryAdapter new creates adapter with name Plenary	
+[32mSuccess[0m	||	PlenaryAdapter get_runner returns a runner with listen, start, stop	
+[32mSuccess[0m	||	PlenaryAdapter get_runner runs single file when file_path provided	
+[32mSuccess[0m	||	PlenaryAdapter get_runner uses default config_path when not provided	
+[32mSuccess[0m	||	PlenaryAdapter is_test_file returns true for _spec.lua files	
+[32mSuccess[0m	||	PlenaryAdapter is_test_file returns false for regular lua files	
+[32mSuccess[0m	||	PlenaryAdapter is_test_file returns false for non-lua files	
+	
+[32mSuccess: [0m	7	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/examples/solidjs_signals/init_spec.lua	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createSignal - reactive state container returns getter and setter functions	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createSignal - reactive state container getter returns initial value	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createSignal - reactive state container getter returns updated value after setter called	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createSignal - reactive state container works with any value type	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createSignal - reactive state container setter skips update if value unchanged (referential equality)	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects runs immediately on creation	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects auto-tracks signal dependencies	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects tracks multiple dependencies	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects re-runs only when dependencies change	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects returns dispose function	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects supports cleanup function	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects cleanup runs on dispose	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects handles conditional dependencies	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createEffect - reactive side effects handles nested effects correctly	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createMemo - cached computed values returns a getter function	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createMemo - cached computed values computes value from dependencies	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createMemo - cached computed values caches value - computation runs once per change	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createMemo - cached computed values chains memos	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createMemo - cached computed values can be used as effect dependency	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createMemo - cached computed values returns dispose function	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals createMemo - cached computed values handles complex derived state	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals batch - deferred updates defers effect execution until batch completes	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals batch - deferred updates prevents glitches (intermediate states)	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals batch - deferred updates supports nested batches	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals batch - deferred updates handles diamond dependency problem	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals batch - deferred updates batch returns nothing (void)	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals untrack - escape hatch reads signal without tracking	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals untrack - escape hatch works with nested untrack calls	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals untrack - escape hatch returns value from function	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals Advanced patterns counter example - classic reactive pattern	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals Advanced patterns derived state - computed from multiple signals	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals Advanced patterns form validation pattern	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals Advanced patterns effect with resource cleanup simulation	
+[32mSuccess[0m	||	Solid.js-style Reactive Signals Advanced patterns todo list example - complex state management	
+	
+[32mSuccess: [0m	34	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/Job_spec.lua	
+[32mSuccess[0m	||	Job start Receives stdout	
+[32mSuccess[0m	||	Job start Receives stderr	
+[32mSuccess[0m	||	Job start Receives exit code	
+[32mSuccess[0m	||	Job start Starting a job is idempotent	
+[32mSuccess[0m	||	Job stop No job started does nothing	
+[32mSuccess[0m	||	Job stop Stopping an already stopped job	
+[32mSuccess[0m	||	Job stop Ends the running job	
+	
+[32mSuccess: [0m	7	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/plenary/WatchController_spec.lua	
+[32mSuccess[0m	||	WatchController new accepts a runner	
+[32mSuccess[0m	||	WatchController start starts inner runner	
+[32mSuccess[0m	||	WatchController start emits own process_started event	
+[32mSuccess[0m	||	WatchController stop stops inner runner	
+[32mSuccess[0m	||	WatchController stop emits process_ended event	
+[32mSuccess[0m	||	WatchController event forwarding forwards results events from inner runner	
+[32mSuccess[0m	||	WatchController event forwarding does NOT forward process_started from inner runner	
+[32mSuccess[0m	||	WatchController event forwarding does NOT forward process_ended from inner runner	
+[32mSuccess[0m	||	WatchController listen returns unsubscribe function	
+	
+[32mSuccess: [0m	9	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/consumers/buffer_consumer/init_spec.lua	
+[32mSuccess[0m	||	BufferConsumer new creates a new BufferConsumer instance	
+[32mSuccess[0m	||	BufferConsumer new stores the win_config	
+[32mSuccess[0m	||	BufferConsumer open creates buffers when opened	
+[32mSuccess[0m	||	BufferConsumer open creates windows when opened	
+[32mSuccess[0m	||	BufferConsumer open renders last state if available	
+[32mSuccess[0m	||	BufferConsumer open does nothing if window is already open	
+[32mSuccess[0m	||	BufferConsumer close closes open windows	
+[32mSuccess[0m	||	BufferConsumer close does nothing if window is not open	
+[32mSuccess[0m	||	BufferConsumer close can be called multiple times safely	
+[32mSuccess[0m	||	BufferConsumer toggle opens window when closed	
+[32mSuccess[0m	||	BufferConsumer toggle closes window when open	
+[32mSuccess[0m	||	BufferConsumer toggle can be toggled multiple times	
+[32mSuccess[0m	||	BufferConsumer receives NopeTestRunResults autocmd stores the state	
+[32mSuccess[0m	||	BufferConsumer receives NopeTestRunResults autocmd updates state when window is closed	
+[32mSuccess[0m	||	BufferConsumer receives NopeTestRunResults autocmd renders state when window is open	
+[32mSuccess[0m	||	BufferConsumer receives NopeTestRunResults autocmd updates multiple times	
+[32mSuccess[0m	||	BufferConsumer receives NopeTestRunResults autocmd remembers state after closing and reopening	
+[32mSuccess[0m	||	BufferConsumer buffer properties creates non-modifiable buffers	
+[32mSuccess[0m	||	BufferConsumer buffer properties creates unlisted buffers	
+[32mSuccess[0m	||	BufferConsumer multiple instances supports multiple independent consumers	
+[32mSuccess[0m	||	BufferConsumer rendering format renders status correctly	
+[32mSuccess[0m	||	BufferConsumer rendering format renders files list correctly	
+[32mSuccess[0m	||	BufferConsumer rendering format handles empty files	
+[32mSuccess[0m	||	BufferConsumer rendering format handles all status types	
+[32mSuccess[0m	||	BufferConsumer tree navigation builds tree items from state	
+[32mSuccess[0m	||	BufferConsumer parallel runs tracks multiple runs	
+[32mSuccess[0m	||	BufferConsumer parallel runs auto-activates first run	
+[32mSuccess[0m	||	BufferConsumer parallel runs does not switch away from active run when new run starts	
+[32mSuccess[0m	||	BufferConsumer parallel runs generates correct tab labels	
+[32mSuccess[0m	||	BufferConsumer parallel runs updates run status on run ended	
+[32mSuccess[0m	||	BufferConsumer parallel runs stores state per run	
+[32mSuccess[0m	||	BufferConsumer parallel runs closes tab and removes run state	
+[32mSuccess[0m	||	BufferConsumer parallel runs closes window when last tab is closed	
+[32mSuccess[0m	||	BufferConsumer parallel runs switches tabs	
+[32mSuccess[0m	||	BufferConsumer parallel runs switches to tab by index	
+[32mSuccess[0m	||	BufferConsumer parallel runs stop clears all runs	
+[32mSuccess[0m	||	BufferConsumer help starts with help hidden	
+[32mSuccess[0m	||	BufferConsumer help toggles help on _toggle_help	
+[32mSuccess[0m	||	BufferConsumer help can toggle help when window is open	
+	
+[32mSuccess: [0m	39	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/debounce_spec.lua	
+[32mSuccess[0m	||	debounce calls function after delay	
+[32mSuccess[0m	||	debounce resets timer on repeated calls	
+[32mSuccess[0m	||	debounce cancel prevents execution	
+[32mSuccess[0m	||	debounce passes arguments correctly	
+[32mSuccess[0m	||	debounce uses latest arguments when called multiple times	
+[32mSuccess[0m	||	debounce can be called again after firing	
+[32mSuccess[0m	||	debounce cancel is idempotent	
+	
+[32mSuccess: [0m	7	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+
+========================================	
+Testing: 	/Users/edouardpenin/Test/nvim/nope.nvim/lua/nope/FileWatcher/init_spec.lua	
+[32mSuccess[0m	||	FileWatcher creates instance with callback	
+[32mSuccess[0m	||	FileWatcher start is idempotent	
+[32mSuccess[0m	||	FileWatcher stop is idempotent	
+[32mSuccess[0m	||	FileWatcher can stop without starting	
+[32mSuccess[0m	||	FileWatcher calls callback when lua file changes	
+[32mSuccess[0m	||	FileWatcher ignores non-lua files	
+[32mSuccess[0m	||	FileWatcher ignores gitignored files	
+[32mSuccess[0m	||	FileWatcher detects changes in subdirectories	
+	
+[32mSuccess: [0m	8	
+[31mFailed : [0m	0	
+[31mErrors : [0m	0	
+========================================	
+make: *** [test] Error 1

@@ -1,0 +1,9 @@
+
+local function orderCalculation(person, start, _end)
+    local space = " [space] "
+    local greeting = start .. space .. _end
+
+    print(greeting)
+
+    return start .. person.firstName .. space .. person.lastName .. _end
+end

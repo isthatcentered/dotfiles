@@ -1,0 +1,125 @@
+{
+  "Console Log Value": {
+    "prefix": "clog",
+    "body": "console.log(\"🛑:::\", $1)",
+    "description": "Log marker with value"
+  },
+
+  "Export Class": {
+    "prefix": "tclass",
+    "body": "export class $1 extends Data.Class<{$2}>{}",
+    "description": "Export a Data.Class with a type param"
+  },
+  "Export Tagged Class": {
+    "prefix": "ttagged",
+    "body": "export class $1 extends Data.TaggedClass(\"$1\")<{$2}>{}",
+    "description": "Export a Data.TaggedClass with a type param"
+  },
+  "test": {
+    "prefix": "test",
+    "body": [
+      "test(`$1`, () => {",
+      " $2",
+      "})"
+    ]
+  },
+  "testeffect": {
+    "prefix": "ttest",
+    "body": [
+      "test(`$1`, () => pipe(",
+      "Effect.gen(function*(){",
+      " $2",
+      "}),",
+      "Effect.provide(dependencies),",
+      "Effect.runPromise, ",
+      "))"
+    ]
+  },
+  "describe": {
+    "prefix": "desc",
+    "body": [
+      "describe(`$1`, () => {",
+      " $2",
+      "})"
+    ]
+  },
+  "Gen": {
+    "prefix": "tgen",
+    "body": [
+      "Effect.gen(function*(){",
+      " $1",
+      "})"
+    ]
+  },
+  "Shadow": {
+    "prefix": "tshadow",
+    "body": [
+      "import { type Context, Effect, Layer, pipe } from 'effect';",
+      "",
+      "export class InMemory$1 extends Effect.Tag(",
+      "  'InMemory$1',",
+      ")<InMemory$1, {} & Context.Tag.Service<$1>>() {}",
+      "",
+      "const make$1 =",
+      "  (): Context.Tag.Service<InMemory$1> => {",
+      "    return undefined!;",
+      "  };",
+      "",
+      "export const liveInMemory$1 = Layer.unwrapEffect(",
+      "  pipe(",
+      "    Effect.sync(make$1),",
+      "    Effect.map((a) =>",
+      "      pipe(",
+      "        Layer.succeed($1, a),",
+      "        Layer.merge(Layer.succeed(InMemory$1, a)),",
+      "      ),",
+      "    ),",
+      "  ),",
+      ");"
+    ]
+  },
+  "Export Service Class": {
+    "prefix": "tservice",
+    "body": " export class $1 extends Effect.Tag('$1')<$1, {$2}>() {}"
+  },
+  "Log effect value": {
+    "prefix": "ttap",
+    "body": "Effect.tap(a=> console.log('🛑:::', a)), Effect.tapErrorCause(a=> Effect.log('🛑:::', a)),"
+  },
+  "Match value": {
+    "prefix": "tmatchval",
+    "body": [
+      "Match.value($1),",
+      "Match.when($2, () => $3),",
+      "Match.exhaustive,"
+    ]
+  },
+  "Branded type": {
+    "prefix": "tbranded",
+    "body": "export type $1 = Brand.Branded<string, '${1/(.*)/${1:/upcase}/}'>"
+  },
+  "Export Tagged Schema Class": {
+    "prefix": "ttaggedschemaclass",
+    "body": [
+      "export class $1 extends Schema.TaggedClass<$1>()(\"$1\", {",
+      "  $2",
+      "}) {",
+      "}"
+    ],
+    "description": "Export an Effect Schema.Class with a factory helper"
+  },
+  "Export Schema Class": {
+    "prefix": "tschemaclass",
+    "body": [
+      "export class $1 extends Schema.Class<$1>(\"$1\")({",
+      "  $2",
+      "}) {",
+      "}"
+    ],
+    "description": "Export an Effect Schema.Class with a factory helper"
+  },
+  "hole": {
+    "prefix": "hole",
+    "body": "(a)=> a,"
+  }
+}

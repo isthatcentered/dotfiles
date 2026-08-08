@@ -1,0 +1,3 @@
+
+
+require'foo'.bar.baz()

@@ -1,0 +1,11 @@
+describe("passing suite", function()
+  it("first passing test", function()
+    print("LOG: first passing test executed")
+    assert.is_true(true)
+  end)
+
+  it("second passing test", function()
+    print("LOG: second passing test executed")
+    assert.are.equal(1 + 1, 2)
+  end)
+end)

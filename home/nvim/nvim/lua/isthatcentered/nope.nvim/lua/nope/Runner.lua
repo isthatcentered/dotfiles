@@ -1,0 +1,3 @@
+---@class Runner: Observable2<RunnerEvent>
+---@field start fun(self: Runner)
+---@field stop fun(self: Runner)

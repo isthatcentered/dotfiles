@@ -1,0 +1,7 @@
+{
+  "source": ["./nvim"],
+  "targets": {
+    "macos": ["~/.config"],
+    "linux": ["~/.config"]
+  }
+}

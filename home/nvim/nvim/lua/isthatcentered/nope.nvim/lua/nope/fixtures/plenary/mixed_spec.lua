@@ -1,0 +1,11 @@
+describe("mixed suite", function()
+  it("passing test in mixed", function()
+    print("LOG: passing test in mixed executed")
+    assert.is_true(true)
+  end)
+
+  it("failing test in mixed", function()
+    print("LOG: failing test in mixed executed")
+    assert.is_true(false)
+  end)
+end)

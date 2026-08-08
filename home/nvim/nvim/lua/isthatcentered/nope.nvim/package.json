@@ -1,0 +1,35 @@
+{
+  "name": "custom-vitest-reporter",
+  "version": "1.0.0",
+  "description": "A TypeScript project with Vitest testing and Prettier formatting",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "typescript",
+    "vitest",
+    "prettier",
+    "testing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "typescript": "^5.8.3",
+    "vitest": "4.0.16"
+  },
+  "dependencies": {
+    "tsx": "^4.20.3"
+  }
+}
