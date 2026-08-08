@@ -114,7 +114,21 @@ Result:
 
 ### Platform-specific Zsh
 
-Linux and macOS configurations can use separate containers. The current Linux container is `home/zsh/linux/`:
+Linux and macOS use separate containers with the same target but different contents:
+
+```text
+home/zsh/
+├── linux/
+│   ├── manage.json
+│   ├── .zshrc
+│   └── .p10k.zsh
+└── macos/
+    ├── manage.json
+    ├── .zshrc
+    └── .p10k.zsh
+```
+
+For example, `home/zsh/linux/manage.json` is:
 
 ```json
 {
@@ -123,14 +137,15 @@ Linux and macOS configurations can use separate containers. The current Linux co
 }
 ```
 
-Running for Linux links only that container's siblings:
+The macOS manifest has the same target and declares `"platforms": ["macos"]`. Running for a platform links only that container's siblings:
 
 ```text
+# Linux
 ~/.zshrc → <repository>/home/zsh/linux/.zshrc
-~/.p10k.zsh → <repository>/home/zsh/linux/.p10k.zsh
-```
 
-An eventual macOS variant can live independently at `home/zsh/macos/` with its own manifest and files.
+# macOS
+~/.zshrc → <repository>/home/zsh/macos/.zshrc
+```
 
 ### Platform-specific Ghostty targets
 
