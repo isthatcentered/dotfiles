@@ -1,0 +1,359 @@
+// Niri configuration restored from Downloads/niri-customizations.md.
+// Kept in one file for easier backup and transfer.
+
+    animations {
+        workspace-switch {
+            spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
+        }
+        window-open {
+            duration-ms 200
+            curve "ease-out-quad"
+        }
+        window-close {
+            duration-ms 200
+            curve "ease-out-cubic"
+        }
+        horizontal-view-movement {
+            spring damping-ratio=1.0 stiffness=900 epsilon=0.0001
+        }
+        window-movement {
+            spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+        }
+        window-resize {
+            spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
+        }
+        config-notification-open-close {
+            spring damping-ratio=0.6 stiffness=1200 epsilon=0.001
+        }
+        screenshot-ui-open {
+            duration-ms 300
+            curve "ease-out-quad"
+        }
+        overview-open-close {
+            spring damping-ratio=1.0 stiffness=900 epsilon=0.0001
+        }
+    }
+
+// ────────────── Startup Applications ──────────────
+// https://github.com/YaLTeR/niri/wiki/Configuration:-Miscellaneous#spawn-sh-at-startup
+
+    spawn-at-startup "noctalia"
+    spawn-at-startup "blueman-applet"
+
+binds {
+
+    // ────────────── Keybindings ──────────────
+    // https://github.com/YaLTeR/niri/wiki/Configuration:-Key-Bindings
+
+    // ─── noctalia-shell keybinds ───
+    // https://docs.noctalia.dev/getting-started/keybinds/
+
+    Mod+Shift+ESCAPE                     { show-hotkey-overlay; }
+
+    // ─── Applications ───
+    Mod+Return                          hotkey-overlay-title="Open Terminal: Ghostty" { spawn "ghostty"; }
+    Mod+B                               hotkey-overlay-title="Open Browser: Google Chrome" { spawn "google-chrome-stable"; }
+
+    // --- Noctalia ---
+    Mod+Shift+Return                    hotkey-overlay-title="Open Wallpaper Selector: noctalia wallpaper toggle" { spawn-sh "noctalia msg panel-toggle wallpaper"; }
+    Mod+S                               hotkey-overlay-title="Open Control Center: noctalia controlCenter" { spawn-sh "noctalia msg panel-toggle control-center"; }
+    Mod+Shift+S                         hotkey-overlay-title="Open Settings: noctalia settings" { spawn-sh "noctalia msg settings-toggle"; }
+    Mod+CTRL+Return                     hotkey-overlay-title="Open App Launcher: noctalia launcher" { spawn-sh "noctalia msg panel-toggle launcher"; }
+    Mod+ALT+L                           hotkey-overlay-title="Lock Screen: noctalia lock" { spawn-sh "noctalia msg session lock"; }
+    Mod+Shift+Q                         hotkey-overlay-title="Session Menu: noctalia sessionMenu" { spawn-sh "noctalia msg panel-toggle session"; }
+
+    // Please set the text editor of your choice.
+    // Mod+Shift+E                               hotkey-overlay-title="Open Text Editor: Zed" { spawn "zed"; }
+
+    // Please choose your own file manager.
+    Mod+E                               hotkey-overlay-title="File Manager: Nautilus" { spawn "nautilus"; }
+
+    // ─── Media Controls ───
+    XF86AudioRaiseVolume                allow-when-locked=true { spawn-sh "noctalia msg volume-up"; }
+    XF86AudioLowerVolume                allow-when-locked=true { spawn-sh "noctalia msg volume-down"; }
+    XF86AudioMute                       allow-when-locked=true { spawn-sh "noctalia msg volume-mute"; }
+    XF86AudioMicMute                    allow-when-locked=true { spawn-sh "noctalia msg mic-mute"; }
+    XF86AudioNext                       allow-when-locked=true { spawn-sh "noctalia msg media next"; }
+    XF86AudioPrev                       allow-when-locked=true { spawn-sh "noctalia msg media previous"; }
+    XF86AudioPlay                       allow-when-locked=true { spawn-sh "noctalia msg media play"; }
+    XF86AudioPause                      allow-when-locked=true { spawn-sh "noctalia msg media stop"; }
+
+    // ─── Brightness Controls ───
+    XF86MonBrightnessUp                 allow-when-locked=true { spawn-sh "noctalia msg brightness-up"; }
+    XF86MonBrightnessDown               allow-when-locked=true { spawn-sh "noctalia msg brightness-down"; }
+
+    // ─── Window Movement and Focus ───
+    Mod+Q                               { close-window; }
+
+    Mod+Left                            { focus-column-left; }
+    Mod+H                               { focus-column-left; }
+    Mod+Right                           { focus-column-right; }
+    Mod+L                               { focus-column-right; }
+    Mod+Up                              { focus-window-up; }
+    Mod+K                               { focus-window-up; }
+    Mod+Down                            { focus-window-down; }
+    Mod+J                               { focus-window-down; }
+
+    Mod+CTRL+Left                       { move-column-left; }
+    Mod+CTRL+H                          { move-column-left; }
+    Mod+CTRL+Right                      { move-column-right; }
+    Mod+CTRL+L                          { move-column-right; }
+    Mod+CTRL+UP                         { move-window-up; }
+    Mod+CTRL+K                          { move-window-up; }
+    Mod+CTRL+Down                       { move-window-down; }
+    Mod+CTRL+J                          { move-window-down; }
+
+    Mod+Home                            { focus-column-first; }
+    Mod+End                             { focus-column-last; }
+    Mod+CTRL+Home                       { move-column-to-first; }
+    Mod+CTRL+End                        { move-column-to-last; }
+
+    Mod+Shift+Left                      { focus-monitor-left; }
+    Mod+Shift+Right                     { focus-monitor-right; }
+    Mod+Shift+UP                        { focus-monitor-up; }
+    Mod+Shift+Down                      { focus-monitor-down; }
+
+    Mod+Shift+CTRL+Left                 { move-column-to-monitor-left; }
+    Mod+Shift+CTRL+Right                { move-column-to-monitor-right; }
+    Mod+Shift+CTRL+UP                   { move-column-to-monitor-up; }
+    Mod+Shift+CTRL+Down                 { move-column-to-monitor-down; }
+    Mod+Shift+V                         { switch-focus-between-floating-and-tiling; }
+
+    Mod+BracketLeft                     { consume-or-expel-window-left; }
+    Mod+BracketRight                    { consume-or-expel-window-right; }
+
+    Mod+Comma                           { consume-window-into-column; }
+    Mod+Period                          { expel-window-from-column; }
+
+    Mod+R                               { switch-preset-column-width; }
+    Mod+Shift+R                         { switch-preset-column-width-back; }
+
+    Mod+Ctrl+Shift+R                    { switch-preset-window-height; }
+    Mod+Ctrl+R                          { reset-window-height; }
+
+
+    // ─── Workspace Switching ───
+    Mod+WheelScrollDown                 cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp                   cooldown-ms=150 { focus-workspace-up; }
+    Mod+CTRL+WheelScrollDown            cooldown-ms=150 { move-column-to-workspace-down; }
+    Mod+CTRL+WheelScrollUp              cooldown-ms=150 { move-column-to-workspace-up; }
+
+    Mod+WheelScrollRight                { focus-column-right; }
+    Mod+WheelScrollLeft                 { focus-column-left; }
+    Mod+CTRL+WheelScrollRight           { move-column-right; }
+    Mod+CTRL+WheelScrollLeft            { move-column-left; }
+
+    Mod+Shift+WheelScrollDown           { focus-column-right; }
+    Mod+Shift+WheelScrollUp             { focus-column-left; }
+    Mod+CTRL+Shift+WheelScrollDown      { move-column-right; }
+    Mod+CTRL+Shift+WheelScrollUp        { move-column-left; }
+
+    Mod+1                               { focus-workspace 1; }
+    Mod+2                               { focus-workspace 2; }
+    Mod+3                               { focus-workspace 3; }
+    Mod+4                               { focus-workspace 4; }
+    Mod+5                               { focus-workspace 5; }
+    Mod+6                               { focus-workspace 6; }
+    Mod+7                               { focus-workspace 7; }
+    Mod+8                               { focus-workspace 8; }
+    Mod+9                               { focus-workspace 9; }
+
+    Mod+CTRL+1                          { move-column-to-workspace 1; }
+    Mod+CTRL+2                          { move-column-to-workspace 2; }
+    Mod+CTRL+3                          { move-column-to-workspace 3; }
+    Mod+CTRL+4                          { move-column-to-workspace 4; }
+    Mod+CTRL+5                          { move-column-to-workspace 5; }
+    Mod+CTRL+6                          { move-column-to-workspace 6; }
+    Mod+CTRL+7                          { move-column-to-workspace 7; }
+    Mod+CTRL+8                          { move-column-to-workspace 8; }
+    Mod+CTRL+9                          { move-column-to-workspace 9; }
+
+    Mod+TAB                             { focus-workspace-previous; }
+
+    // ─── Layout Controls ───
+    Mod+CTRL+F                          { expand-column-to-available-width; }
+    Mod+C                               { center-column; }
+    Mod+CTRL+C                          { center-visible-columns; }
+    Mod+Minus                           { set-column-width "-10%"; }
+    Mod+Equal                           { set-column-width "+10%"; }
+    Mod+Shift+Minus                     { set-window-height "-10%"; }
+    Mod+Shift+Equal                     { set-window-height "+10%"; }
+
+
+    // ─── Modes ───
+    Mod+T                               { toggle-window-floating; }
+    Mod+F                               { fullscreen-window; }
+    Mod+W                               { toggle-column-tabbed-display; }
+    Mod+M                               { maximize-window-to-edges; }
+
+    // ─── Screenshots ───
+    CTRL+Shift+1                        { screenshot; }
+    CTRL+Shift+2                        { screenshot-screen; }
+    CTRL+Shift+3                        { screenshot-window; }
+
+    // ─── Emergency Escape Key ───
+    // Use this when a fullscreen app blocks your keybinds.
+    // It disables any active keyboard shortcut inhibitor, restoring control.
+    Mod+ESCAPE                          allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+
+    // ─── Exit / Power ───
+    CTRL+ALT+Delete                     { quit; } // Also quits Niri
+    Mod+Shift+P                         { power-off-monitors; } // Turn off screens (useful for OLED or privacy)
+    Mod+O                               repeat=false { toggle-overview; }
+}
+
+// ────────────── Input Configuration ──────────────
+// https://github.com/YaLTeR/niri/wiki/Configuration:-Input
+
+input {
+    keyboard {
+        xkb {
+            //If you want to overwrite your keyboard layout,
+            // uncomment the line below and change the layout accordingly.
+            //layout "us" // Use the American keyboard layout
+        }
+        numlock // Enable numlock on startup
+    }
+
+    touchpad {
+        tap // Enable tap-to-click
+        natural-scroll // Enable natural (macOS-style) scrolling
+    }
+
+    mouse {
+        // If you want to disable Mouse Acceleration,
+        // uncomment the lines below.
+        //accel-profile "flat"
+        //accel-speed 0.0
+    }
+
+    focus-follows-mouse // Automatically focus windows under the mouse pointer
+    workspace-auto-back-and-forth // Enable workspace back & forth switching
+}
+
+// Keep the overview available from Mod+O without activating it at screen corners.
+gestures {
+    hot-corners {
+        off
+    }
+}
+
+// ────────────── Output Configuration ──────────────
+// You can run `niri msg outputs` to get the correct name for your displays.
+// You will have to remove "/-" and edit it before it takes effect.
+// https://github.com/YaLTeR/niri/wiki/Configuration:-Outputs
+
+/- output "DP-1" {
+    mode "2560x1440@359.979" // Set resolution and refresh rate
+    scale 1 // No scaling (use 2 for HiDPI)
+}
+
+    layout {
+        gaps 0 // Completely gapless layout
+        center-focused-column "never" // Don’t auto-center focused column
+
+        background-color "#000000"
+
+        focus-ring {
+            off
+        }
+
+        border {
+            off
+        }
+
+        preset-column-widths {
+            proportion 0.33333
+            proportion 0.5
+            proportion 0.66667
+        }
+
+        struts {}
+    }
+
+    window-rule {
+        geometry-corner-radius 0
+        clip-to-geometry true
+    }
+
+    // Dim inactive windows while leaving the focused window fully opaque.
+    window-rule {
+        match is-active=false
+        opacity 0.8
+    }
+
+    window-rule {
+        background-effect {
+          blur true
+          xray false
+        }
+    }
+
+    // Floating Noctalia settings window.
+    window-rule {
+        match app-id="dev.noctalia.Noctalia"
+        open-floating true
+        default-column-width { fixed 1080; }
+        default-window-height { fixed 920; }
+    }
+
+    // if you use steam you will probably like these
+    window-rule {
+        match app-id="steam"
+        exclude title=r#"^[Ss]team$"#
+        open-floating true
+    }
+
+    window-rule {
+       match app-id="steam" title=r#"^notificationtoasts_\d+_desktop$"#
+       default-floating-position x=10 y=10 relative-to="bottom-right"
+       open-focused false
+    }
+
+    layer-rule {
+        match namespace="^noctalia-wallpaper"
+        place-within-backdrop true
+    }
+
+    layer-rule {
+        match namespace="^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$"
+        background-effect {
+          xray false
+          // blur false
+        }
+    }
+
+    prefer-no-csd
+    screenshot-path null
+
+    environment {
+        ELECTRON_OZONE_PLATFORM_HINT "auto"
+        QT_QPA_PLATFORM "wayland"
+        QT_QPA_PLATFORMTHEME "gtk3"
+        QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
+        XDG_CURRENT_DESKTOP "niri"
+        XDG_SESSION_TYPE "wayland"
+    }
+
+    cursor {
+        xcursor-theme "capitaine-cursors"
+        xcursor-size 24
+    }
+
+    blur {
+        passes 2        // more passes = stronger blur (default: 3)
+        offset 3.0      // sample distance per pass (default: 3.0)
+        noise 0.03      // grain overlay (default: 0.02)
+        saturation 1.0  // color saturation boost (default: 1.5)
+    }
+
+    debug {
+        // Allows notification actions and window activation from Noctalia.
+        honor-xdg-activation-with-invalid-serial
+    }
+
+    hotkey-overlay {
+       skip-at-startup
+    }
+
+include "noctalia.kdl"

@@ -1,0 +1,7 @@
+{
+  "source": ["./niri"],
+  "targets": {
+    "macos": ["~/.config"],
+    "linux": ["~/.config"]
+  }
+}
