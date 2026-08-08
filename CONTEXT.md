@@ -4,9 +4,12 @@ This context describes how configuration stored in the repository is projected i
 
 ## Language
 
-**Managed source**:
-A file or directory owned by a package and selected for linking into the filesystem.
-_Avoid_: Source target, managed target
+**Package**:
+A non-empty collection of configuration entries that share the same target set.
+
+**Managed entry**:
+An immediate child of a package other than its manifest that resolves within the package boundary. Every managed entry participates in fan-out; broken entries are invalid.
+_Avoid_: Managed source, source target, managed target
 
 **Target directory**:
 A platform-specific filesystem directory that receives links to every managed source in its package.
@@ -17,5 +20,5 @@ The unordered, duplicate-free collection of target directories selected for one 
 _Avoid_: Target list, target sequence
 
 **Fan-out**:
-The relationship in which every managed source in a package is linked into every target directory selected for the active platform.
+The relationship in which every managed entry in a package is linked into every target directory selected for the active platform.
 _Avoid_: Routing, one-to-one mapping
