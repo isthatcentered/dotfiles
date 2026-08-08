@@ -31,7 +31,7 @@ func main() {
 	}
 }
 
-// Run links entries adjacent to active manifests found under repository/home.
+// Run reconciles entries adjacent to active manifests found under repository/home.
 func Run(repository string, args []string, stdout, stderr io.Writer) error {
 	flags := flag.NewFlagSet("dotfiles", flag.ContinueOnError)
 	flags.SetOutput(stderr)
@@ -58,7 +58,7 @@ func Run(repository string, args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	actions, unchanged, err := validatePlan(plan)
+	links, relinks, unchanged, err := validatePlan(plan)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func Run(repository string, args []string, stdout, stderr io.Writer) error {
 	for _, link := range unchanged {
 		fmt.Fprintf(stdout, "exists     %s -> %s\n", link.Destination, link.Entry)
 	}
-	for _, link := range actions {
+	for _, link := range links {
 		if *dryRun {
 			fmt.Fprintf(stdout, "would link %s -> %s\n", link.Destination, link.Entry)
 			continue
@@ -78,6 +78,16 @@ func Run(repository string, args []string, stdout, stderr io.Writer) error {
 			return err
 		}
 		fmt.Fprintf(stdout, "linked     %s -> %s\n", link.Destination, link.Entry)
+	}
+	for _, link := range relinks {
+		if *dryRun {
+			fmt.Fprintf(stdout, "would relink %s -> %s\n", link.Destination, link.Entry)
+			continue
+		}
+		if err := replaceSymlink(link); err != nil {
+			return err
+		}
+		fmt.Fprintf(stdout, "relinked   %s -> %s\n", link.Destination, link.Entry)
 	}
 
 	return nil
@@ -372,32 +382,61 @@ func expandHome(path string) (string, error) {
 	return path, nil
 }
 
-func validatePlan(plan []Link) (actions []Link, unchanged []Link, err error) {
+func validatePlan(plan []Link) (links []Link, relinks []Link, unchanged []Link, err error) {
 	for _, link := range plan {
 		info, statErr := os.Lstat(link.Destination)
 		if os.IsNotExist(statErr) {
-			actions = append(actions, link)
+			links = append(links, link)
 			continue
 		}
 		if statErr != nil {
-			return nil, nil, statErr
+			return nil, nil, nil, statErr
 		}
 		if info.Mode()&os.ModeSymlink == 0 {
-			return nil, nil, fmt.Errorf("%s already exists and is not a symlink", link.Destination)
+			return nil, nil, nil, fmt.Errorf("%s already exists and is not a symlink", link.Destination)
 		}
 
-		currentTarget, resolveErr := filepath.EvalSymlinks(link.Destination)
-		if resolveErr != nil {
-			return nil, nil, fmt.Errorf("%s is a broken symlink", link.Destination)
+		currentTarget, readErr := os.Readlink(link.Destination)
+		if readErr != nil {
+			return nil, nil, nil, readErr
 		}
-		sourceTarget, resolveErr := filepath.EvalSymlinks(link.Entry)
-		if resolveErr != nil {
-			return nil, nil, resolveErr
-		}
-		if currentTarget != sourceTarget {
-			return nil, nil, fmt.Errorf("%s points to %s instead of %s", link.Destination, currentTarget, link.Entry)
+		if currentTarget != link.Entry {
+			relinks = append(relinks, link)
+			continue
 		}
 		unchanged = append(unchanged, link)
 	}
-	return actions, unchanged, nil
+	return links, relinks, unchanged, nil
+}
+
+func replaceSymlink(link Link) error {
+	parentDirectory := filepath.Dir(link.Destination)
+	temporaryDirectory, err := os.MkdirTemp(
+		parentDirectory,
+		"."+filepath.Base(link.Destination)+".relink-",
+	)
+	if err != nil {
+		return fmt.Errorf("prepare replacement for %s: %w", link.Destination, err)
+	}
+	temporaryLink := filepath.Join(temporaryDirectory, filepath.Base(link.Destination))
+	cleanup := func() {
+		_ = os.Remove(temporaryLink)
+		_ = os.Remove(temporaryDirectory)
+	}
+	defer cleanup()
+
+	if err := os.Symlink(link.Entry, temporaryLink); err != nil {
+		return fmt.Errorf("prepare replacement for %s: %w", link.Destination, err)
+	}
+	info, err := os.Lstat(link.Destination)
+	if err != nil {
+		return fmt.Errorf("reinspect %s before replacement: %w", link.Destination, err)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		return fmt.Errorf("%s changed and is no longer a symlink", link.Destination)
+	}
+	if err := os.Rename(temporaryLink, link.Destination); err != nil {
+		return fmt.Errorf("replace symlink %s: %w", link.Destination, err)
+	}
+	return nil
 }

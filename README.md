@@ -2,7 +2,7 @@
 
 This repository contains a small Go program that installs configuration files by creating symbolic links from your home directory back into this repository.
 
-It deliberately does one job: recursively discover `manage.json` files under `home/`, activate the manifests that support `macos` or `linux`, and link every adjacent managed entry into every target directory. It does not copy files, install applications, manage secrets, or modify an existing destination.
+It deliberately does one job: recursively discover `manage.json` files under `home/`, activate the manifests that support `macos` or `linux`, and reconcile every adjacent managed entry into every target directory. It does not copy files, install applications, manage secrets, or overwrite existing regular files and directories.
 
 ## Requirements
 
@@ -196,15 +196,17 @@ The command reports one line per managed entry:
 
 ```text
 would link /target/config -> /repository/home/example/config
+would relink /target/config -> /repository/home/example/config
 linked     /target/config -> /repository/home/example/config
+relinked   /target/config -> /repository/home/example/config
 exists     /target/config -> /repository/home/example/config
 ```
 
-`exists` means the destination is already a symlink to the correct source, so no change was needed.
+`exists` means the destination symlink already stores the exact planned absolute source path. `linked` creates a missing destination, while `relinked` atomically replaces an existing symlink whose stored target is different. The `would` variants report the same actions without changing the filesystem.
 
 ## Migrating an existing configuration
 
-The manager intentionally refuses to overwrite existing files or directories. Move or copy the configuration into its manifest container, preserve a backup, and only then create the link.
+The manager intentionally refuses to overwrite existing regular files or directories. Move or copy the configuration into its manifest container, preserve a backup, and only then create the link.
 
 For example, a cautious Tmux migration could be:
 
@@ -234,7 +236,7 @@ Review files for credentials and tokens before committing them to Git. A private
 
 ## Safety behavior
 
-Before creating any link, the manager validates the complete plan:
+Before changing any link, the manager validates the complete plan:
 
 - Every manifest must be valid JSON with only recognized fields.
 - Every active manifest container must contain at least one managed entry.
@@ -246,13 +248,13 @@ Before creating any link, the manager validates the complete plan:
 - A planned destination may not be nested below another planned destination, because every destination becomes a symlink.
 - Dangling symlinks and non-directory components in target-directory paths are rejected before links are created.
 - Existing regular files and directories are never replaced.
-- Wrong and broken destination symlinks are never replaced.
+- Any symlink at a destination claimed by the current plan is managed: wrong, indirect, relative, and broken links are replaced atomically with the planned absolute link.
 - Correct existing symlinks are left unchanged.
 - Missing destination directories are created as needed.
 
-The manager creates absolute symlinks to this repository. Moving the repository afterward will break those links; place the clone at its intended permanent location before applying it.
+The manager creates absolute symlinks to this repository. Moving the repository or its manifest containers temporarily breaks existing links; rerun the manager from the repository's new location to repair every destination claimed by the selected platform. Destinations no longer present in the current plan are left untouched.
 
-There is no `--force` option. Resolve a conflict yourself, then run the command again.
+There is no `--force` option. Resolve regular-file and directory conflicts yourself, then run the command again.
 
 ## Current limitations
 
@@ -261,7 +263,7 @@ There is no `--force` option. Resolve a conflict yourself, then run the command 
 - No package installation or `Brewfile` handling
 - No secret storage or encryption
 - No automatic backups or removal of obsolete links
-- No transactional rollback: if an unexpected filesystem error occurs while applying a validated plan, links created earlier in that run remain in place
+- No transactional rollback across the whole run: if an unexpected filesystem error occurs while applying a validated plan, earlier links remain created or updated
 - No overlay or precedence between active manifests; conflicting destinations are rejected
 - Managed entries are placed directly into the target rather than preserving their grouping-directory names
 

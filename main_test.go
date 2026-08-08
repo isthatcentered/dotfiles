@@ -159,6 +159,131 @@ func TestRunIsIdempotentForCorrectExistingSymlink(t *testing.T) {
 	}
 }
 
+func TestRunRelinksExistingSymlinkToExactPlannedEntry(t *testing.T) {
+	tests := []struct {
+		name           string
+		existingTarget func(t *testing.T, source, destination string) string
+	}{
+		{
+			name: "wrong symlink",
+			existingTarget: func(t *testing.T, _, _ string) string {
+				t.Helper()
+				wrong := filepath.Join(t.TempDir(), "wrong.config")
+				writeTestFile(t, wrong, "wrong\n")
+				return wrong
+			},
+		},
+		{
+			name: "broken symlink",
+			existingTarget: func(t *testing.T, _, _ string) string {
+				t.Helper()
+				return filepath.Join(t.TempDir(), "missing.config")
+			},
+		},
+		{
+			name: "equivalent relative symlink",
+			existingTarget: func(t *testing.T, source, destination string) string {
+				t.Helper()
+				relative, err := filepath.Rel(filepath.Dir(destination), source)
+				if err != nil {
+					t.Fatalf("make relative symlink target: %v", err)
+				}
+				return relative
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			repository := t.TempDir()
+			containerDirectory := filepath.Join(repository, "home", "dummy")
+			targetDirectory := t.TempDir()
+			source := filepath.Join(containerDirectory, "dummy.config")
+			destination := filepath.Join(targetDirectory, "dummy.config")
+
+			writeTestFile(t, source, "dummy\n")
+			writeTestManifest(t, containerDirectory, testManifest{
+				Platforms: []string{"macos"},
+				Targets:   []string{targetDirectory},
+			})
+			if err := os.Symlink(test.existingTarget(t, source, destination), destination); err != nil {
+				t.Fatalf("create existing symlink: %v", err)
+			}
+
+			var stdout bytes.Buffer
+			if err := Run(repository, []string{"macos"}, &stdout, &bytes.Buffer{}); err != nil {
+				t.Fatalf("Run() error = %v", err)
+			}
+			assertSymlink(t, destination, source)
+			if got, want := stdout.String(), "relinked   "+destination+" -> "+source+"\n"; got != want {
+				t.Fatalf("stdout = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+func TestRunDryRunReportsRelinkWithoutChangingSymlink(t *testing.T) {
+	repository := t.TempDir()
+	containerDirectory := filepath.Join(repository, "home", "dummy")
+	targetDirectory := t.TempDir()
+	source := filepath.Join(containerDirectory, "dummy.config")
+	destination := filepath.Join(targetDirectory, "dummy.config")
+	oldTarget := filepath.Join(t.TempDir(), "old.config")
+
+	writeTestFile(t, source, "dummy\n")
+	writeTestFile(t, oldTarget, "old\n")
+	writeTestManifest(t, containerDirectory, testManifest{
+		Platforms: []string{"macos"},
+		Targets:   []string{targetDirectory},
+	})
+	if err := os.Symlink(oldTarget, destination); err != nil {
+		t.Fatalf("create existing symlink: %v", err)
+	}
+
+	var stdout bytes.Buffer
+	if err := Run(repository, []string{"--dry-run", "macos"}, &stdout, &bytes.Buffer{}); err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	assertSymlink(t, destination, oldTarget)
+	if got, want := stdout.String(), "would relink "+destination+" -> "+source+"\n"; got != want {
+		t.Fatalf("stdout = %q, want %q", got, want)
+	}
+}
+
+func TestRunRepairsSymlinkAfterRepositoryMoves(t *testing.T) {
+	workspace := t.TempDir()
+	repository := filepath.Join(workspace, "original")
+	containerDirectory := filepath.Join(repository, "home", "dummy")
+	targetDirectory := t.TempDir()
+	oldSource := filepath.Join(containerDirectory, "dummy.config")
+	destination := filepath.Join(targetDirectory, "dummy.config")
+
+	writeTestFile(t, oldSource, "dummy\n")
+	writeTestManifest(t, containerDirectory, testManifest{
+		Platforms: []string{"macos"},
+		Targets:   []string{targetDirectory},
+	})
+	if err := Run(repository, []string{"macos"}, &bytes.Buffer{}, &bytes.Buffer{}); err != nil {
+		t.Fatalf("initial Run() error = %v", err)
+	}
+	assertSymlink(t, destination, oldSource)
+
+	movedRepository := filepath.Join(workspace, "moved")
+	if err := os.Rename(repository, movedRepository); err != nil {
+		t.Fatalf("move repository: %v", err)
+	}
+	newSource := filepath.Join(movedRepository, "home", "dummy", "dummy.config")
+
+	var stdout bytes.Buffer
+	if err := Run(movedRepository, []string{"macos"}, &stdout, &bytes.Buffer{}); err != nil {
+		t.Fatalf("Run() after move error = %v", err)
+	}
+	assertSymlink(t, destination, newSource)
+	if got, want := stdout.String(), "relinked   "+destination+" -> "+newSource+"\n"; got != want {
+		t.Fatalf("stdout = %q, want %q", got, want)
+	}
+}
+
 func TestRunRefusesDestinationCollisionsBeforeMakingChanges(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -179,26 +304,6 @@ func TestRunRefusesDestinationCollisionsBeforeMakingChanges(t *testing.T) {
 				}
 			},
 		},
-		{
-			name: "wrong symlink",
-			makeTarget: func(t *testing.T, destination string) {
-				t.Helper()
-				wrong := filepath.Join(t.TempDir(), "wrong.config")
-				writeTestFile(t, wrong, "wrong\n")
-				if err := os.Symlink(wrong, destination); err != nil {
-					t.Fatalf("create wrong symlink: %v", err)
-				}
-			},
-		},
-		{
-			name: "broken symlink",
-			makeTarget: func(t *testing.T, destination string) {
-				t.Helper()
-				if err := os.Symlink(filepath.Join(t.TempDir(), "missing"), destination); err != nil {
-					t.Fatalf("create broken symlink: %v", err)
-				}
-			},
-		},
 	}
 
 	for _, test := range tests {
@@ -210,13 +315,18 @@ func TestRunRefusesDestinationCollisionsBeforeMakingChanges(t *testing.T) {
 			conflictingSource := filepath.Join(containerDirectory, "z.config")
 			firstDestination := filepath.Join(targetDirectory, "a.config")
 			conflictingDestination := filepath.Join(targetDirectory, "z.config")
+			oldTarget := filepath.Join(t.TempDir(), "old.config")
 
 			writeTestFile(t, firstSource, "first\n")
 			writeTestFile(t, conflictingSource, "conflict\n")
+			writeTestFile(t, oldTarget, "old\n")
 			writeTestManifest(t, containerDirectory, testManifest{
 				Platforms: []string{"macos"},
 				Targets:   []string{targetDirectory},
 			})
+			if err := os.Symlink(oldTarget, firstDestination); err != nil {
+				t.Fatalf("create relinkable destination: %v", err)
+			}
 			test.makeTarget(t, conflictingDestination)
 
 			var stdout bytes.Buffer
@@ -227,9 +337,7 @@ func TestRunRefusesDestinationCollisionsBeforeMakingChanges(t *testing.T) {
 			if !strings.Contains(err.Error(), conflictingDestination) {
 				t.Fatalf("Run() error = %q, want destination path", err)
 			}
-			if _, err := os.Lstat(firstDestination); !os.IsNotExist(err) {
-				t.Fatalf("first destination was changed before validation completed: %v", err)
-			}
+			assertSymlink(t, firstDestination, oldTarget)
 			if got := stdout.String(); got != "" {
 				t.Fatalf("stdout = %q, want empty", got)
 			}
@@ -263,6 +371,41 @@ func TestRunSelectsOnlyContainersForRequestedOperatingSystem(t *testing.T) {
 	assertSymlink(t, filepath.Join(linuxTarget, "dummy.config"), linuxSource)
 	if _, err := os.Lstat(filepath.Join(macOSTarget, "dummy.config")); !os.IsNotExist(err) {
 		t.Fatalf("macOS destination stat error = %v, want not-exist", err)
+	}
+}
+
+func TestRunRelinksDestinationWhenSelectedPlatformChanges(t *testing.T) {
+	repository := t.TempDir()
+	targetDirectory := t.TempDir()
+	macOSContainer := filepath.Join(repository, "home", "dummy", "macos")
+	linuxContainer := filepath.Join(repository, "home", "dummy", "linux")
+	macOSSource := filepath.Join(macOSContainer, "dummy.config")
+	linuxSource := filepath.Join(linuxContainer, "dummy.config")
+	destination := filepath.Join(targetDirectory, "dummy.config")
+
+	writeTestFile(t, macOSSource, "macos\n")
+	writeTestManifest(t, macOSContainer, testManifest{
+		Platforms: []string{"macos"},
+		Targets:   []string{targetDirectory},
+	})
+	writeTestFile(t, linuxSource, "linux\n")
+	writeTestManifest(t, linuxContainer, testManifest{
+		Platforms: []string{"linux"},
+		Targets:   []string{targetDirectory},
+	})
+
+	if err := Run(repository, []string{"linux"}, &bytes.Buffer{}, &bytes.Buffer{}); err != nil {
+		t.Fatalf("Linux Run() error = %v", err)
+	}
+	assertSymlink(t, destination, linuxSource)
+
+	var stdout bytes.Buffer
+	if err := Run(repository, []string{"macos"}, &stdout, &bytes.Buffer{}); err != nil {
+		t.Fatalf("macOS Run() error = %v", err)
+	}
+	assertSymlink(t, destination, macOSSource)
+	if got, want := stdout.String(), "relinked   "+destination+" -> "+macOSSource+"\n"; got != want {
+		t.Fatalf("stdout = %q, want %q", got, want)
 	}
 }
 
