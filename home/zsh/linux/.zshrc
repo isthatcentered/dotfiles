@@ -13,3 +13,5 @@ source /usr/share/cachyos-zsh-config/cachyos-config.zsh
 # >>> Codex installer >>>
 export PATH="/home/isthatcentered/.local/bin:$PATH"
 # <<< Codex installer <<<
+
+eval "$(direnv hook zsh)"
