@@ -31,7 +31,6 @@ function M.setup()
   local treesitter = require 'nvim-treesitter'
 
   treesitter.install(languages)
-  treesitter.update(languages)
 
   vim.api.nvim_create_autocmd('FileType', {
     group = vim.api.nvim_create_augroup('native-treesitter-start', { clear = true }),
