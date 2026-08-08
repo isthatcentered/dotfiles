@@ -1,0 +1,43 @@
+(defcfg
+  process-unmapped-keys yes
+  linux-device-detect-mode keyboard-only
+)
+
+(defsrc
+  j k u i m ,
+)
+
+(defvar
+  chord-time 30
+)
+
+(defalias
+  chord-j     (chord jk j)
+  chord-k     (chord jk k)
+  chord-u     (chord ui u)
+  chord-i     (chord ui i)
+  chord-m     (chord mcomma m)
+  chord-comma (chord mcomma comma)
+)
+
+(deflayer base
+  @chord-j @chord-k @chord-u @chord-i @chord-m @chord-comma
+)
+
+(defchords jk $chord-time
+  (j  ) j
+  (  k) k
+  (j k) esc
+)
+
+(defchords ui $chord-time
+  (u  ) u
+  (  i) i
+  (u i) bspc
+)
+
+(defchords mcomma $chord-time
+  (m      ) m
+  (  comma) ,
+  (m comma) ret
+)
