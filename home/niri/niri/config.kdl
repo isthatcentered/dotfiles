@@ -258,13 +258,15 @@ output "HDMI-A-1" {
 }
 
 output "DP-2" {
-    scale 1.6
+    // 3840x2400 -> 2048x1280 logical pixels, matching the MacBook's UI scale.
+    scale 1.875
     position x=520 y=1440
 }
 
 
 output "DP-3" {
-    scale 1.65
+    // Same display when connected through the alternate DP connector.
+    scale 1.875
     position x=557 y=1440
 }
 
