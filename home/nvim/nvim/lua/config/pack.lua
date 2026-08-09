@@ -44,6 +44,11 @@ local specs = {
     version = 'main',
   },
   {
+    src = 'https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim',
+    name = 'mason-tool-installer.nvim',
+    version = 'main',
+  },
+  {
     src = 'https://github.com/windwp/nvim-ts-autotag',
     name = 'nvim-ts-autotag',
     version = 'main',
@@ -330,7 +335,8 @@ function M.add()
 end
 
 function M.setup()
-  require('mason').setup {
+  require('mason').setup {}
+  require('mason-tool-installer').setup {
     ensure_installed = {
       'ast-grep',
       'jq',
@@ -339,6 +345,8 @@ function M.setup()
       'eslint_d',
       'goimports',
       'gopls',
+      'json-lsp',
+      'lua-language-server',
       'oxfmt',
       'oxlint',
       'prettier',
