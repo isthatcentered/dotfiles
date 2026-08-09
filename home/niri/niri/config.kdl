@@ -110,14 +110,22 @@ binds {
     Mod+CTRL+End                        { move-column-to-last; }
 
     Mod+Shift+Left                      { focus-monitor-left; }
+    Mod+Shift+H                         { focus-monitor-left; }
     Mod+Shift+Right                     { focus-monitor-right; }
+    Mod+Shift+L                         { focus-monitor-right; }
     Mod+Shift+UP                        { focus-monitor-up; }
+    Mod+Shift+K                         { focus-monitor-up; }
     Mod+Shift+Down                      { focus-monitor-down; }
+    Mod+Shift+J                         { focus-monitor-down; }
 
     Mod+Shift+CTRL+Left                 { move-column-to-monitor-left; }
+    Mod+Shift+CTRL+H                    { move-column-to-monitor-left; }
     Mod+Shift+CTRL+Right                { move-column-to-monitor-right; }
+    Mod+Shift+CTRL+L                    { move-column-to-monitor-right; }
     Mod+Shift+CTRL+UP                   { move-column-to-monitor-up; }
+    Mod+Shift+CTRL+K                    { move-column-to-monitor-up; }
     Mod+Shift+CTRL+Down                 { move-column-to-monitor-down; }
+    Mod+Shift+CTRL+J                    { move-column-to-monitor-down; }
     Mod+Shift+V                         { switch-focus-between-floating-and-tiling; }
 
     Mod+BracketLeft                     { consume-or-expel-window-left; }
@@ -251,6 +259,12 @@ output "HDMI-A-1" {
 output "DP-2" {
     scale 1.6
 }
+
+
+output "DP-3" {
+    scale 1.65
+}
+
 
 /- output "DP-1" {
     mode "2560x1440@359.979" // Set resolution and refresh rate
