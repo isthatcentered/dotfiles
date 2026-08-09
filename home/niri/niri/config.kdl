@@ -263,9 +263,7 @@ output "DP-2" {
 
         background-color "#000000"
 
-        focus-ring {
-            off
-        }
+        focus-ring {}
 
         border {
             off
@@ -283,12 +281,6 @@ output "DP-2" {
     window-rule {
         geometry-corner-radius 0
         clip-to-geometry true
-    }
-
-    // Dim inactive windows while leaving the focused window fully opaque.
-    window-rule {
-        match is-active=false
-        opacity 0.8
     }
 
     window-rule {
