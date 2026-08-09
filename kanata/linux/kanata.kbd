@@ -1,6 +1,9 @@
 (defcfg
   process-unmapped-keys yes
   linux-device-detect-mode keyboard-only
+  linux-dev-names-exclude (
+    "SteelSeries SteelSeries Rival 3 Wireless Keyboard"
+  )
 )
 
 (defsrc
