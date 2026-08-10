@@ -37,7 +37,7 @@
     <array>
       <string>/Users/edouardpenin/.cargo/bin/kanata</string>
       <string>--cfg</string>
-      <string>/Users/edouardpenin/Test/kanata-config/kanata.kbd</string>
+      <string>/Users/edouardpenin/Test/dotfiles/kanata/macos/kanata.kbd</string>
     </array>
 
     <key>UserName</key>
