@@ -21,6 +21,8 @@ local function normal_colors()
 		gray_2 = "#a5b7c5",
 		gray_1 = "#e9f0f7",
 		gray_0 = "#f7f8fa",
+		markdown_code = "#f6f8fa",
+		markdown_code_inline = "#eff1f3",
 		red = "#fa0000",
 		orange = "#FF7E00",
 
@@ -232,6 +234,12 @@ function M.setup()
 		["@ibl.scope.underline.1"] = { link = "IblIndent" },
 
 		-------- Custom highlights
+		RenderMarkdownCode = { bg = colors.markdown_code },
+		RenderMarkdownCodeInfo = { fg = colors.gray_4, bg = colors.markdown_code },
+		RenderMarkdownCodeBorder = { link = "RenderMarkdownCode" },
+		RenderMarkdownCodeFallback = { fg = colors.gray_4, bg = colors.markdown_code },
+		RenderMarkdownCodeInline = { fg = colors.text, bg = colors.markdown_code_inline },
+
 		IsThatCenteredLualineNeotestPasing = { fg = colors.white, bg = "#03ff1f" },
 		IsThatCenteredLualineNeotestFailing = { fg = colors.white, bg = "#ff0000" },
 		IsThatCenteredLualineNeotestPending = { fg = colors.white, bg = colors.gray_3 },
