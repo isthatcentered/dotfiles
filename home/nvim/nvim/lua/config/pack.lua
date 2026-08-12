@@ -368,7 +368,7 @@ function M.setup()
   setup_oil()
   require('nvim-web-devicons').setup {}
   require('config.pack.treesitter').setup()
-  vim.keymap.set('n', '<leader>m', '<cmd>RenderMarkdown toggle<cr>', { desc = 'Toggle Markdown rendering' })
+  require('config.leaf').setup()
   require('config.pack.neotree').setup()
   require('config.pack.lualine').setup()
   require('config.pack.smart_splits').setup()
