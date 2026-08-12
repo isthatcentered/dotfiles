@@ -79,6 +79,11 @@ local specs = {
     version = 'main',
   },
   {
+    src = 'https://github.com/meanderingprogrammer/render-markdown.nvim',
+    name = 'render-markdown.nvim',
+    version = 'main',
+  },
+  {
     src = 'https://github.com/nvim-treesitter/nvim-treesitter-textobjects',
     name = 'nvim-treesitter-textobjects',
     version = 'main',
