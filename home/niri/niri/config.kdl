@@ -264,8 +264,8 @@ output "DP-2" {
 
 
 output "DP-3" {
-    scale 1.5
-    position x=557 y=1440
+    scale 1
+    position x=440 y=1440
 }
 
 
