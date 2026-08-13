@@ -1,0 +1,4 @@
+{
+  "platforms": ["macos", "linux"],
+  "targets": ["~/.agents", "~/.codex", "~/.pi/agent"]
+}
