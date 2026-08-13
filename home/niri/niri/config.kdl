@@ -257,22 +257,16 @@ output "HDMI-A-1" {
     position x=0 y=0
 }
 
-output "DP-2" {
-    scale 1.5
-    position x=520 y=1440
-}
-
-
 output "DP-3" {
     scale 1
     position x=440 y=1440
 }
 
 
-/- output "DP-1" {
-    mode "2560x1440@359.979" // Set resolution and refresh rate
-    scale 1 // No scaling (use 2 for HiDPI)
-}
+// /- output "DP-1" {
+//     mode "2560x1440@359.979" // Set resolution and refresh rate
+//     scale 1 // No scaling (use 2 for HiDPI)
+// }
 
     layout {
         gaps 0 // Completely gapless layout
