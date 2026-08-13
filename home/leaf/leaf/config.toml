@@ -1,1 +1,7 @@
-theme = "arctic"
+theme = "arctic-white"
+
+[themes.arctic-white]
+base = "arctic"
+
+[themes.arctic-white.ui]
+content_bg = "#ffffff"
