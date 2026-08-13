@@ -1,7 +1,39 @@
-theme = "arctic-white"
+theme = "github-light-high-contrast"
 
-[themes.arctic-white]
+[themes.github-light-high-contrast]
 base = "arctic"
+syntax = "InspiredGitHub"
 
-[themes.arctic-white.ui]
+[themes.github-light-high-contrast.ui]
 content_bg = "#ffffff"
+toc_bg = "#ffffff"
+toc_inactive_bg = "#ffffff"
+toc_border = "#66707b"
+toc_hover_fg = "#000000"
+toc_primary_active = "#000000"
+toc_primary_inactive = "#000000"
+toc_secondary_text_active = "#000000"
+toc_secondary_text_inactive = "#000000"
+status_filename_fg = "#000000"
+status_percent_fg = "#0349b4"
+toc_accent = "#0349b4"
+
+[themes.github-light-high-contrast.markdown]
+text = "#000000"
+strong_text = "#000000"
+table_cell = "#000000"
+footnote_text = "#000000"
+mark_fg = "#000000"
+heading_1 = "#0349b4"
+heading_2 = "#024c1a"
+heading_3 = "#3f2200"
+heading_4 = "#622cbc"
+heading_other = "#000000"
+link_icon = "#0349b4"
+link_text = "#0349b4"
+link_hover = "#1168e3"
+inline_code_fg = "#a0111f"
+blockquote_text = "#4b535d"
+blockquote_marker = "#66707b"
+table_border = "#66707b"
+table_separator = "#88929d"
