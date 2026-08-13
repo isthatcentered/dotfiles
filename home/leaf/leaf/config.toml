@@ -2,7 +2,6 @@ theme = "github-light-high-contrast"
 
 [themes.github-light-high-contrast]
 base = "arctic"
-syntax = "InspiredGitHub"
 
 [themes.github-light-high-contrast.ui]
 content_bg = "#ffffff"
