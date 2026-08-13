@@ -82,6 +82,16 @@ vim.keymap.set('n', 'n', 'nzzzv', { desc = 'previous search result (centered)' }
 -- Window navigation
 vim.keymap.set('n', '<C-l>', '<c-w><c-w>', { desc = 'move focus to next window' })
 -- vim.keymap.set('n', '<c-h>', '<c-w><c-w>', { desc = 'move focus to next window' })
+vim.keymap.set('n', '<C-w>z', function()
+  if vim.t.zoom_restore then
+    vim.cmd(vim.t.zoom_restore)
+    vim.t.zoom_restore = nil
+  else
+    vim.t.zoom_restore = vim.fn.winrestcmd()
+    vim.cmd 'wincmd _'
+    vim.cmd 'wincmd |'
+  end
+end, { desc = 'Toggle window zoom' })
 
 -- Buffer navigation
 vim.keymap.set('n', '<c-d>', '<c-d>zz', { desc = 'half page down (centered)' })
