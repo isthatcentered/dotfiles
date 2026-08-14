@@ -100,7 +100,7 @@
 (deflayer symbols
   _    _    _    _    _    _   _       _      _    _     _     _
   _    _    _    _     S-min S-lbrc S-rbrc S-,  S-.
-  _    S-4  _    _     min   S-9    S-0    S-apos apos
+  _    S-4  _    _     min   S-9    S-0    apos S-apos
   _    _    _    S-5  lbrc  rbrc   S-bksl
   spc
   fn
