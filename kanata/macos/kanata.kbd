@@ -101,7 +101,7 @@
   _    _    _    _    _    _   _       _      _    _     _     _
   _    _    _    _     S-min S-lbrc S-rbrc S-,  S-.
   _    S-4  _    _     min   S-9    S-0    S-apos apos
-  _    _    _    S-7  lbrc  rbrc   S-bksl
+  _    _    _    S-5  lbrc  rbrc   S-bksl
   spc
   fn
 )
