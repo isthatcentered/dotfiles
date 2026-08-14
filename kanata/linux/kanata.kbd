@@ -7,40 +7,119 @@
 )
 
 (defsrc
-  j k u i m ,
+  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
+  tab caps e r y u i o p
+  a s d f h j k l ;
+  lsft c v n m , .
+  spc
+  fn
 )
 
 (defvar
-  chord-time 30
+  tap-time 150
+  hold-time 200
+  duo-time 30
 )
 
 (defalias
-  chord-j     (chord jk j)
-  chord-k     (chord jk k)
-  chord-u     (chord ui u)
-  chord-i     (chord ui i)
-  chord-m     (chord mcomma m)
-  chord-comma (chord mcomma comma)
+  escctrl (tap-hold $tap-time $hold-time esc (layer-toggle symbols))
+  shnum (tap-hold $tap-time $hold-time lsft (layer-toggle nums))
+  a (tap-hold $tap-time $hold-time a lmet)
+  s (tap-hold $tap-time $hold-time s lalt)
+  d (tap-hold $tap-time $hold-time d lsft)
+  f (tap-hold $tap-time $hold-time f lctl)
+  j (tap-hold $tap-time $hold-time j rctl)
+  k (tap-hold $tap-time $hold-time k rsft)
+  l (tap-hold $tap-time $hold-time l ralt)
+  ; (tap-hold $tap-time $hold-time ; rmet)
+  spcl (tap-hold $tap-time $hold-time spc (layer-toggle nav))
+  fnl (tap-hold 200 200 fn (layer-toggle fn))
+
+  numly (layer-toggle nums)
+  symly (layer-toggle symbols)
+  chc (chord cv c)
+  chv (chord cv v)
+  chd (chord fd d)
+  chf (chord fd f)
+  chj (chord jk j)
+  chk (chord jk k)
+  chu (chord ui u)
+  chi (chord ui i)
+  chm (chord mcomma m)
+  chcomma (chord mcomma comma)
 )
 
 (deflayer base
-  @chord-j @chord-k @chord-u @chord-i @chord-m @chord-comma
+  brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
+  tab @escctrl e r y @chu @chi o p
+  @a @s @chd @chf h @chj @chk @l @;
+  @shnum @chc @chv n @chm @chcomma .
+  @spcl
+  @fnl
 )
 
-(defchords jk $chord-time
-  (j  ) j
-  (  k) k
+(deflayer fn
+  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
+  tab @escctrl _ _ _ _ _ _ _
+  _ _ _ _ _ _ _ _ _
+  @shnum _ _ _ _ _ _
+  spc
+  fn
+)
+
+(deflayer nav
+  _    _    _    _    _    _   _     _   _    _     _     _
+  _    _    _    _    _    _    _   _     _
+  _    _    _    _    left down up    rght _
+  _    _    _    _    _    _    _
+  spc
+  fn
+)
+
+(deflayer nums
+  _    _    _    _    _    _   _     _    _    _     _     _
+  _    _    _    _    _    7    8    9    _
+  _    _    _    _    _    4    5    6    _
+  _    _    _    0    1    2    3
+  spc
+  fn
+)
+
+(deflayer symbols
+  _    _    _    _    _    _   _       _      _    _     _     _
+  _    _    _    _     S-min S-lbrc S-rbrc S-,  S-.
+  _    S-4  _    _     min   S-9    S-0    S-apos apos
+  _    _    _    S-7  lbrc  rbrc   S-bksl
+  spc
+  fn
+)
+
+(defchords cv $duo-time
+  (c  ) c
+  (  v) v
+  (c v) @numly
+)
+
+(defchords fd $duo-time
+  (f  ) @f
+  (  d) @d
+  (f d) @symly
+)
+
+(defchords jk $duo-time
+  (j  ) @j
+  (  k) @k
   (j k) esc
 )
 
-(defchords ui $chord-time
+(defchords ui $duo-time
   (u  ) u
   (  i) i
   (u i) bspc
 )
 
-(defchords mcomma $chord-time
-  (m      ) m
-  (  comma) ,
-  (m comma) ret
+(defchords mcomma $duo-time
+  (m    ) m
+  (    comma) ,
+  (m   comma) ret
 )
