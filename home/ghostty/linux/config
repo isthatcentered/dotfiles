@@ -53,6 +53,7 @@ bold-is-bright = true
 macos-option-as-alt = left
 keybind = alt+left=unbind
 keybind = alt+right=unbind
+keybind = ctrl+shift+j=unbind
 keybind = cmd+l=goto_split:next
 keybind = cmd+r=clear_screen
 keybind = cmd+k=scroll_page_up
