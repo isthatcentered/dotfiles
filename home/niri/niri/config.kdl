@@ -53,6 +53,7 @@ binds {
     // ─── Applications ───
     Mod+Return                          hotkey-overlay-title="Open Terminal: Ghostty" { spawn "ghostty"; }
     Mod+B                               hotkey-overlay-title="Open Browser: Google Chrome" { spawn "google-chrome-stable"; }
+    CTRL+Shift+Space                    allow-inhibiting=false hotkey-overlay-title="Toggle Dictation: OpenWhispr" { spawn "xdotool" "search" "--limit" "1" "--name" "^Control Panel$" "key" "--clearmodifiers" "--window" "%@" "ctrl+shift+space"; }
 
     // --- Noctalia ---
     Mod+Shift+Return                    hotkey-overlay-title="Open Wallpaper Selector: noctalia wallpaper toggle" { spawn-sh "noctalia msg panel-toggle wallpaper"; }
