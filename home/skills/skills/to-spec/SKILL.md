@@ -19,14 +19,11 @@ Check with the user that these seams match their expectations.
 3. Write the spec using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
 
 <spec-template>
-
-## Problem Statement
-
-The problem that the user is facing, from the user's perspective.
+## Goal
+What we want to do and why from the user's perspective. Be precise but concise
 
 ## Solution
-
-The solution to the problem, from the user's perspective.
+The shared understanding of the work to do, reached after discussing with the user. Be precise but concise
 
 ## User Stories
 
@@ -64,12 +61,31 @@ A list of testing decisions that were made. Include:
 - Which modules will be tested
 - Prior art for the tests (i.e. similar types of tests in the codebase)
 
+
+## QA plan
+
+A gherkin based list of tests that will be run to validate the work is correct.
+
 ## Out of Scope
 
 A description of the things that are out of scope for this spec.
+
+## Documentation
+
+The paths/urls/... given by the user as additional reference, relevant ADRS or guides from .agents/guides if any.
 
 ## Further Notes
 
 Any further notes about the feature.
 
 </spec-template>
+
+## Conversation history 
+The convesation history with the user that led to the shared understanding. As is.
+
+<Example>
+Question: What should we do when ...
+Answer: We must ...
+</Example>
+
+</Template>
