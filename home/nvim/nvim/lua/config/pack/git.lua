@@ -285,10 +285,10 @@ local DiffView = {
       vim.cmd 'DiffviewClose'
     end, { desc = 'Close diffview' })
 
-    local function commit_and_push(message)
-      vim.notify('Committing and pushing...', vim.log.levels.INFO)
+    local function commit_changes(message)
+      vim.notify('Committing...', vim.log.levels.INFO)
       local stderr_chunks = {}
-      local command = 'git add -A && git commit -m ' .. vim.fn.shellescape(message) .. ' && git push --force -u origin HEAD'
+      local command = 'git add -A && git commit -m ' .. vim.fn.shellescape(message)
 
       vim.fn.jobstart(command, {
         on_stderr = function(_, data)
@@ -301,10 +301,10 @@ local DiffView = {
         on_exit = function(_, code)
           vim.schedule(function()
             if code == 0 then
-              vim.notify('Commit and push done', vim.log.levels.INFO)
+              vim.notify('Commit done', vim.log.levels.INFO)
             else
               local msg = table.concat(stderr_chunks, '\n')
-              vim.notify(msg ~= '' and msg or 'Commit or push failed', vim.log.levels.ERROR)
+              vim.notify(msg ~= '' and msg or 'Commit failed', vim.log.levels.ERROR)
             end
           end)
         end,
@@ -352,11 +352,11 @@ local DiffView = {
           return
         end
 
-        commit_and_push(message)
+        commit_changes(message)
       end
 
-      vim.keymap.set('i', '<CR>', submit, { buffer = input_buf, silent = true, nowait = true, desc = 'Commit and push' })
-      vim.keymap.set('n', '<CR>', submit, { buffer = input_buf, silent = true, nowait = true, desc = 'Commit and push' })
+      vim.keymap.set('i', '<CR>', submit, { buffer = input_buf, silent = true, nowait = true, desc = 'Commit' })
+      vim.keymap.set('n', '<CR>', submit, { buffer = input_buf, silent = true, nowait = true, desc = 'Commit' })
       vim.keymap.set('n', 'q', close_popup, { buffer = input_buf, silent = true, nowait = true, desc = 'Cancel commit' })
 
       vim.cmd 'startinsert'
@@ -386,7 +386,7 @@ local DiffView = {
       })
     end, { desc = 'Git yollo (commit all + push)' })
 
-    vim.keymap.set('n', '<leader>gm', open_commit_message_popup, { desc = 'Git commit with message (commit all + push)' })
+    vim.keymap.set('n', '<leader>gm', open_commit_message_popup, { desc = 'Git commit with message (commit all)' })
   end,
 }
 
