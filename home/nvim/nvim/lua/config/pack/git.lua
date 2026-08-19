@@ -365,7 +365,7 @@ local DiffView = {
     vim.keymap.set('n', '<leader>gy', function()
       vim.notify('Committing and pushing...', vim.log.levels.INFO)
       local stderr_chunks = {}
-      vim.fn.jobstart('git add -A && git commit -m "wip" && git push --force -u origin HEAD', {
+      vim.fn.jobstart('git add -A && git commit -m "wip" && git push -u origin HEAD', {
         on_stderr = function(_, data)
           for _, line in ipairs(data) do
             if line ~= '' then
