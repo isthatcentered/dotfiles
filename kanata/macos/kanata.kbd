@@ -4,6 +4,7 @@
   macos-dev-names-include (
     "Apple Internal Keyboard / Trackpad"
     "Keychron K2"
+    "SONSEI"
   )
 )
 
@@ -35,11 +36,8 @@
   spcl (tap-hold $tap-time $hold-time spc (layer-toggle nav))
   fnl (tap-hold 200 200 fn (layer-toggle fn))
 
-  erly (layer-toggle er)
   numly (layer-toggle nums)
   symly (layer-toggle symbols)
-  che (chord er e)
-  chr (chord er r)
   chc (chord cv c)
   chv (chord cv v)
   chd (chord fd d)
@@ -54,7 +52,7 @@
 
 (deflayer base
   brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
-  tab @escctrl @che @chr y @chu @chi o p
+  tab @escctrl e r y @chu @chi o p
   @a @s @chd @chf h @chj @chk @l @;
   @shnum @chc @chv n @chm @chcomma .
   @spcl
@@ -79,15 +77,6 @@
   fn
 )
 
-(deflayer er
-  _    _    _    _    _    _   _     _    _      _     _     _
-  _    _    _    _    _    S-min S-4  _    _
-  _    _    _    _    _     _    _    _    _
-  _    _    _    S-2  S-5   S-8  S-3
-  spc
-  fn
-)
-
 (deflayer nums
   _    _    _    _    _    _   _     _    _    _     _     _
   _    _    _    _    _    7    8    9    _
@@ -104,12 +93,6 @@
   _    _    _    S-5  lbrc  rbrc   S-bksl
   spc
   fn
-)
-
-(defchords er $duo-time
-  (e  ) e
-  (  r) r
-  (e r) @erly
 )
 
 (defchords cv $duo-time

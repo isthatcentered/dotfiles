@@ -1,6 +1,7 @@
 ---
 name: verify-knowledge
 description: "Test and push the user's understanding of any technical topic through a rigorous Socratic interview. Trigger whenever the user says 'check-knowledge', 'test my knowledge', 'quiz me on', 'do I really understand', 'interview me about', or any variation of wanting to verify or pressure-test their understanding of a topic. Also trigger when the user wants to find gaps in their knowledge, prepare for a technical interview, or asks Claude to act as a technical interviewer. This skill turns Claude into a demanding but fair Socratic interviewer who probes for deep understanding and helps the user reason through their mistakes rather than just pointing them out."
+disable-model-invocation: true
 ---
 
 # Check Knowledge

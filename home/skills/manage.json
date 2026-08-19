@@ -1,4 +1,4 @@
 {
   "platforms": ["macos", "linux"],
-  "targets": ["~/.codex", "~/.config/opencode", "~/.claude"]
+  "targets": ["~/.codex", "~/.config/opencode", "~/.claude", "~/.agents/"]
 }
