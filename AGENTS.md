@@ -1,1 +1,3 @@
-Commit and push once your changes are validated.
+- Always rebase before doing any work
+- Always preserve my changes
+- Commit and push once your changes are validated
