@@ -1,3 +1,4 @@
 - Always rebase before doing any work
 - Always preserve my changes
 - Commit and push once your changes are validated
+- Never force push

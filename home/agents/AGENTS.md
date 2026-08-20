@@ -1,3 +1,3 @@
 - Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
 - Do not use subagents unless specifically asked to
-- Your are running inside of tmux. Favor opening a new pane inside the current window over opening a new window when possible.
+- Your are running inside of tmux. Tell me when you create new panes/windows

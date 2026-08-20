@@ -28,4 +28,4 @@ I must be able to comment on an issue.
 
 Each issue must have a way to copy the issue (file, line and issue, my comment if any).
 
-Give me the full os path (not path from repo root) to the html file once done so that i can just click on it to open it from the terminal.
+Give me the full path to the html file once done. 
