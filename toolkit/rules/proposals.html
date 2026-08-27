@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Rules CLI proposals</title>
+  <style>
+    :root {
+      --paper: #f3f0e8;
+      --paper-raised: #fbfaf6;
+      --ink: #191916;
+      --muted: #67655f;
+      --rule: #cbc6ba;
+      --accent: #b4412f;
+      --accent-soft: #ead7ce;
+      --blue: #235d72;
+      --blue-soft: #d9e6e8;
+      --blocked: #8d6a28;
+      --blocked-soft: #eee2c7;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Iowan Old Style, Charter, "Bitstream Charter", "Sitka Text", Cambria, serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.65;
+    }
+
+    button { font: inherit; }
+    a { color: var(--blue); text-underline-offset: 0.16em; }
+    a:hover { color: var(--accent); }
+
+    .shell {
+      width: min(1420px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 24px;
+      padding: 28px 0 15px;
+      border-bottom: 3px double var(--ink);
+      font-family: var(--sans);
+    }
+
+    .masthead__name {
+      font-size: clamp(1.5rem, 4vw, 3.2rem);
+      font-weight: 850;
+      letter-spacing: -0.06em;
+      line-height: 0.9;
+      text-transform: uppercase;
+    }
+
+    .masthead__meta {
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 750;
+      letter-spacing: 0.13em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.8fr);
+      gap: clamp(32px, 7vw, 96px);
+      padding: clamp(50px, 9vw, 120px) 0 54px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--accent);
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, h4 { text-wrap: balance; }
+    .hero h1 {
+      max-width: 880px;
+      margin: 0;
+      font-size: clamp(3.2rem, 8.2vw, 8.3rem);
+      font-weight: 500;
+      letter-spacing: -0.065em;
+      line-height: 0.82;
+    }
+
+    .hero__aside {
+      align-self: end;
+      padding-bottom: 7px;
+    }
+
+    .hero__aside p {
+      margin: 0;
+      font-size: clamp(1.05rem, 1.7vw, 1.35rem);
+      line-height: 1.42;
+    }
+
+    .hero__aside p + p { margin-top: 18px; }
+    .muted { color: var(--muted); }
+
+    .status-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 26px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-family: var(--sans);
+      font-size: 0.67rem;
+      font-weight: 760;
+      letter-spacing: 0.055em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .pill::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      content: "";
+    }
+
+    .pill--ready { color: var(--blue); background: var(--blue-soft); }
+    .pill--blocked { color: var(--blocked); background: var(--blocked-soft); }
+
+    .overview {
+      padding: 54px 0 70px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .section-kicker {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+      font-family: var(--sans);
+    }
+
+    .section-kicker h2 {
+      margin: 0;
+      font-size: clamp(1.7rem, 3vw, 2.7rem);
+      letter-spacing: -0.045em;
+      line-height: 1;
+    }
+
+    .section-kicker span {
+      color: var(--muted);
+      font-size: 0.69rem;
+      font-weight: 740;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .consensus {
+      display: grid;
+      grid-template-columns: 1.3fr repeat(2, 1fr);
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .finding {
+      min-height: 250px;
+      padding: 25px 28px 30px 0;
+    }
+
+    .finding + .finding {
+      border-left: 1px solid var(--rule);
+      padding-left: 28px;
+    }
+
+    .finding__number {
+      color: var(--accent);
+      font-family: var(--sans);
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .finding h3 {
+      margin: 46px 0 12px;
+      font-size: clamp(1.45rem, 2.5vw, 2.5rem);
+      font-weight: 520;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+    }
+
+    .finding p { margin: 0; color: var(--muted); line-height: 1.46; }
+
+    .workspace { padding: 44px 0 80px; }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .tab {
+      min-height: 92px;
+      border: 0;
+      border-right: 1px solid var(--rule);
+      padding: 16px 20px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--sans);
+      text-align: left;
+    }
+
+    .tab:last-child { border-right: 0; }
+    .tab:hover { background: rgba(255, 255, 255, 0.36); color: var(--ink); }
+    .tab[aria-selected="true"] { background: var(--ink); color: var(--paper-raised); }
+    .tab:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+
+    .tab__index {
+      display: block;
+      margin-bottom: 12px;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .tab__title { display: block; font-size: 0.88rem; font-weight: 720; }
+
+    .report-panel { display: none; }
+    .report-panel.is-active { display: block; }
+
+    .report-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 820px) 1fr;
+      gap: clamp(28px, 5vw, 72px);
+      padding-top: 48px;
+    }
+
+    .report-nav {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      font-family: var(--sans);
+      font-size: 0.69rem;
+      line-height: 1.35;
+    }
+
+    .report-nav strong {
+      display: block;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 0.6rem;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .report-nav a {
+      display: block;
+      border-left: 1px solid var(--rule);
+      padding: 6px 0 6px 13px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    .report-nav a:hover { border-left-color: var(--accent); color: var(--accent); }
+
+    .report-actions {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      border-top: 1px solid var(--ink);
+      padding-top: 16px;
+      font-family: var(--sans);
+    }
+
+    .report-actions p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 0.73rem;
+      line-height: 1.45;
+    }
+
+    .action-button {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      border: 1px solid var(--ink);
+      border-radius: 0;
+      padding: 9px 12px;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 0.67rem;
+      font-weight: 760;
+      letter-spacing: 0.06em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    .action-button:hover { background: var(--ink); color: var(--paper-raised); }
+
+    .report {
+      min-width: 0;
+      padding-bottom: 80px;
+    }
+
+    .report > h1 {
+      margin: 0 0 0.9em;
+      font-size: clamp(2.5rem, 5vw, 5rem);
+      font-weight: 500;
+      letter-spacing: -0.058em;
+      line-height: 0.94;
+    }
+
+    .report h2 {
+      margin: 2.4em 0 0.75em;
+      border-top: 1px solid var(--ink);
+      padding-top: 0.6em;
+      font-family: var(--sans);
+      font-size: clamp(1.45rem, 2.8vw, 2.35rem);
+      letter-spacing: -0.045em;
+      line-height: 1.08;
+    }
+
+    .report h3 {
+      margin: 2em 0 0.7em;
+      font-family: var(--sans);
+      font-size: 1.15rem;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+    }
+
+    .report p { margin: 0 0 1.2em; }
+    .report ul, .report ol { margin: 0 0 1.35em; padding-left: 1.3em; }
+    .report li + li { margin-top: 0.38em; }
+    .report strong { font-weight: 750; }
+
+    .report code {
+      border: 1px solid #d8d2c5;
+      border-radius: 3px;
+      padding: 0.09em 0.3em;
+      background: #ebe7dc;
+      font-family: var(--mono);
+      font-size: 0.79em;
+    }
+
+    .report pre {
+      max-width: 100%;
+      margin: 1.7em 0;
+      border-left: 4px solid var(--accent);
+      padding: 19px 22px;
+      overflow: auto;
+      background: #252521;
+      color: #f5f1e6;
+      font: 0.77rem/1.6 var(--mono);
+    }
+
+    .report pre code { border: 0; padding: 0; background: transparent; color: inherit; font-size: inherit; }
+
+    .report table {
+      width: 100%;
+      margin: 1.8em 0;
+      border-collapse: collapse;
+      font-family: var(--sans);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    .report th, .report td { border-bottom: 1px solid var(--rule); padding: 10px 12px 10px 0; text-align: left; vertical-align: top; }
+    .report th { border-bottom-color: var(--ink); font-size: 0.64rem; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    .blocked-card {
+      grid-column: 1 / -1;
+      max-width: 900px;
+      margin: 28px auto 0;
+      border-top: 8px solid var(--blocked);
+      padding: clamp(30px, 7vw, 72px);
+      background: var(--paper-raised);
+      box-shadow: 0 18px 50px rgba(60, 49, 29, 0.08);
+    }
+
+    .blocked-card h2 {
+      margin: 0 0 18px;
+      font-size: clamp(2.4rem, 5vw, 5rem);
+      font-weight: 500;
+      letter-spacing: -0.055em;
+      line-height: 0.95;
+    }
+
+    .blocked-card p { max-width: 680px; }
+    .error-message {
+      margin: 30px 0;
+      border-left: 3px solid var(--blocked);
+      padding: 14px 18px;
+      background: var(--blocked-soft);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 30px;
+      border-top: 3px double var(--ink);
+      padding: 22px 0 34px;
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 0.66rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 1000px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero__aside { max-width: 680px; }
+      .consensus { grid-template-columns: 1fr; }
+      .finding { min-height: auto; padding: 25px 0 32px; }
+      .finding + .finding { border-top: 1px solid var(--rule); border-left: 0; padding-left: 0; }
+      .finding h3 { margin-top: 28px; }
+      .report-layout { grid-template-columns: minmax(0, 1fr); }
+      .report-nav, .report-actions { position: static; max-height: none; }
+      .report-nav { display: none; }
+      .report-actions { display: flex; gap: 8px; }
+      .report-actions p { margin-right: auto; }
+      .action-button { width: auto; margin: 0; }
+    }
+
+    @media (max-width: 680px) {
+      body { font-size: 16px; }
+      .shell { width: min(100% - 24px, 1420px); }
+      .masthead { align-items: start; }
+      .masthead__meta { max-width: 130px; }
+      .tabs { grid-template-columns: 1fr 1fr; }
+      .tab { border-bottom: 1px solid var(--rule); }
+      .tab:nth-child(2) { border-right: 0; }
+      .tab:nth-child(n + 3) { border-bottom: 0; }
+      .report-actions { align-items: stretch; flex-direction: column; }
+      .report-actions p { margin-right: 0; }
+      .action-button { width: 100%; }
+      .footer { flex-direction: column; }
+    }
+
+    @media print {
+      body { background: white; font-size: 11pt; }
+      .shell { width: 100%; }
+      .masthead, .hero, .overview, .tabs, .report-nav, .report-actions, .footer { display: none !important; }
+      .workspace { padding: 0; }
+      .report-panel { display: none !important; }
+      .report-panel.is-active { display: block !important; }
+      .report-layout { display: block; padding: 0; }
+      .report { max-width: none; }
+      .report pre { white-space: pre-wrap; color: black; background: #f3f3f3; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell masthead">
+    <div class="masthead__name">The rules review</div>
+    <div class="masthead__meta">Architecture desk<br>27 August 2026</div>
+  </header>
+
+  <main>
+    <section class="shell hero" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Independent proposals / CLI design</p>
+        <h1 id="page-title">One command.<br>Any repo.</h1>
+      </div>
+      <div class="hero__aside">
+        <p>Four reviewers were asked how a central set of ESLint rules could run against any project, while leaving room for more tools later.</p>
+        <p class="muted">Two complete reviews returned. Claude Code was blocked twice by organization authentication policy.</p>
+        <div class="status-line" aria-label="Review status">
+          <span class="pill pill--ready">2 reports ready</span>
+          <span class="pill pill--blocked">2 runs blocked</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="shell overview" aria-labelledby="overview-title">
+      <div class="section-kicker">
+        <h2 id="overview-title">The editorial read</h2>
+        <span>Consensus before detail</span>
+      </div>
+      <div class="consensus">
+        <article class="finding">
+          <span class="finding__number">01 / clear favorite</span>
+          <h3>Own the runtime</h3>
+          <p>Both reports choose a self-contained Node CLI with pinned ESLint dependencies and an adapter boundary. It works even when the target has no ESLint install.</p>
+        </article>
+        <article class="finding">
+          <span class="finding__number">02 / main fork</span>
+          <h3>Central policy or local context?</h3>
+          <p>The hard product choice is config authority. A central config is predictable; a target-local overlay respects framework and monorepo settings.</p>
+        </article>
+        <article class="finding">
+          <span class="finding__number">03 / later</span>
+          <h3>Keep expansion cheap</h3>
+          <p>Containers and a Go orchestrator make more sense once the suite spans runtimes. For ESLint alone, both add machinery without improving the first release.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="shell workspace" aria-labelledby="reports-title">
+      <div class="section-kicker">
+        <h2 id="reports-title">The reports</h2>
+        <span>Select a reviewer</span>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Agent reports">
+        <button class="tab" id="tab-codex-1" role="tab" aria-selected="true" aria-controls="panel-codex-1" data-report="codex-1">
+          <span class="tab__index">Report 01 · ready</span>
+          <span class="tab__title">Codex high / A</span>
+        </button>
+        <button class="tab" id="tab-codex-2" role="tab" aria-selected="false" aria-controls="panel-codex-2" data-report="codex-2" tabindex="-1">
+          <span class="tab__index">Report 02 · ready</span>
+          <span class="tab__title">Codex high / B</span>
+        </button>
+        <button class="tab" id="tab-claude-1" role="tab" aria-selected="false" aria-controls="panel-claude-1" data-report="claude-1" tabindex="-1">
+          <span class="tab__index">Attempt 03 · blocked</span>
+          <span class="tab__title">Claude high / A</span>
+        </button>
+        <button class="tab" id="tab-claude-2" role="tab" aria-selected="false" aria-controls="panel-claude-2" data-report="claude-2" tabindex="-1">
+          <span class="tab__index">Attempt 04 · blocked</span>
+          <span class="tab__title">Claude high / B</span>
+        </button>
+      </div>
+
+      <section class="report-panel is-active" id="panel-codex-1" role="tabpanel" aria-labelledby="tab-codex-1">
+        <div class="report-layout">
+          <nav class="report-nav" aria-label="Codex report A contents"></nav>
+          <article class="report" data-markdown="codex-1"></article>
+          <aside class="report-actions">
+            <p>Full agent report. Generated with <strong>gpt-5.6-sol</strong> at high reasoning effort.</p>
+            <button class="action-button" type="button" data-copy="codex-1">Copy Markdown</button>
+            <button class="action-button" type="button" data-print>Print report</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="report-panel" id="panel-codex-2" role="tabpanel" aria-labelledby="tab-codex-2" hidden>
+        <div class="report-layout">
+          <nav class="report-nav" aria-label="Codex report B contents"></nav>
+          <article class="report" data-markdown="codex-2"></article>
+          <aside class="report-actions">
+            <p>Full agent report. Generated with <strong>gpt-5.6-sol</strong> at high reasoning effort.</p>
+            <button class="action-button" type="button" data-copy="codex-2">Copy Markdown</button>
+            <button class="action-button" type="button" data-print>Print report</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="report-panel" id="panel-claude-1" role="tabpanel" aria-labelledby="tab-claude-1" hidden>
+        <article class="blocked-card">
+          <p class="eyebrow">Attempt 03 / Claude Opus / high effort</p>
+          <h2>No report returned.</h2>
+          <p>The Claude CLI started, received the prompt, and stopped at authentication. No proposal was fabricated or replaced with another model.</p>
+          <div class="error-message">Your organization has disabled Claude subscription access for Claude Code · Use an Anthropic API key instead, or ask your admin to enable access</div>
+          <p class="muted">The environment had no <code>ANTHROPIC_API_KEY</code>, Bedrock backend, Vertex backend, or connected browser session available for a retry.</p>
+        </article>
+      </section>
+
+      <section class="report-panel" id="panel-claude-2" role="tabpanel" aria-labelledby="tab-claude-2" hidden>
+        <article class="blocked-card">
+          <p class="eyebrow">Attempt 04 / Claude Opus / high effort</p>
+          <h2>No report returned.</h2>
+          <p>The second independent Claude CLI run hit the same organization policy before it could analyze the repository.</p>
+          <div class="error-message">Your organization has disabled Claude subscription access for Claude Code · Use an Anthropic API key instead, or ask your admin to enable access</div>
+          <p class="muted">This card remains in the comparison so the requested four-agent run has an accurate audit trail.</p>
+        </article>
+      </section>
+    </section>
+  </main>
+
+  <footer class="shell footer">
+    <span>Source reports preserved in this file</span>
+    <span>Self-contained · no external assets</span>
+  </footer>
+
+  <script>
+    const reports = {"codex-1":"# Proposals for a repository-independent `rules` command\n\n## What the command should mean\n\nUse one command shape for every implementation:\n\n```text\nrules [check] [PATH] [options]\nrules \u003ctool\u003e [PATH] [options]\n```\n\n`rules PATH` is shorthand for `rules check PATH`. `PATH` defaults to the current directory. `check` runs every configured tool, while a tool subcommand runs only that tool.\n\n```bash\n# Run all configured checks in the current repository\nrules\n\n# Run all checks in another repository\nrules ~/src/my-app\n\n# Run only ESLint\nrules eslint ~/src/my-app\n\n# Apply ESLint fixes\nrules eslint ~/src/my-app --fix\n\n# Machine-readable output for CI or editor integration\nrules eslint . --format json\n\n# Future expansion\nrules check . --only eslint,prettier\nrules prettier . --write\n```\n\nKeep exit codes stable across tools:\n\n- `0`: all selected checks passed\n- `1`: a selected tool found violations\n- `2`: the runner could not start or its configuration is invalid\n\nFor a file path, use its parent as the working directory and lint only that file. For a directory path, treat that exact directory as the target root. Avoid implicit Git-root discovery in the first version because `rules packages/web` should remain scoped to `packages/web`.\n\nThe shared ESLint configuration should support both kinds of \"rules\":\n\n- configuration of ESLint core and third-party rules\n- locally implemented rules exposed as a small plugin, for example `personal/no-forbidden-import`\n\n## Repository constraints that affect the design\n\nThis repository has no root JavaScript package or workspace today, and `toolkit/` does not exist. The clean boundary is therefore a self-contained package under `toolkit/rules/`, with its own `package.json` and lockfile.\n\nThe existing Go program should not absorb this feature. Its README says that it deliberately does one job, reconciling managed symlinks, and does not install applications. The macOS shell setup already puts pnpm's global bin directory and `$HOME/bin` on `PATH`, so either is a natural place to expose a `rules` executable.\n\nCurrent ESLint 10 documentation confirms that the `ESLint` class can run against an absolute `cwd`, accepts an in-memory flat configuration through `overrideConfig`, disables target config lookup with `overrideConfigFile: true`, lints paths with `lintFiles()`, writes fixes with `ESLint.outputFixes()`, and formats results with `loadFormatter()`. This makes an API-based runner practical without copying a config into every target repository. See the [ESLint Node.js API](https://github.com/eslint/eslint/blob/v10.5.0/docs/src/integrate/nodejs-api.md) and [integration tutorial](https://github.com/eslint/eslint/blob/v10.5.0/docs/src/integrate/integration-tutorial.md).\n\n## Option 1: standalone Node CLI with tool adapters\n\nThis is the best fit.\n\nCreate one private Node package that owns the ESLint version, plugins, local rule implementations, configuration, CLI parsing, and result formatting. Install or link its `bin` entry once so `rules` is available from any directory.\n\n```text\ntoolkit/rules/\n├── package.json\n├── pnpm-lock.yaml\n├── bin/\n│   └── rules.mjs\n├── src/\n│   ├── cli.mjs\n│   ├── runner.mjs\n│   ├── tools/\n│   │   └── eslint.mjs\n│   └── eslint/\n│       ├── config.mjs\n│       ├── plugin.mjs\n│       └── rules/\n│           └── no-forbidden-import.mjs\n└── test/\n    ├── cli.test.mjs\n    └── fixtures/\n```\n\n`package.json` exposes `bin/rules.mjs` as the `rules` binary. From `toolkit/rules`, `pnpm link --global` can expose it through the already configured pnpm bin directory during development. A normal global install is the less surprising release mechanism later.\n\nThe ESLint adapter resolves the requested path, then constructs ESLint roughly as follows:\n\n```js\nconst eslint = new ESLint({\n  cwd: targetDirectory,\n  overrideConfigFile: true,\n  overrideConfig: sharedConfig,\n  fix: options.fix,\n});\n\nconst results = await eslint.lintFiles(patterns);\n```\n\nIf `--fix` is set, it calls `ESLint.outputFixes(results)`. It then loads the requested formatter and converts ESLint's counts into the shared exit-code contract. All ESLint imports and plugin dependencies resolve inside `toolkit/rules`, so the target repository does not need ESLint installed.\n\nThe adapter interface can stay small:\n\n```ts\ninterface ToolAdapter {\n  name: string;\n  run(context: {\n    target: string;\n    fix: boolean;\n    format: string;\n    passthroughArgs: string[];\n  }): Promise\u003c{ exitCode: 0 | 1 | 2 }\u003e;\n}\n```\n\nAdding another tool means adding an adapter and registering it in `runner.mjs`. The public command does not change.\n\nAdvantages:\n\n- One pinned ESLint and plugin set behaves the same in every repository.\n- Target repositories need no dependencies or config files.\n- The direct API gives the wrapper control over formatting, fixes, aggregated output, and future multi-tool execution.\n- Local custom rules are ordinary modules and are easy to unit test.\n\nCosts:\n\n- The shared config may disagree with a target's framework or language setup.\n- Type-aware TypeScript rules need an explicit policy for project discovery and parser options.\n- Because target config lookup is disabled, repository-specific exceptions need a deliberate extension mechanism, such as an optional `.rules.mjs` loaded from the target root.\n\nSuggested extension policy: keep the central config authoritative by default, then add `--project-config` later if a real use case appears. Do not silently merge `eslint.config.js`, since merge order becomes part of the product contract.\n\n## Option 2: delegate to each target's local ESLint\n\nMake `rules` a thin Node or shell launcher. It selects the target directory, finds that repository's package manager and local ESLint executable, then invokes ESLint with the shared flat config stored in `toolkit/rules`.\n\nThe CLI remains the same:\n\n```bash\nrules eslint ~/src/my-app\nrules eslint ~/src/my-app --fix\nrules eslint . -- --max-warnings 0\n```\n\nThe final example uses `--` to pass arguments directly to ESLint. Internally, the wrapper would run the equivalent of this from the target directory:\n\n```bash\n\u003ctarget-package-manager\u003e exec eslint --config \u003cdotfiles\u003e/toolkit/rules/eslint.config.mjs .\n```\n\nThe shared config can import local custom-rule modules from `toolkit/rules`. ESLint itself comes from the target repository.\n\nAdvantages:\n\n- The target controls its ESLint version and can reuse dependencies it already has.\n- Startup and behavior match direct use of that repository's ESLint CLI.\n- Passthrough arguments expose the full ESLint CLI without duplicating every option.\n\nCosts:\n\n- It fails in repositories that do not have ESLint installed, which weakens the \"from anywhere\" goal.\n- Different targets can produce different results as ESLint and plugin versions drift.\n- The launcher needs package-manager detection and clear errors for npm, pnpm, Yarn, and Bun.\n- A shared flat config must declare a supported ESLint range. Older repositories may use legacy config or incompatible rule APIs.\n- Multi-tool output is harder to normalize because every adapter is mostly a child process.\n\nThis option makes sense if respecting each repository's existing toolchain matters more than identical results across repositories.\n\n## Option 3: containerized tool suite\n\nPackage ESLint, the shared config, custom rules, and future tools in an OCI image. Install a small `rules` launcher in `$HOME/bin`; it resolves the target path and runs the image with that directory mounted at `/work`.\n\nThe user-facing API is still local-looking:\n\n```bash\nrules ~/src/my-app\nrules eslint ~/src/my-app --fix\nrules check ~/src/my-app --only eslint\nrules image update\n```\n\nThe launcher translates the lint command into an invocation like:\n\n```text\ncontainer run --rm -v \u003ctarget\u003e:/work -w /work \u003crules-image\u003e eslint .\n```\n\nThe actual script must also map the host user for writable fixes, preserve terminal colors, forward signals, and mount a named cache volume. `rules image update` pulls or rebuilds the pinned image.\n\nAdvantages:\n\n- The full runtime is pinned, including Node, ESLint, plugins, and non-JavaScript tools.\n- Target repositories and the host need no Node dependencies.\n- It scales cleanly to tools written in different languages.\n\nCosts:\n\n- Docker or another container runtime becomes a hard dependency.\n- Cold starts and filesystem access are noticeably slower on macOS.\n- `--fix` needs careful UID and file-permission handling.\n- Editor integration and linting a single unsaved file are more awkward.\n- This is more machinery than a personal ESLint wrapper needs today.\n\nChoose this only if reproducibility across machines, or a future mixed-language tool suite, is worth the runtime cost.\n\n## Comparison\n\n| Property | Standalone Node CLI | Target-local delegation | Containerized suite |\n|---|---|---|---|\n| Works without target ESLint | Yes | No | Yes |\n| Same versions in every repo | Yes | No | Yes |\n| Respects target toolchain | Only by explicit extension | Yes | No |\n| Multi-tool growth | Straightforward adapters | Straightforward, but subprocess-heavy | Strongest for mixed runtimes |\n| Startup cost | Low | Low | Highest |\n| Installation cost | Node package link/install | Tiny launcher | Launcher plus container runtime |\n| Complexity | Moderate | Lowest initially | Highest |\n\n## Recommendation\n\nStart with option 1. It meets the actual requirement with the fewest moving parts: one globally exposed command, no setup in target repositories, pinned behavior, and a clean place for future adapters.\n\nFor the first version, implement only:\n\n```text\nrules [PATH]\nrules eslint [PATH] [--fix] [--format stylish|json]\nrules check [PATH] [--only eslint]\nrules --help\nrules --version\n```\n\nUse `rules PATH` as the everyday command and keep `rules eslint PATH` for scripting and debugging. Add target-local overrides, package-manager delegation, or containers only after a concrete repository requires them.\n","codex-2":"# Three designs for a portable `rules` command\n\n## Repository constraints that matter\n\nThis repository currently has a small Go program at its root. That program only reconciles dotfile symlinks described by `home/**/manage.json`. Its narrow scope is deliberate.\n\nThe macOS shell configuration already puts `~/bin` on `PATH`, so `rules` can be made globally available there. The existing dotfile manager is not a good installer for an implementation stored in `toolkit/rules/`: it only manages entries beneath `home/`, and it rejects managed symlinks that resolve outside their manifest container. A package-manager link or a small install command is a better fit.\n\nThere is no root JavaScript workspace and no existing `toolkit/` convention. Whichever design is chosen should keep its JavaScript dependencies inside `toolkit/rules/` rather than turning the entire dotfiles repository into an npm package.\n\nThe current ESLint Node API supports the mechanics needed here. An `ESLint` instance can receive an absolute target directory through `cwd`, an explicit flat-config file through `overrideConfigFile`, and `fix` and `cache` options. It can lint the target with `lintFiles()`, write fixes with `ESLint.outputFixes()`, and render results with `loadFormatter()`. A flat config can import parsers and plugins as JavaScript objects, which lets those packages live beside the central rules rather than in every target repository.\n\n## A common command-line contract\n\nI would keep the same interface whichever implementation wins:\n\n```text\nrules [PATH]                       Check PATH with every enabled tool\nrules check [PATH]                 Explicit form of the default command\nrules fix [PATH]                   Apply safe fixes, then report what remains\nrules tool eslint [PATH]           Run one tool only\nrules list                         List configured tools\nrules doctor [PATH]                Report runtimes, config, and resolved target\nrules --help\n```\n\n`PATH` defaults to the current directory and may name either a directory or one file. The short form requested in the prompt works directly:\n\n```bash\nrules path/to/project\n```\n\nThe process should return `0` when all selected checks pass, `1` when checks find violations, and `2` for invalid arguments, missing runtimes, or broken configuration. Output should go to stdout for findings and stderr for operational errors. These details matter once the command is used by CI or editor integrations.\n\nThe first version can expose only ESLint. `rules list` would then print one tool, while the command shape already has room for more.\n\n## Proposal 1: a self-contained Node CLI\n\nStore one private Node package under `toolkit/rules/`. It owns the CLI, ESLint, parsers, plugins, configuration, and any locally written ESLint rules.\n\n```text\ntoolkit/rules/\n├── package.json\n├── package-lock.json\n├── bin/\n│   └── rules.mjs\n├── src/\n│   ├── cli.mjs\n│   └── tools/\n│       └── eslint.mjs\n└── eslint/\n    ├── config.mjs\n    ├── plugin.mjs\n    └── rules/\n        ├── no-example.mjs\n        └── prefer-example.mjs\n```\n\n`package.json` declares `bin.rules` as `./bin/rules.mjs`. It includes `eslint` and every parser or plugin used by the central config as regular dependencies. `eslint/plugin.mjs` exports local rule implementations as a flat-config plugin, and `eslint/config.mjs` imports that plugin plus any third-party plugins.\n\nThe ESLint adapter creates an instance roughly as follows:\n\n```js\nconst eslint = new ESLint({\n  cwd: absoluteTarget,\n  overrideConfigFile: centralConfigPath,\n  fix,\n  cache: true,\n  cacheLocation: cachePath,\n});\n\nconst results = await eslint.lintFiles(patterns);\n```\n\nUsing an explicit central config makes the result independent of the target repository's ESLint setup. The config's `files` and `ignores` entries define supported file types and exclusions. Because the config imports plugin objects itself, plugin resolution starts from `toolkit/rules/`, where those dependencies are installed.\n\nInstall it once with the chosen package manager's link command, for example from `toolkit/rules/`:\n\n```bash\nnpm install\nnpm link\n```\n\nThat puts `rules` on the global npm executable path. A repository-local `install` script could instead create `~/bin/rules` as a symlink to `bin/rules.mjs`; this matches the current shell `PATH` and avoids depending on npm's global-bin configuration.\n\nAdvantages:\n\n- It works even when the target repository has no ESLint dependency or config.\n- Every repository gets the same ESLint, parser, plugin, and rule versions.\n- Adding a second JavaScript-based tool is a small adapter, not a new installation model.\n- Debugging is straightforward because one package owns the whole lint process.\n\nCosts:\n\n- TypeScript and framework support must be declared centrally. A new file type may require another parser or plugin in this package.\n- The central rules replace the target's ESLint config unless an explicit opt-in merge mode is added.\n- One ESLint version may not suit old repositories forever. Presets such as `modern` and `legacy` may eventually be needed.\n\nThis is my recommendation. It gives `rules path/to/project` predictable behavior and has the fewest resolution traps.\n\n## Proposal 2: use each target repository's ESLint\n\nKeep the CLI and custom rules in `toolkit/rules/`, but load ESLint from the target repository. The wrapper resolves `\u003ctarget\u003e/node_modules/eslint`, imports its `ESLint` class, and adds the central plugin and rules through `overrideConfig`.\n\n```text\ntoolkit/rules/\n├── package.json\n├── bin/rules.mjs\n└── eslint/\n    ├── overlay.mjs\n    ├── plugin.mjs\n    └── rules/\n```\n\nThe default mode would preserve the repository's own flat config and append the central rules:\n\n```bash\nrules path/to/project\nrules check path/to/project --project-config\n```\n\nAn isolated mode could skip target config lookup and apply only the central config:\n\n```bash\nrules check path/to/project --isolated\n```\n\n`rules doctor` becomes important in this design. It should print the resolved ESLint package path and version, whether a target config was found, and which central preset was appended.\n\nAdvantages:\n\n- A repository keeps its own language, framework, generated-file, and monorepo settings.\n- There is no second ESLint installation when every target already has one.\n- The central package can focus on custom policy rather than recreating each project's complete lint setup.\n\nCosts:\n\n- `rules` cannot lint a repository that has no installed ESLint unless a bundled fallback is added.\n- Different target ESLint versions can interpret the same overlay differently. Supporting ESLint 8, 9, and 10 would require an explicit compatibility policy and tests.\n- Old configuration formats and flat config do not compose cleanly.\n- A target can disable or conflict with central rules unless the merge order is carefully enforced.\n- Loading code from an arbitrary target's config means running that repository's JavaScript. That is normal ESLint behavior, but it should be stated clearly.\n\nChoose this when the real goal is \"apply my extra rules on top of each repository's established lint setup.\" It is weaker when the goal is one identical lint policy everywhere.\n\n## Proposal 3: a Go orchestrator with tool adapters\n\nAdd a separate Go command under `toolkit/rules/cmd/rules/`. It owns argument parsing, target resolution, process execution, output ordering, and aggregate exit status. ESLint remains a Node adapter with its own private dependencies.\n\n```text\ntoolkit/rules/\n├── cmd/rules/\n│   └── main.go\n├── tools.json\n└── tools/\n    └── eslint/\n        ├── package.json\n        ├── package-lock.json\n        ├── run.mjs\n        ├── config.mjs\n        └── rules/\n```\n\n`tools.json` declares enabled adapters and their capabilities. For example, ESLint supports both `check` and `fix`, while a future dependency audit might support only `check`. The Go process invokes adapters with a stable internal protocol such as:\n\n```text\nnode tools/eslint/run.mjs --mode check --target /absolute/project --format stylish\n```\n\nThe external CLI remains unchanged:\n\n```bash\nrules path/to/project\nrules fix path/to/project\nrules tool eslint path/to/project\n```\n\nAn installer builds the binary into `toolkit/rules/.build/rules` and links it to `~/bin/rules`. The binary locates `tools.json` and adapters relative to its resolved executable path. Moving the dotfiles checkout requires rerunning the installer, just as moving the current repository requires rerunning its symlink reconciler.\n\nAdvantages:\n\n- Go fits the existing repository and is good at running several tools, handling signals, and combining exit statuses.\n- Each tool can use its native runtime and dependency set behind one stable command.\n- The orchestration layer can later add parallel execution, per-tool timeouts, machine-readable output, and a manifest without rewriting every adapter.\n\nCosts:\n\n- The first release uses two languages and two installation steps to run one tool.\n- The Go layer does not remove the need for Node or an ESLint package.\n- Adapter protocols, manifest validation, and combined output are extra code that Proposal 1 does not need.\n- Resource discovery after installation needs deliberate testing on macOS and Linux.\n\nChoose this only if several unlike tools are expected soon. With ESLint alone, it is more machinery than the problem warrants.\n\n## Recommendation and first cut\n\nStart with Proposal 1. Keep the CLI dispatcher separate from the ESLint adapter even though they live in one Node package. That boundary costs almost nothing and leaves a clean route to more tools.\n\nThe first cut should include:\n\n1. The common CLI contract above, with ESLint as the sole enabled tool.\n2. An authoritative flat config loaded by absolute path.\n3. Local rules exported as a small flat-config plugin.\n4. Central ownership of ESLint and plugin versions.\n5. `doctor`, because path, Node, config, and cache problems are otherwise annoying to diagnose.\n6. Tests that run the CLI against temporary JavaScript and TypeScript fixtures with no local ESLint installation.\n\nDelay config merging, tool manifests, and parallel execution until a concrete second tool or a repository that needs its own ESLint config forces those decisions.\n"};
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+      })[character]);
+    }
+
+    function inlineMarkdown(value) {
+      const code = [];
+      let output = escapeHtml(value).replace(/`([^`]+)`/g, (_, content) => {
+        const token = `@@INLINE_${code.length}@@`;
+        code.push(`<code>${content}</code>`);
+        return token;
+      });
+      output = output
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+      code.forEach((snippet, index) => {
+        output = output.replace(`@@INLINE_${index}@@`, snippet);
+      });
+      return output;
+    }
+
+    function renderMarkdown(markdown) {
+      const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+      const output = [];
+      let index = 0;
+
+      const isDivider = line => /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+      const cells = line => line.trim().replace(/^\||\|$/g, "").split("|").map(cell => cell.trim());
+
+      while (index < lines.length) {
+        const line = lines[index];
+        if (!line.trim()) { index += 1; continue; }
+
+        const fence = line.match(/^```([^\s]*)\s*$/);
+        if (fence) {
+          const language = fence[1];
+          const body = [];
+          index += 1;
+          while (index < lines.length && !/^```\s*$/.test(lines[index])) {
+            body.push(lines[index]);
+            index += 1;
+          }
+          index += 1;
+          output.push(`<pre><code${language ? ` class="language-${escapeHtml(language)}"` : ""}>${escapeHtml(body.join("\n"))}</code></pre>`);
+          continue;
+        }
+
+        const heading = line.match(/^(#{1,4})\s+(.+)$/);
+        if (heading) {
+          const level = heading[1].length;
+          output.push(`<h${level}>${inlineMarkdown(heading[2])}</h${level}>`);
+          index += 1;
+          continue;
+        }
+
+        if (index + 1 < lines.length && line.includes("|") && isDivider(lines[index + 1])) {
+          const headers = cells(line);
+          index += 2;
+          const rows = [];
+          while (index < lines.length && lines[index].includes("|") && lines[index].trim()) {
+            rows.push(cells(lines[index]));
+            index += 1;
+          }
+          output.push(`<table><thead><tr>${headers.map(cell => `<th>${inlineMarkdown(cell)}</th>`).join("")}</tr></thead><tbody>${rows.map(row => `<tr>${row.map(cell => `<td>${inlineMarkdown(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+          continue;
+        }
+
+        if (/^[-*]\s+/.test(line)) {
+          const items = [];
+          while (index < lines.length && /^[-*]\s+/.test(lines[index])) {
+            items.push(lines[index].replace(/^[-*]\s+/, ""));
+            index += 1;
+          }
+          output.push(`<ul>${items.map(item => `<li>${inlineMarkdown(item)}</li>`).join("")}</ul>`);
+          continue;
+        }
+
+        if (/^\d+\.\s+/.test(line)) {
+          const items = [];
+          while (index < lines.length && /^\d+\.\s+/.test(lines[index])) {
+            items.push(lines[index].replace(/^\d+\.\s+/, ""));
+            index += 1;
+          }
+          output.push(`<ol>${items.map(item => `<li>${inlineMarkdown(item)}</li>`).join("")}</ol>`);
+          continue;
+        }
+
+        const paragraph = [line.trim()];
+        index += 1;
+        while (index < lines.length && lines[index].trim() && !/^(#{1,4})\s+/.test(lines[index]) && !/^```/.test(lines[index]) && !/^[-*]\s+/.test(lines[index]) && !/^\d+\.\s+/.test(lines[index])) {
+          if (index + 1 < lines.length && lines[index].includes("|") && isDivider(lines[index + 1])) break;
+          paragraph.push(lines[index].trim());
+          index += 1;
+        }
+        output.push(`<p>${inlineMarkdown(paragraph.join(" "))}</p>`);
+      }
+
+      return output.join("\n");
+    }
+
+    function slugify(value, index) {
+      const base = value.toLowerCase().replace(/<[^>]+>/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      return `${base || "section"}-${index + 1}`;
+    }
+
+    document.querySelectorAll("[data-markdown]").forEach(report => {
+      const key = report.dataset.markdown;
+      report.innerHTML = renderMarkdown(reports[key]);
+      const panel = report.closest(".report-panel");
+      const nav = panel.querySelector(".report-nav");
+      const headings = [...report.querySelectorAll("h2")];
+      nav.innerHTML = `<strong>In this report</strong>${headings.map((heading, index) => {
+        heading.id = `${key}-${slugify(heading.textContent, index)}`;
+        return `<a href="#${heading.id}">${heading.textContent}</a>`;
+      }).join("")}`;
+    });
+
+    const tabs = [...document.querySelectorAll('[role="tab"]')];
+
+    function activateReport(key, updateHash = true) {
+      tabs.forEach(tab => {
+        const active = tab.dataset.report === key;
+        tab.setAttribute("aria-selected", String(active));
+        tab.tabIndex = active ? 0 : -1;
+      });
+      document.querySelectorAll(".report-panel").forEach(panel => {
+        const active = panel.id === `panel-${key}`;
+        panel.classList.toggle("is-active", active);
+        panel.hidden = !active;
+      });
+      if (updateHash) history.replaceState(null, "", `#${key}`);
+    }
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => activateReport(tab.dataset.report));
+      tab.addEventListener("keydown", event => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        let next = index;
+        if (event.key === "ArrowLeft") next = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+        if (event.key === "Home") next = 0;
+        if (event.key === "End") next = tabs.length - 1;
+        tabs[next].focus();
+        activateReport(tabs[next].dataset.report);
+      });
+    });
+
+    document.querySelectorAll("[data-copy]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const original = button.textContent;
+        try {
+          await navigator.clipboard.writeText(reports[button.dataset.copy]);
+          button.textContent = "Copied";
+        } catch {
+          button.textContent = "Copy unavailable";
+        }
+        setTimeout(() => { button.textContent = original; }, 1600);
+      });
+    });
+
+    document.querySelectorAll("[data-print]").forEach(button => button.addEventListener("click", () => window.print()));
+
+    const initial = location.hash.slice(1);
+    if (tabs.some(tab => tab.dataset.report === initial)) activateReport(initial, false);
+  </script>
+</body>
+</html>
