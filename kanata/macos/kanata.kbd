@@ -1,11 +1,6 @@
 ;; defsrc is still necessary
 (defcfg
   process-unmapped-keys yes
-  macos-dev-names-include (
-    "Apple Internal Keyboard / Trackpad"
-    "Keychron K2"
-    "SONSEI"
-  )
 )
 
 (defsrc

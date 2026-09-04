@@ -53,7 +53,7 @@
     </dict>
 
     <key>StandardOutPath</key>
-    <string>/var/log/kanata.log</string>
+    <string>/dev/null</string>
 
     <key>StandardErrorPath</key>
     <string>/var/log/kanata.log</string>
