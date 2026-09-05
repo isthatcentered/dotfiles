@@ -1,0 +1,15 @@
+{
+  "codexCommand": "codex",
+  "claudeCommand": "claude",
+  "reviewers": [
+    {"id": "codex-astra", "provider": "codex", "model": "gpt-6-astra", "effort": "high"},
+    {"id": "codex-sol", "provider": "codex", "model": "gpt-5.6-sol", "effort": "high"},
+    {"id": "claude-opus", "provider": "claude", "model": "opus", "effort": "high"}
+  ],
+  "consolidator": {"id": "consolidator", "provider": "codex", "model": "gpt-5.6-sol", "effort": "medium"},
+  "startupTimeoutSeconds": 120,
+  "runTimeoutSeconds": 1800,
+  "maxAttempts": 2,
+  "browserCommand": "auto",
+  "browserTimeoutSeconds": 45
+}

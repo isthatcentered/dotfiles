@@ -1,0 +1,4 @@
+interface:
+  display_name: "Adversarial Code Review 2"
+  short_description: "Scripted reviews with explicit failures and a review UI"
+  default_prompt: "Use $adversarial-code-review-2 to review the current branch and return the HTML report."

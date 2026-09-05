@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adversarial review</title>
+<style>
+:root{--paper:#f3efe6;--ink:#171914;--muted:#66665b;--rule:#c9c2b3;--red:#9d321f;--green:#315f4a;--amber:#78540d;--code:#151b18;--code-ink:#e5e8df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.55 Georgia,serif}button,textarea{font:inherit}button{cursor:pointer}button:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #b16c30;outline-offset:3px}button{border:1px solid var(--rule);padding:7px 11px;background:transparent;color:inherit}button:hover{border-color:currentColor}button:disabled{opacity:.5;cursor:default}button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.layout{display:grid;grid-template-columns:minmax(0,54%) minmax(0,46%);min-height:100vh}main{padding:35px clamp(22px,4vw,65px) 75px;min-width:0}.kicker,.label,.meta,button,.where,.code-head,.tabs,footer{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.kicker{font-size:11px;letter-spacing:.13em;text-transform:uppercase;border-top:5px solid var(--ink);border-bottom:1px solid var(--rule);padding:12px 0;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}h1{font-weight:500;font-size:clamp(46px,5vw,78px);line-height:.95;letter-spacing:-.05em;margin:27px 0 24px}h2{font-weight:500;font-size:26px;margin:0 0 16px}h3{font-size:23px;font-weight:500;line-height:1.2;margin:10px 0}p{margin:12px 0}.label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}.scope{font:12px/1.7 ui-monospace,monospace;overflow-wrap:anywhere;color:var(--muted)}.banner{padding:18px 0;border-top:3px double var(--rule);border-bottom:3px double var(--rule);margin:25px 0}.banner strong{display:block;font-size:23px;font-weight:500}.banner[data-status=partial]{border-color:var(--amber)}.banner[data-status=failed]{border-color:var(--red)}.notice{color:var(--red);font-size:14px;overflow-wrap:anywhere}.reviewers{display:grid;gap:10px;margin:20px 0}.reviewer{border-bottom:1px solid var(--rule);padding:10px 0}.reviewer summary{cursor:pointer;font:12px/1.7 ui-monospace,monospace;display:list-item}.reviewer p,.reviewer li{font-size:14px}.reviewer pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;max-height:240px;overflow:auto}.section{margin-top:35px}.finding{border:1px solid var(--rule);background:#faf7f0;padding:22px;margin-bottom:18px;overflow-wrap:anywhere}.finding.selected{border-left:4px solid var(--red);padding-left:19px}.finding.resolved{background:transparent}.meta{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:var(--muted)}.meta span{border:1px solid var(--rule);padding:3px 7px}.where{display:block;text-align:left;font-size:11px;width:100%;overflow-wrap:anywhere;margin:15px 0}.explanation{border-top:1px solid var(--rule);padding-top:12px;margin-top:20px}.explanation h4{font-size:16px;margin:20px 0 5px}.explanation p,.explanation li{font-size:15px;white-space:pre-wrap}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.actions button{font-size:10px;text-transform:uppercase;letter-spacing:.03em}label.comment{display:block;margin-top:20px}textarea{display:block;width:100%;min-height:75px;border:1px solid var(--rule);background:var(--paper);color:var(--ink);padding:9px;resize:vertical}.empty{padding:25px;border:1px dashed var(--rule);font-style:italic;color:var(--muted)}aside{position:sticky;top:0;height:100vh;min-width:0;background:var(--code);color:var(--code-ink);display:flex;flex-direction:column;border-left:1px solid #080c09}.code-head{padding:23px 24px 14px;border-bottom:1px solid #384039;font-size:12px;overflow-wrap:anywhere}.code-head strong{display:block;margin-top:9px}.tabs{display:flex;flex-wrap:wrap;gap:8px;padding:15px 24px;font-size:11px}.tabs button{border-color:#59665c}.tabs button[aria-pressed=true]{background:#e5e8df;color:#151b18}.code-block{flex:1;min-height:0;overflow:auto;padding:0 18px 20px}.code-block pre{margin:0;tab-size:2;font:12px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre;min-width:max-content}.line{display:block;padding-right:18px}.line.target{background:#3c3723;box-shadow:inset 3px 0 #d5b465}.number{display:inline-block;width:5em;padding:0 12px;text-align:right;color:#87988a;user-select:none}.tok-comment{color:#98a89c;font-style:italic}.tok-string{color:#d8c47f}.tok-keyword{color:#dfa4c5}.code-foot{font:11px/1.5 ui-monospace,monospace;padding:14px 24px;border-top:1px solid #384039;overflow-wrap:anywhere}.absent{padding:25px;color:#b7c2b9}.muted{color:var(--muted)}footer{font-size:11px;border-top:1px solid var(--rule);margin-top:30px;padding-top:15px;overflow-wrap:anywhere}#feedback{min-height:24px;font-size:13px}ul,ol{padding-left:22px}details.execution{margin-top:18px}details.execution summary{cursor:pointer}details.execution pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}aside{position:relative;height:65vh;min-height:340px;border-left:0}main{padding:25px 22px 40px}.kicker{font-size:10px}}@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+<div class="layout">
+<main>
+  <header><div class="kicker"><span>Adversarial code review</span><span id="edition"></span></div><h1>The Review<br>Ledger</h1><div id="scope" class="scope"></div></header>
+  <section id="banner" class="banner" aria-label="Review completion"></section>
+  <div id="warnings"></div>
+  <section class="section"><h2>Review desk</h2><div id="reviewers" class="reviewers"></div></section>
+  <section class="section" id="changes-section"><h2>What changed</h2><ul id="changes"></ul></section>
+  <section class="section"><h2 id="findings-title">Open findings</h2><div id="open-list"></div></section>
+  <section class="section"><h2>Done or rejected</h2><div id="resolved-list"></div></section>
+  <div id="feedback" role="status" aria-live="polite"></div>
+  <section id="limits-section" class="section"><h2>Evidence and limits</h2><ul id="limits"></ul></section>
+  <details id="excluded-section" class="execution"><summary>Findings excluded during consolidation</summary><div id="excluded"></div></details>
+  <footer id="footer"></footer>
+</main>
+<aside aria-label="Revision-specific source viewer">
+  <div class="code-head"><span id="code-revision">Source at review time</span><strong id="code-title">Select a finding</strong></div>
+  <div class="tabs"><button id="before" type="button" aria-pressed="true">Before</button><button id="after" type="button" aria-pressed="false">After</button><button id="full-file" type="button" aria-pressed="false">Full file</button></div>
+  <div id="supporting" class="tabs"></div>
+  <div id="code-block" class="code-block"><p class="absent">No finding selected.</p></div>
+  <div id="code-foot" class="code-foot">Each source view uses its recorded commit and line range.</div>
+</aside>
+</div>
+<script id="report-data" type="application/json">__REPORT_DATA__</script>
+<script>
+'use strict';
+const report = JSON.parse(document.getElementById('report-data').textContent);
+const reportKey = 'adversarial-review-2:' + report.runId;
+const $ = id => document.getElementById(id);
+function el(tag, text, className) { const node=document.createElement(tag); if(text!==undefined)node.textContent=text;if(className)node.className=className;return node; }
+function list(parent, items) { for(const item of items)parent.append(el('li',item)); }
+function notice(text) { $('feedback').textContent=text; }
+let state={};
+try { const saved=JSON.parse(localStorage.getItem(reportKey)||'{}'); if(saved&&typeof saved==='object'&&!Array.isArray(saved))state=saved; } catch { notice('Browser storage is unavailable; comments and decisions may not persist.'); }
+function stateFor(id) { const saved=state[id]; return {status:['open','done','rejected'].includes(saved?.status)?saved.status:'open',comment:typeof saved?.comment==='string'?saved.comment:''}; }
+function persist() {try{localStorage.setItem(reportKey,JSON.stringify(state));}catch{notice('Could not save in this browser. Copy your finding and comment before closing.');}}
+let selected=report.findings[0]?.finding.id||null;
+let side='after', full=false, supporting=null;
+function locationText(location) { return `${location.path} @ ${location.revision} · lines ${location.startLine}–${location.endLine}`; }
+function sideText(value) {return value.kind==='absent'?(value.reason==='added'?'New code — no before location or excerpt':'Deleted — no after location or excerpt'):locationText(value.location)+'\n'+value.excerpt;}
+function findingText(entry) {
+ const f=entry.finding,r=f.reproduction;
+ return [f.title,`Severity: ${f.severity.value} — ${f.severity.reasoning}`,`Likelihood: ${f.likelihood.value} — ${f.likelihood.reasoning}`,
+  'Problematic location'+(f.problematicLocation.kind==='deletion'?' (deletion)':'')+': '+locationText(f.problematicLocation.location),
+  'What goes wrong\n'+f.whatGoesWrong,'Before\n'+sideText(f.before),'After\n'+sideText(f.after),'Why it happens\n'+f.whyItHappens,
+  'Supporting locations\n'+f.supportingLocations.map(locationText).join('\n'),'Prerequisites\n'+(r.prerequisites.join('\n')||'None'),
+  'How to reproduce\n'+r.steps.map((step,i)=>`${i+1}. ${step}`).join('\n'),'Expected: '+r.expected,
+  (r.basis==='observed'?'Actual: ':'Predicted actual: ')+r.actual,'Evidence\n'+f.evidence.join('\n'),'Limits\n'+f.limits.join('\n'),
+  'Reported by '+new Set(entry.sources.map(s=>s.reviewer)).size+' distinct reviewers: '+entry.sources.map(s=>s.reviewer+' / '+s.findingId).join(', '),
+  'Disagreements\n'+entry.disagreements.map(d=>d.reviewer+': '+d.explanation).join('\n'),
+  'Comment: '+stateFor(f.id).comment].join('\n\n');
+}
+async function copyFinding(entry) {
+ const text=findingText(entry);
+ try {await navigator.clipboard.writeText(text);notice('Complete finding copied.');}
+ catch {const area=el('textarea');area.value=text;document.body.append(area);area.select();let copied=false;try{copied=document.execCommand('copy');}catch{}area.remove();notice(copied?'Complete finding copied.':'Copy unavailable. Select the finding text and copy manually.');}
+}
+function button(text, action, name) {const b=el('button',text);b.type='button';if(name)b.dataset.action=name;b.onclick=action;return b;}
+function setStatus(id,status){state[id]={...stateFor(id),status};persist();renderFindings();}
+function paragraph(parent,title,text){parent.append(el('h4',title),el('p',text));}
+function findingCard(entry){
+ const f=entry.finding,current=stateFor(f.id),active=selected===f.id;
+ const article=el('article',undefined,'finding'+(active?' selected':'')+(current.status!=='open'?' resolved':''));article.dataset.findingId=f.id;
+ article.append(el('div',current.status.toUpperCase(),'label'),el('h3',f.title));
+ const meta=el('div',undefined,'meta');for(const text of ['severity · '+f.severity.value,'likelihood · '+f.likelihood.value,'reported by '+new Set(entry.sources.map(s=>s.reviewer)).size+' reviewers'])meta.append(el('span',text));article.append(meta);
+ const where=button((f.problematicLocation.kind==='deletion'?'Deletion · ':'')+locationText(f.problematicLocation.location),()=>{selected=f.id;supporting=null;side=f.after.kind==='absent'?'before':'after';renderFindings();renderCode();},'select');where.className='where';where.setAttribute('aria-expanded',String(active));article.append(where,el('p',f.whatGoesWrong));
+ if(active){const details=el('div',undefined,'explanation');paragraph(details,'Severity',f.severity.reasoning);paragraph(details,'Likelihood',f.likelihood.reasoning);paragraph(details,'Why it happens',f.whyItHappens);paragraph(details,'Prerequisites',f.reproduction.prerequisites.join('\n')||'None');details.append(el('h4','How to reproduce'));const steps=el('ol');list(steps,f.reproduction.steps);details.append(steps);paragraph(details,'Expected',f.reproduction.expected);paragraph(details,f.reproduction.basis==='observed'?'Actual':'Predicted actual',f.reproduction.actual);paragraph(details,'Evidence',f.evidence.join('\n'));paragraph(details,'Limits',f.limits.join('\n')||'None reported');for(const d of entry.disagreements)paragraph(details,'Disagreement · '+d.reviewer,d.explanation);article.append(details);}
+ const label=el('label','Your comment · saved in this browser','label comment');label.htmlFor='comment-'+f.id;const comment=el('textarea');comment.id=label.htmlFor;comment.value=current.comment;comment.oninput=()=>{state[f.id]={...stateFor(f.id),comment:comment.value};persist();};article.append(label,comment);
+ const actions=el('div',undefined,'actions');if(current.status!=='done')actions.append(button('Mark done',()=>setStatus(f.id,'done'),'done'));if(current.status!=='rejected')actions.append(button('Reject',()=>setStatus(f.id,'rejected'),'reject'));if(current.status!=='open')actions.append(button('Reopen',()=>setStatus(f.id,'open'),'reopen'));actions.append(button('Copy finding',()=>copyFinding(entry),'copy'));article.append(actions);return article;
+}
+function renderFindings(){
+ $('open-list').replaceChildren();$('resolved-list').replaceChildren();for(const entry of report.findings){const id=stateFor(entry.finding.id).status==='open'?'open-list':'resolved-list';$(id).append(findingCard(entry));}
+ if(!$('open-list').children.length){let text='All findings have been triaged.';if(!report.findings.length)text=report.reviewStatus==='failed'?'No review conclusion is available.':report.consolidationStatus==='failed'?'No findings in the available reports. Consolidation failed.':'No supported findings identified'+(report.reviewStatus==='partial'?' in the available reviews.':'.');$('open-list').append(el('p',text,'empty'));}
+ if(!$('resolved-list').children.length)$('resolved-list').append(el('p','Done and rejected findings appear here.','empty'));
+}
+function highlight(text){
+ const fragment=document.createDocumentFragment();const tokens=/(\/\/.*$|#.*$|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|\b(?:import|export|from|type|interface|const|let|return|yield|function|readonly|never|void|new|as|async|await|if|else|class|def|raise|for|while|try|except|true|false|null|None|True|False)\b)/g;let cursor=0;
+ for(const match of text.matchAll(tokens)){fragment.append(document.createTextNode(text.slice(cursor,match.index)));const token=match[0];fragment.append(el('span',token,token.startsWith('//')||token.startsWith('#')?'tok-comment':/^["'`]/.test(token)?'tok-string':'tok-keyword'));cursor=match.index+token.length;}fragment.append(document.createTextNode(text.slice(cursor)));return fragment;
+}
+function renderCode(){
+ const entry=report.findings.find(e=>e.finding.id===selected);$('code-block').replaceChildren();$('supporting').replaceChildren();for(const name of ['before','after','full-file'])$(name).disabled=!entry;
+ if(!entry){$('code-block').append(el('p','No finding selected.','absent'));return;}
+ $('before').setAttribute('aria-pressed',String(!supporting&&side==='before'));$('after').setAttribute('aria-pressed',String(!supporting&&side==='after'));$('full-file').setAttribute('aria-pressed',String(full));
+ entry.finding.supportingLocations.forEach((location,i)=>$('supporting').append(button('Supporting source '+(i+1),()=>{supporting=location;full=true;renderCode();})));
+ const value=supporting?{kind:'present',location:supporting}:entry.finding[side];
+ if(value.kind==='absent'){$('code-title').textContent=side==='before'?'New code':'Deleted code';$('code-revision').textContent=side==='before'?'Before · base':'After · HEAD';$('code-block').append(el('p',sideText(value),'absent'));$('code-foot').textContent='This side has no source location.';return;}
+ const location=value.location,file=report.sourceFiles.find(f=>f.revision===location.revision&&f.path===location.path);$('code-title').textContent=location.path;$('code-revision').textContent=(supporting?'Supporting source':side==='before'?'Before · base':'After · HEAD')+' @ '+location.revision;$('code-foot').textContent=`Lines ${location.startLine}–${location.endLine} highlighted · exact source embedded at review time`;
+ if(!file){$('code-block').append(el('p','Source unavailable; see report limits.','absent'));return;}
+ const lines=file.content.split('\n');if(lines.at(-1)==='')lines.pop();const pre=el('pre'),code=el('code');pre.append(code);const first=full?1:location.startLine,last=full?lines.length:location.endLine;
+ for(let n=first;n<=last;n++){const line=el('span',undefined,'line'+(n>=location.startLine&&n<=location.endLine?' target':''));line.dataset.line=String(n);const number=el('span',String(n),'number');number.setAttribute('aria-hidden','true');line.append(number,highlight(lines[n-1]));code.append(line);}$('code-block').append(pre);const target=code.querySelector('.target');if(full&&target)$('code-block').scrollTop=Math.max(0,target.offsetTop-160);
+}
+const completed=report.reviewers.filter(r=>r.status==='completed').length;
+document.title='Adversarial review · '+report.request.scope.headSha.slice(0,9);
+$('edition').textContent=report.runId;
+$('scope').textContent=report.request.scope.requested+'\nBase '+report.request.scope.baseSha+' → HEAD '+report.request.scope.headSha;
+$('banner').dataset.status=report.reviewStatus;
+$('banner').append(el('strong',(report.reviewStatus==='complete'?'Review complete':report.reviewStatus==='partial'?'Review incomplete':'Review failed')+' — '+completed+' of '+report.reviewers.length+' reviewers completed.'));
+$('banner').append(el('p',report.reviewStatus==='failed'?'No reviewer supplied a usable report. No review conclusion is available.':report.findings.length+' '+(report.consolidationStatus==='completed'?'consolidated':'unconsolidated')+' findings.'));
+for(const warning of report.warnings)$('warnings').append(el('p',warning,'notice'));
+for(const reviewer of report.reviewers){const details=el('details',undefined,'reviewer');details.append(el('summary',reviewer.reviewer+' · '+reviewer.status.toUpperCase()+' · '+reviewer.requestedModel+' / '+reviewer.effort));if(reviewer.failure)details.append(el('p',reviewer.failure.message,'notice'));if(reviewer.report){details.append(el('p',reviewer.report.findings.length+' raw findings'));const inspected=el('ul');list(inspected,reviewer.report.coverage.inspected);details.append(inspected);for(const check of reviewer.report.coverage.checks)details.append(el('p',check.outcome+': '+check.description+' — '+check.details));for(const limit of reviewer.report.coverage.limits)details.append(el('p','Limit: '+limit));}for(const attempt of reviewer.attempts){details.append(el('p','Attempt '+attempt.number+' · '+(attempt.failure?attempt.failure.kind:'completed')+' · '+attempt.startedAt+' → '+attempt.finishedAt));if(attempt.failure)details.append(el('pre',attempt.failure.message));details.append(el('p','Events: '+(attempt.eventsPath||'not started')+'\nStderr: '+(attempt.stderrPath||'not started')));}$('reviewers').append(details);}
+list($('changes'),report.whatChanged);$('changes-section').hidden=!report.whatChanged.length;list($('limits'),report.limits);$('limits-section').hidden=!report.limits.length;
+for(const excluded of report.excluded)$('excluded').append(el('p',excluded.source.reviewer+' / '+excluded.source.findingId+': '+excluded.reason));$('excluded-section').hidden=!report.excluded.length;
+$('findings-title').textContent=report.consolidationStatus==='failed'?'Open findings · unconsolidated':'Open findings';
+$('footer').textContent='Pinned commits only · local changes excluded. Decisions and comments are stored in this browser. '+(report.verification?'Browser verification: '+report.verification.status+'. '+report.verification.details:'Browser verification pending.');
+$('before').onclick=()=>{side='before';supporting=null;renderCode();};$('after').onclick=()=>{side='after';supporting=null;renderCode();};$('full-file').onclick=()=>{full=!full;renderCode();};
+renderFindings();renderCode();
+</script>
+</body>
+</html>
