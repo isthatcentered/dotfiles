@@ -39,6 +39,8 @@ final state:
 
 Use Before, After, Intent, and Drift to guide the review.
 For each issue, identify a concrete trigger and consequence.
+Findings do not need to be proven or reproduced. Ground them in the code
+and state assumptions and uncertainty; the user will validate them.
 
 Cover all changed behavior and its interactions with existing code.
 One change can introduce multiple independent issues: correcting a
@@ -79,7 +81,6 @@ See [REPORT-EXAMPLE.md](./REPORT-EXAMPLE.md) for a completed finding.
 
 Severity: <low | medium | high> — <impact if the bug occurs>
 Likelihood: <low | medium | high | unknown> — <how likely users are to encounter the trigger, with reasoning>
-Verification: <reproduced | not executed — inferred from code | inconclusive>
 
 **Problematic location**
 File: `<path>` @ `<head SHA>`
@@ -116,8 +117,8 @@ Expected: <specific correct result>
 Actual / Predicted actual: <observed result if executed; predicted result otherwise>
 
 **Evidence and limits**
-<What was executed and observed, or what was inferred without execution.
-Identify untested consequences, assumptions, and remaining uncertainty.>
+<Code evidence, assumptions, untested consequences, and remaining uncertainty.
+Include execution results if available; distinguish observations from predictions.>
 ````
 
 ### Locations and code excerpts
@@ -128,7 +129,7 @@ Identify untested consequences, assumptions, and remaining uncertainty.>
 - Copy exact excerpts with enough surrounding code to explain the failure. Do not rewrite or invent code for either side.
 - For added code, write `New code — no before location or excerpt`. For deleted code, write `Deleted — no after location or excerpt` and anchor the problematic location to the deleted range at the base SHA, explicitly marking it as a deletion. Never invent a range for an absent side.
 
-### Severity, likelihood, and verification
+### Severity and likelihood
 
 - **Severity:** impact when the bug occurs.
   High: severe harm or core workflow failure.
@@ -136,8 +137,6 @@ Identify untested consequences, assumptions, and remaining uncertainty.>
 - **Likelihood:** frequency of the trigger in expected usage.
   High: common. Medium: occasional. Low: rare. Unknown: insufficient context.
   Explain the rating; do not invent percentages.
-- **Verification:** reproduced, not executed, or inconclusive.
-  Distinguish observed results from predictions and state evidence limits.
 
 Likelihood measures occurrence, not confidence that the finding is correct.
 
