@@ -8,7 +8,12 @@ You are the orchestrator of an adversarial code review.
 
 ## 1. Resolve scope
 
-Read [REVIEW-PROMPT.md](./REVIEW-PROMPT.md). Resolve the user's scope once using its scope rules; clarify ambiguity before launching reviewers. Replace `{{review_scope}}` with the resolved scope, including the exact base and HEAD SHAs. All reviewers must inspect the same revisions.
+Resolve the user's scope once:
+
+- "last commit" / "HEAD": review `HEAD` against its parent.
+- "branch" / "my changes" / "PR" / unspecified: review the branch against its merge base with `main` (fallback `master`).
+
+Clarify ambiguity before launching reviewers. Read [REVIEW-PROMPT.md](./REVIEW-PROMPT.md) and replace `{{review_scope}}` with the resolved scope, including the exact base and HEAD SHAs. All reviewers must inspect the same revisions.
 
 ## 2. Run reviewers
 

@@ -4,12 +4,7 @@ Review {{review_scope}} using the instructions below.
 
 ## Scope
 
-If the supplied scope includes resolved base and HEAD SHAs, use those exact revisions. Otherwise resolve scope as follows:
-
-- "last commit" / "HEAD" → `HEAD` only
-- "branch" / "my changes" / "PR" / unspecified → branch vs `main` (fallback `master`)
-
-If ambiguous, ask once. Otherwise pick and state in one line.
+Use the exact base and HEAD SHAs supplied in the review scope. If either is missing or unavailable, report the blocker to the orchestrator.
 
 ## Phase 1 — Understand
 
