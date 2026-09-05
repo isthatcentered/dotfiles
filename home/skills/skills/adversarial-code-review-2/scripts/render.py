@@ -10,17 +10,20 @@ import subprocess
 import tempfile
 import time
 import uuid
+from migrate import upgrade_report
 
 SKILL = Path(__file__).resolve().parent.parent
 
 
 def render_report(report, destination):
+    report = upgrade_report(report)
     # Escape < so source such as </script> cannot close the inert JSON element.
     data = json.dumps(report, ensure_ascii=True).replace("<", "\\u003c").replace("&", "\\u0026")
     template = (SKILL / "assets/report.html").read_text()
     if template.count("__REPORT_DATA__") != 1:
         raise ValueError("Report template must contain exactly one data slot")
-    Path(destination).write_text(template.replace("__REPORT_DATA__", data))
+    script = (SKILL / "assets/report.js").read_text()
+    Path(destination).write_text(template.replace("__REPORT_DATA__", data).replace("__REPORT_SCRIPT__", script))
 
 
 def browser_command(config):

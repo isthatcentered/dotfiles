@@ -15,3 +15,10 @@ whatChanged: completion and failures are supplied separately by the script.
 
 Only inspect the supplied reports and, if necessary, the pinned source revisions
 to resolve conflicting evidence. Do not run additional reviewers.
+
+Preserve complementary code views, labeled ranges, structured evidence, supplied
+context, and unresolved assumptions from the input findings. Remap source
+evidence codeViewId references if merging view IDs. Do not silently upgrade
+needs-verification to supported; explain the evidence that resolved each input
+assumption or preserve it with a concrete verification step. Preserve distinct
+before/after paths and revisions for every view, not only the primary location.

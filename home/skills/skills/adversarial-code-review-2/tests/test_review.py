@@ -6,11 +6,16 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
+import copy
+import threading
 
 SKILL = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL / "scripts"))
-from render import browser_command, verify_report
-from review import load_config, request_for
+from render import browser_command, verify_report, render_report
+from review import load_config, request_for, snapshot, git as read_git, Source, validate_consolidation
+from environment import resolve_environment, prepare_environment, capture_context
+from migrate import upgrade_report
 
 
 class ReviewTests(unittest.TestCase):
@@ -24,6 +29,7 @@ class ReviewTests(unittest.TestCase):
         self.git("config", "user.name", "Review Fixture")
         self.git("config", "user.email", "fixture@example.invalid")
         (self.repo / "app.py").write_text('value = "before"\nsecond = 2\n')
+        (self.repo / "hooks.py").write_text("header = 1\nquery = 2\ngap = 3\nstream = 4\nend = 5\n")
         (self.repo / "old.py").write_text('value = "rename me"\n')
         (self.repo / "deleted.py").write_text('value = "deleted"\n')
         self.git("add", ".")
@@ -31,6 +37,7 @@ class ReviewTests(unittest.TestCase):
         self.base = self.git("rev-parse", "HEAD")
         self.git("checkout", "-qb", "feature")
         (self.repo / "app.py").write_text('value = "</script><script>window.injected=true</script>"\nsecond = 3\n')
+        (self.repo / "hooks.py").write_text("header = 1\nquery = 20\ngap = 3\nstream = 40\nend = 5\n")
         (self.repo / "old.py").rename(self.repo / "new.py")
         (self.repo / "deleted.py").unlink()
         (self.repo / "added.py").write_text('value = "added"\n')
@@ -203,11 +210,136 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(original.split("## Phase 3 — Report")[0], current.split("## Phase 3 — Report")[0])
         self.assertEqual(original.split("### Severity and likelihood")[1], current.split("### Severity and likelihood")[1])
 
+    def test_context_snapshot_and_project_profile(self):
+        (self.repo / "design.md").write_text("Forced jobs may coexist with one ordinary job.")
+        profile = self.repo / ".agents/review-config.json"
+        profile.parent.mkdir()
+        data = json.loads(self.config.read_text())
+        data["context"] = {"intent": "Preserve ordering", "acceptedExceptions": ["Forced jobs may coexist"],
+                           "documents": [{"id": "design", "title": "Design decision", "path": "design.md"}]}
+        profile.write_text(json.dumps(data))
+        result = subprocess.run([sys.executable, str(SKILL / "scripts/review.py"), "--repo", str(self.repo),
+                                 "--scope", "branch"], capture_output=True, text=True, timeout=25,
+                                env={**os.environ, "MOCK_REVIEW_MODE": "multi"})
+        final = json.loads(result.stdout.strip().splitlines()[-1])
+        report = json.loads(Path(final["reportPath"]).with_name("report.json").read_text())
+        self.assertEqual(report["request"]["context"]["intent"], "Preserve ordering")
+        self.assertEqual(len(report["findings"]), 2)
+        self.assertTrue(any(e["kind"] == "document" for e in report["findings"][0]["finding"]["evidence"]))
+        (self.repo / "design.md").write_text("Changed later")
+        self.assertEqual(report["request"]["context"]["documents"][0]["content"], "Forced jobs may coexist with one ordinary job.")
+        config = load_config(None)
+        if browser_command(config):
+            checked = verify_report(Path(final["reportPath"]), config)
+            self.assertEqual(checked["status"], "passed", checked)
+
+    def test_dependency_copy_and_symlink_isolation(self):
+        (self.repo / ".gitignore").write_text("node_modules/\ncommon/temp/\n")
+        self.git("add", ".gitignore"); self.git("commit", "-qm", "dependency paths")
+        self.head = self.git("rev-parse", "HEAD")
+        package = self.repo / "common/temp/store/pkg"; package.mkdir(parents=True)
+        (package / "index.js").write_text("original package")
+        modules = self.repo / "node_modules"; modules.mkdir()
+        (modules / "pkg").symlink_to(package)
+        external = self.root / "external"; external.mkdir(); (external / "file").write_text("external")
+        (modules / "external").symlink_to(external)
+        clone = self.root / "clone"; snapshot(self.repo, clone, self.head)
+        plan = resolve_environment(self.repo, self.head, {}, read_git)
+        record, _ = prepare_environment(self.repo, clone, plan, self.root / "logs", threading.Event())
+        self.assertIn("node_modules", record["copied"])
+        self.assertIn("common/temp", record["copied"])
+        self.assertTrue((clone / "node_modules/pkg").resolve().is_relative_to(clone.resolve()))
+        (clone / "node_modules/pkg/index.js").write_text("worker writes")
+        self.assertEqual((package / "index.js").read_text(), "original package")
+        self.assertFalse((clone / "node_modules/external").exists())
+        self.assertTrue(any("External dependency symlink omitted" in limit for limit in record["limits"]))
+
+    def test_incompatible_dependencies_are_not_reused(self):
+        (self.repo / "package.json").write_text('{"name":"fixture"}\n')
+        (self.repo / ".gitignore").write_text("node_modules/\n")
+        self.git("add", "."); self.git("commit", "-qm", "manifest")
+        self.head = self.git("rev-parse", "HEAD")
+        (self.repo / "node_modules").mkdir()
+        (self.repo / "node_modules/file").write_text("installed")
+        (self.repo / "package.json").write_text('{"name":"changed"}\n')
+        plan = resolve_environment(self.repo, self.head, {}, read_git)
+        self.assertFalse(plan["copyPaths"])
+        self.assertTrue(any("manifests differ" in limit for limit in plan["limits"]))
+
+    def test_rush_runtime_selection_and_setup(self):
+        (self.repo / "rush.json").write_text('{"nodeSupportedVersionRange":">=24.18.0 <25.0.0"}\n')
+        self.git("add", "rush.json"); self.git("commit", "-qm", "runtime")
+        self.head = self.git("rev-parse", "HEAD")
+        nvm = self.root / "nvm"
+        for version in ("24.14.0", "24.18.0", "25.0.0"):
+            binary = nvm / "versions/node" / ("v" + version) / "bin/node"
+            binary.parent.mkdir(parents=True); binary.write_text("#!/usr/bin/env python3\nprint('v" + version + "')\n"); binary.chmod(0o755)
+        with patch.dict(os.environ, {"NVM_DIR": str(nvm)}):
+            plan = resolve_environment(self.repo, self.head, {"setupCommands": [[sys.executable, "-c", "from pathlib import Path; Path('prepared.txt').write_text('ready')"]]}, read_git)
+        self.assertEqual(plan["nodeVersion"], "v24.18.0")
+        clone = self.root / "clone"; snapshot(self.repo, clone, self.head)
+        record, env = prepare_environment(self.repo, clone, plan, self.root / "logs", threading.Event())
+        self.assertEqual(record["commands"][0]["exitCode"], 0)
+        self.assertEqual((clone / "prepared.txt").read_text(), "ready")
+        self.assertFalse((self.repo / "prepared.txt").exists())
+        self.assertTrue(env["PATH"].startswith(str(nvm / "versions/node/v24.18.0/bin")))
+
+    def test_bad_views_and_evidence_are_rejected(self):
+        _, _, report, _ = self.run_review("multi")
+        raw = report["reviewers"][0]["report"]
+        for mutation in ("range", "document", "external", "source", "assessment"):
+            value = copy.deepcopy(raw)
+            finding = value["findings"][0]
+            if mutation == "range": finding["codeViews"][1]["after"]["ranges"][1]["endLine"] = 999
+            if mutation == "document": finding["evidence"].append({"kind":"document", "label":"Missing", "explanation":"Unknown document", "documentId":"missing"})
+            if mutation == "external": next(e for e in finding["evidence"] if e["kind"] == "external")["url"] = "javascript:alert(1)"
+            if mutation == "source": finding["evidence"][0]["codeViewId"] = "missing"
+            if mutation == "assessment": finding["assessment"]["verificationSteps"] = []
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                Source(self.repo, report["request"]["scope"]).report(value, report["request"])
+
+    def test_legacy_report_migration(self):
+        _, _, report, run = self.run_review()
+        legacy = copy.deepcopy(report); legacy["schemaVersion"] = 1; legacy.pop("fileViews")
+        finding = legacy["findings"][0]["finding"]
+        view = finding.pop("codeViews")[0]
+        for name in ("before", "after"):
+            value = view[name]; span = value["ranges"][0]
+            finding[name] = {"kind":"present", "location":{"revision":value["revision"], "path":value["path"], "startLine":span["startLine"], "endLine":span["endLine"]}, "excerpt":span["excerpt"]}
+        finding["supportingLocations"] = [finding["after"]["location"]]
+        finding.pop("assessment"); finding["evidence"] = ["Original evidence"]
+        upgraded = upgrade_report(legacy)
+        self.assertEqual(upgraded["findings"][0]["finding"]["id"], finding["id"])
+        self.assertEqual(len(upgraded["findings"][0]["finding"]["codeViews"]), 2)
+        render_report(legacy, run / "legacy.html")
+        config = load_config(None)
+        if browser_command(config):
+            checked = verify_report(run / "legacy.html", config)
+            self.assertEqual(checked["status"], "passed", checked)
+
+    def test_consolidation_preserves_complementary_views(self):
+        _, _, report, _ = self.run_review("multi")
+        data = copy.deepcopy(report["consolidation"]["report"])
+        finding = data["findings"][0]["finding"]
+        finding["codeViews"] = [view for view in finding["codeViews"] if view["id"] != "hooks"]
+        finding["evidence"] = [e for e in finding["evidence"] if e.get("codeViewId") != "hooks"]
+        with self.assertRaisesRegex(ValueError, "dropped complementary"):
+            validate_consolidation(data, report["request"], report["reviewers"], Source(self.repo, report["request"]["scope"]))
+
+    def test_setup_failure_does_not_hide_completed_source_reviews(self):
+        config = json.loads(self.config.read_text())
+        config["environment"] = {"reuseDependencies": False, "setupCommands": [[sys.executable, "-c", "raise SystemExit(7)"]], "timeoutSeconds": 5}
+        self.config.write_text(json.dumps(config))
+        _, _, report, _ = self.run_review()
+        self.assertEqual(report["reviewStatus"], "complete")
+        self.assertTrue(all(r["attempts"][0]["environment"]["commands"][0]["exitCode"] == 7 for r in report["reviewers"]))
+        self.assertTrue(any("Setup command 1 failed" in warning for warning in report["warnings"]))
+
     def test_browser_ui_contracts(self):
         config = load_config(None)
         if not browser_command(config):
             self.skipTest("Chrome/Chromium unavailable")
-        for mode in ("success", "added", "deleted", "renamed", "empty", "all-fail"):
+        for mode in ("success", "added", "deleted", "renamed", "multi", "empty", "all-fail"):
             with self.subTest(mode=mode):
                 _, _, report, run = self.run_review(mode)
                 verification = verify_report(run / "index.html", config)

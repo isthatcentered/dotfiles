@@ -16,26 +16,37 @@ def enum(*values):
 
 STRING = {"type": "string"}
 STRINGS = array(STRING)
-VERSION = {"type": "integer", "enum": [1]}
+VERSION = {"type": "integer", "enum": [2]}
 LOCATION = obj(revision=STRING, path=STRING,
                startLine={"type": "integer", "minimum": 1},
                endLine={"type": "integer", "minimum": 1})
-SIDE = {"anyOf": [obj(kind=enum("present"), location=LOCATION, excerpt=STRING),
+RANGE = obj(label=STRING, startLine={"type": "integer", "minimum": 1},
+            endLine={"type": "integer", "minimum": 1}, excerpt=STRING)
+SIDE = {"anyOf": [obj(kind=enum("present"), revision=STRING, path=STRING,
+                      ranges={**array(RANGE), "minItems": 1}),
                   obj(kind=enum("absent"), reason=enum("added", "deleted"))]}
+CODE_VIEW = obj(id=STRING, label=STRING, explanation=STRING, before=SIDE, after=SIDE)
+EVIDENCE = {"anyOf": [
+    obj(kind=enum("source"), label=STRING, explanation=STRING, codeViewId=STRING),
+    obj(kind=enum("document"), label=STRING, explanation=STRING, documentId=STRING),
+    obj(kind=enum("external"), label=STRING, explanation=STRING, url=STRING, quote=STRING),
+    obj(kind=enum("check"), label=STRING, explanation=STRING, command=STRING,
+        outcome=enum("passed", "failed", "not-run"), output=STRING)]}
 FINDING = obj(
     id=STRING, title=STRING,
     severity=obj(value=enum("low", "medium", "high"), reasoning=STRING),
     likelihood=obj(value=enum("low", "medium", "high", "unknown"), reasoning=STRING),
     problematicLocation=obj(kind=enum("head", "deletion"), location=LOCATION),
-    whatGoesWrong=STRING, before=SIDE, after=SIDE, whyItHappens=STRING,
-    supportingLocations=array(LOCATION),
+    whatGoesWrong=STRING, codeViews={**array(CODE_VIEW), "minItems": 1}, whyItHappens=STRING,
+    assessment=obj(status=enum("supported", "needs-verification"), reasoning=STRING,
+                   assumptions=STRINGS, verificationSteps=STRINGS),
     reproduction=obj(prerequisites=STRINGS, steps=STRINGS, expected=STRING,
                      actual=STRING, basis=enum("observed", "predicted")),
-    evidence=STRINGS, limits=STRINGS)
+    evidence=array(EVIDENCE), limits=STRINGS)
 REVIEW = obj(
     schemaVersion=VERSION, runId=STRING, baseSha=STRING, headSha=STRING,
     completeness=enum("complete", "partial"), whatChanged=STRINGS,
-    coverage=obj(inspected=STRINGS, checks=array(obj(
+    coverage=obj(inspected=STRINGS, reviewedFiles=array(obj(revision=STRING, path=STRING)), checks=array(obj(
         description=STRING, outcome=enum("passed", "failed", "not-run"), details=STRING)),
         limits=STRINGS), findings=array(FINDING))
 REF = obj(reviewer=STRING, findingId=STRING)
