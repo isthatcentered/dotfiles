@@ -1,0 +1,2131 @@
+{
+  "schemaVersion": 2,
+  "runId": "EXAMPLE-complex-ui-playground",
+  "request": {
+    "schemaVersion": 2,
+    "runId": "EXAMPLE-complex-ui-playground",
+    "promptVersion": "2",
+    "scope": {
+      "requested": "Illustrative fixture · base → head",
+      "baseSha": "demo-base",
+      "headSha": "demo-head",
+      "changedPaths": [
+        "src/server/project-cache.ts",
+        "src/client/errors.ts",
+        "packages/auth/src/session-store.ts",
+        "src/jobs/expire-pending-invites.ts",
+        "src/client/empty-state.ts"
+      ],
+      "workingTreeChanges": "excluded",
+      "hadLocalChanges": false
+    },
+    "context": {
+      "intent": "SYNTHETIC UI EXAMPLE. Simplify project caching and error handling, rename session storage, and move invitation cleanup out of the application.",
+      "acceptedExceptions": [
+        "Example accepted exception: a replacement cleanup service may run outside this repository, provided its deployed schedule is verified."
+      ],
+      "documents": []
+    }
+  },
+  "reviewers": [
+    {
+      "reviewer": "codex-astra",
+      "requestedModel": "gpt-6-astra",
+      "effort": "high",
+      "status": "completed",
+      "failure": null,
+      "report": {
+        "schemaVersion": 2,
+        "runId": "EXAMPLE-complex-ui-playground",
+        "baseSha": "demo-base",
+        "headSha": "demo-head",
+        "completeness": "complete",
+        "whatChanged": [
+          "Tenant-aware project caching becomes slug-only caching.",
+          "Cancellation detection changes from error identity to a message pattern.",
+          "The session implementation is renamed without updating its public re-export.",
+          "The invitation cleanup job is removed; an empty-state copy file is added."
+        ],
+        "coverage": {
+          "inspected": [
+            "Illustrative source paths and caller relationships; no real reviewer was launched."
+          ],
+          "reviewedFiles": [
+            {
+              "revision": "demo-base",
+              "path": "src/server/project-cache.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/project-cache.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/server/project-route.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/project-route.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/server/project-store.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/project-store.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/client/errors.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/client/errors.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/client/result-hooks.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/client/result-hooks.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "packages/auth/src/session.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "packages/auth/src/session-store.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "packages/auth/src/index.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "packages/auth/src/index.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/jobs/expire-pending-invites.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/server/invites.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/invites.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/client/empty-state.ts"
+            }
+          ],
+          "checks": [],
+          "limits": [
+            "All reviewer outcomes and attributions are simulated."
+          ]
+        },
+        "findings": [
+          {
+            "id": "cache-leak",
+            "title": "A shared project slug returns another tenant’s cached data",
+            "severity": {
+              "value": "high",
+              "reasoning": "A response can expose one tenant’s project data to another tenant."
+            },
+            "likelihood": {
+              "value": "high",
+              "reasoning": "Two tenants using a common slug such as onboarding is a routine scenario when they share a server process."
+            },
+            "problematicLocation": {
+              "kind": "head",
+              "location": {
+                "revision": "demo-head",
+                "path": "src/server/project-cache.ts",
+                "startLine": 6,
+                "endLine": 9
+              }
+            },
+            "whatGoesWrong": "Tenant B requesting onboarding can receive the project cached by tenant A in the same server process.",
+            "whyItHappens": "The refactor removes tenantId from the cache key. The route supplies a tenant, but a cache hit returns before the tenant-scoped database lookup. The invalidation path repeats the same key collision.",
+            "codeViews": [
+              {
+                "id": "cache",
+                "label": "Cache origin",
+                "explanation": "The read and write share a slug-only key. Eviction also omits the tenant.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/server/project-cache.ts",
+                  "ranges": [
+                    {
+                      "label": "Lookup and early return",
+                      "startLine": 6,
+                      "endLine": 9,
+                      "excerpt": "export async function getProject(tenantId: string, slug: string) {\n  const key = `${tenantId}:${slug}`;\n  const cached = cache.get(key);\n  if (cached) return cached;\n"
+                    },
+                    {
+                      "label": "Database result cached",
+                      "startLine": 11,
+                      "endLine": 13,
+                      "excerpt": "  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n"
+                    },
+                    {
+                      "label": "Eviction key",
+                      "startLine": 16,
+                      "endLine": 18,
+                      "excerpt": "export function evictProject(tenantId: string, slug: string) {\n  cache.delete(`${tenantId}:${slug}`);\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/server/project-cache.ts",
+                  "ranges": [
+                    {
+                      "label": "Lookup and early return",
+                      "startLine": 6,
+                      "endLine": 9,
+                      "excerpt": "export async function getProject(tenantId: string, slug: string) {\n  const key = slug;\n  const cached = cache.get(key);\n  if (cached) return cached;\n"
+                    },
+                    {
+                      "label": "Database result cached",
+                      "startLine": 11,
+                      "endLine": 13,
+                      "excerpt": "  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n"
+                    },
+                    {
+                      "label": "Eviction key",
+                      "startLine": 16,
+                      "endLine": 18,
+                      "excerpt": "export function evictProject(tenantId: string, slug: string) {\n  cache.delete(slug);\n}\n"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "route",
+                "label": "Request boundary",
+                "explanation": "The route has an authenticated tenant, but returns the cached object without a second ownership check.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/server/project-route.ts",
+                  "ranges": [
+                    {
+                      "label": "Authenticated lookup and response",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/server/project-route.ts",
+                  "ranges": [
+                    {
+                      "label": "Authenticated lookup and response",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "store",
+                "label": "Database isolation",
+                "explanation": "The database lookup is tenant-scoped; a cache hit bypasses this protection.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/server/project-store.ts",
+                  "ranges": [
+                    {
+                      "label": "Composite tenant key",
+                      "startLine": 1,
+                      "endLine": 5,
+                      "excerpt": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/server/project-store.ts",
+                  "ranges": [
+                    {
+                      "label": "Composite tenant key",
+                      "startLine": 1,
+                      "endLine": 5,
+                      "excerpt": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+                    }
+                  ]
+                }
+              }
+            ],
+            "assessment": {
+              "status": "supported",
+              "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+              "assumptions": [],
+              "verificationSteps": []
+            },
+            "reproduction": {
+              "prerequisites": [
+                "Illustrative fixture only; these snippets are not a runnable application."
+              ],
+              "steps": [
+                "Create onboarding projects for tenants A and B.",
+                "Request A’s project to warm the process-local cache.",
+                "Request B’s project on that same process."
+              ],
+              "expected": "Each response contains only the requesting tenant’s project.",
+              "actual": "B receives A’s cached project.",
+              "basis": "predicted"
+            },
+            "evidence": [
+              {
+                "kind": "source",
+                "label": "Cache origin",
+                "explanation": "The read and write share a slug-only key. Eviction also omits the tenant.",
+                "codeViewId": "cache"
+              },
+              {
+                "kind": "source",
+                "label": "Request boundary",
+                "explanation": "The route has an authenticated tenant, but returns the cached object without a second ownership check.",
+                "codeViewId": "route"
+              },
+              {
+                "kind": "source",
+                "label": "Database isolation",
+                "explanation": "The database lookup is tenant-scoped; a cache hit bypasses this protection.",
+                "codeViewId": "store"
+              }
+            ],
+            "limits": [
+              "Synthetic example. No model review or runtime reproduction was performed."
+            ]
+          },
+          {
+            "id": "hidden-timeout",
+            "title": "Timeout errors silently bypass both recovery handlers",
+            "severity": {
+              "value": "medium",
+              "reasoning": "An interrupted query or stream can remain pending without a visible recovery action."
+            },
+            "likelihood": {
+              "value": "medium",
+              "reasoning": "Requires a non-cancellation error whose message includes timeout or abort."
+            },
+            "problematicLocation": {
+              "kind": "head",
+              "location": {
+                "revision": "demo-head",
+                "path": "src/client/errors.ts",
+                "startLine": 1,
+                "endLine": 3
+              }
+            },
+            "whatGoesWrong": "A query or stream reporting “upstream timeout” is treated as intentional cancellation, hiding the error and recovery controls.",
+            "whyItHappens": "The classifier matches text instead of the cancellation error name. Both consumers return before recording failure, and the stream handler also skips its reconnect action.",
+            "codeViews": [
+              {
+                "id": "classifier",
+                "label": "Error classifier",
+                "explanation": "The changed predicate accepts message substrings, including a server-side timeout.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/client/errors.ts",
+                  "ranges": [
+                    {
+                      "label": "Classification rule",
+                      "startLine": 1,
+                      "endLine": 3,
+                      "excerpt": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && error.name === 'AbortError';\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/client/errors.ts",
+                  "ranges": [
+                    {
+                      "label": "Classification rule",
+                      "startLine": 1,
+                      "endLine": 3,
+                      "excerpt": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && /abort|timeout/i.test(error.message);\n}\n"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "handlers",
+                "label": "Query + stream handlers",
+                "explanation": "These separated early returns suppress different recovery paths in the same file.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/client/result-hooks.ts",
+                  "ranges": [
+                    {
+                      "label": "Query failure path",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n"
+                    },
+                    {
+                      "label": "Stream failure path",
+                      "startLine": 14,
+                      "endLine": 18,
+                      "excerpt": "export function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/client/result-hooks.ts",
+                  "ranges": [
+                    {
+                      "label": "Query failure path",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n"
+                    },
+                    {
+                      "label": "Stream failure path",
+                      "startLine": 14,
+                      "endLine": 18,
+                      "excerpt": "export function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n"
+                    }
+                  ]
+                }
+              }
+            ],
+            "assessment": {
+              "status": "supported",
+              "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+              "assumptions": [],
+              "verificationSteps": []
+            },
+            "reproduction": {
+              "prerequisites": [
+                "Illustrative fixture only; these snippets are not a runnable application."
+              ],
+              "steps": [
+                "Deliver Error(\"upstream timeout\") to onQueryError.",
+                "Deliver the same error to onStreamError.",
+                "Inspect the pending state and reconnect controls."
+              ],
+              "expected": "The operation becomes failed and exposes recovery controls.",
+              "actual": "Both handlers return immediately; the failure actions do not run.",
+              "basis": "predicted"
+            },
+            "evidence": [
+              {
+                "kind": "source",
+                "label": "Error classifier",
+                "explanation": "The changed predicate accepts message substrings, including a server-side timeout.",
+                "codeViewId": "classifier"
+              },
+              {
+                "kind": "source",
+                "label": "Query + stream handlers",
+                "explanation": "These separated early returns suppress different recovery paths in the same file.",
+                "codeViewId": "handlers"
+              },
+              {
+                "kind": "check",
+                "label": "Suggested reproduction",
+                "explanation": "Proposed check only; this command was not run.",
+                "command": "pnpm test -- result-hooks --timeout-recovery",
+                "outcome": "not-run",
+                "output": "No execution result is available in this illustrative report."
+              }
+            ],
+            "limits": [
+              "Synthetic example. No model review or runtime reproduction was performed."
+            ]
+          },
+          {
+            "id": "broken-export",
+            "title": "The public auth export still points to the renamed module",
+            "severity": {
+              "value": "high",
+              "reasoning": "Consumers of the public auth entry point cannot resolve the renamed module."
+            },
+            "likelihood": {
+              "value": "high",
+              "reasoning": "Every build that resolves the package entry point encounters the stale relative path."
+            },
+            "problematicLocation": {
+              "kind": "head",
+              "location": {
+                "revision": "demo-head",
+                "path": "packages/auth/src/index.ts",
+                "startLine": 1,
+                "endLine": 2
+              }
+            },
+            "whatGoesWrong": "Importing createSession through the auth package entry point cannot resolve ./session after the file rename.",
+            "whyItHappens": "The implementation moved to session-store.ts while index.ts retained its original relative export. The origin is the stale reference; the supporting view shows the rename.",
+            "codeViews": [
+              {
+                "id": "barrel",
+                "label": "Public entry point",
+                "explanation": "This unchanged export still uses the old relative module name.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "packages/auth/src/index.ts",
+                  "ranges": [
+                    {
+                      "label": "Stale module path",
+                      "startLine": 1,
+                      "endLine": 2,
+                      "excerpt": "export { createSession, expireSession } from './session';\nexport type { Session } from './types';\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "packages/auth/src/index.ts",
+                  "ranges": [
+                    {
+                      "label": "Stale module path",
+                      "startLine": 1,
+                      "endLine": 2,
+                      "excerpt": "export { createSession, expireSession } from './session';\nexport type { Session } from './types';\n"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "rename",
+                "label": "Renamed implementation",
+                "explanation": "Before and After are different filenames, with the same exported functions.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "packages/auth/src/session.ts",
+                  "ranges": [
+                    {
+                      "label": "Session creation",
+                      "startLine": 1,
+                      "endLine": 3,
+                      "excerpt": "export function createSession(userId: string) {\n  return { userId, createdAt: Date.now() };\n}\n"
+                    },
+                    {
+                      "label": "Session expiration",
+                      "startLine": 5,
+                      "endLine": 7,
+                      "excerpt": "export function expireSession(session: Session) {\n  return { ...session, expired: true };\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "packages/auth/src/session-store.ts",
+                  "ranges": [
+                    {
+                      "label": "Session creation",
+                      "startLine": 1,
+                      "endLine": 3,
+                      "excerpt": "export function createSession(userId: string) {\n  return { userId, createdAt: Date.now() };\n}\n"
+                    },
+                    {
+                      "label": "Session expiration",
+                      "startLine": 5,
+                      "endLine": 7,
+                      "excerpt": "export function expireSession(session: Session) {\n  return { ...session, expired: true };\n}\n"
+                    }
+                  ]
+                }
+              }
+            ],
+            "assessment": {
+              "status": "supported",
+              "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+              "assumptions": [],
+              "verificationSteps": []
+            },
+            "reproduction": {
+              "prerequisites": [
+                "Illustrative fixture only; these snippets are not a runnable application."
+              ],
+              "steps": [
+                "Resolve packages/auth/src/index.ts in a clean checkout.",
+                "Follow the ./session re-export.",
+                "Observe that only session-store.ts exists in the reviewed revision."
+              ],
+              "expected": "The package entry point resolves createSession and expireSession.",
+              "actual": "The old module path has no target.",
+              "basis": "predicted"
+            },
+            "evidence": [
+              {
+                "kind": "source",
+                "label": "Public entry point",
+                "explanation": "This unchanged export still uses the old relative module name.",
+                "codeViewId": "barrel"
+              },
+              {
+                "kind": "source",
+                "label": "Renamed implementation",
+                "explanation": "Before and After are different filenames, with the same exported functions.",
+                "codeViewId": "rename"
+              }
+            ],
+            "limits": [
+              "Synthetic example. No model review or runtime reproduction was performed."
+            ]
+          }
+        ]
+      },
+      "attempts": []
+    },
+    {
+      "reviewer": "codex-sol",
+      "requestedModel": "gpt-5.6-sol",
+      "effort": "high",
+      "status": "completed",
+      "failure": null,
+      "report": {
+        "schemaVersion": 2,
+        "runId": "EXAMPLE-complex-ui-playground",
+        "baseSha": "demo-base",
+        "headSha": "demo-head",
+        "completeness": "complete",
+        "whatChanged": [
+          "Tenant-aware project caching becomes slug-only caching.",
+          "Cancellation detection changes from error identity to a message pattern.",
+          "The session implementation is renamed without updating its public re-export.",
+          "The invitation cleanup job is removed; an empty-state copy file is added."
+        ],
+        "coverage": {
+          "inspected": [
+            "Illustrative source paths and caller relationships; no real reviewer was launched."
+          ],
+          "reviewedFiles": [
+            {
+              "revision": "demo-base",
+              "path": "src/server/project-cache.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/project-cache.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/server/project-route.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/project-route.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/server/project-store.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/project-store.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/client/errors.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/client/errors.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/client/result-hooks.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/client/result-hooks.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "packages/auth/src/session.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "packages/auth/src/session-store.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "packages/auth/src/index.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "packages/auth/src/index.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/jobs/expire-pending-invites.ts"
+            },
+            {
+              "revision": "demo-base",
+              "path": "src/server/invites.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/server/invites.ts"
+            },
+            {
+              "revision": "demo-head",
+              "path": "src/client/empty-state.ts"
+            }
+          ],
+          "checks": [],
+          "limits": [
+            "All reviewer outcomes and attributions are simulated."
+          ]
+        },
+        "findings": [
+          {
+            "id": "cache-leak",
+            "title": "A shared project slug returns another tenant’s cached data",
+            "severity": {
+              "value": "high",
+              "reasoning": "A response can expose one tenant’s project data to another tenant."
+            },
+            "likelihood": {
+              "value": "high",
+              "reasoning": "Two tenants using a common slug such as onboarding is a routine scenario when they share a server process."
+            },
+            "problematicLocation": {
+              "kind": "head",
+              "location": {
+                "revision": "demo-head",
+                "path": "src/server/project-cache.ts",
+                "startLine": 6,
+                "endLine": 9
+              }
+            },
+            "whatGoesWrong": "Tenant B requesting onboarding can receive the project cached by tenant A in the same server process.",
+            "whyItHappens": "The refactor removes tenantId from the cache key. The route supplies a tenant, but a cache hit returns before the tenant-scoped database lookup. The invalidation path repeats the same key collision.",
+            "codeViews": [
+              {
+                "id": "cache",
+                "label": "Cache origin",
+                "explanation": "The read and write share a slug-only key. Eviction also omits the tenant.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/server/project-cache.ts",
+                  "ranges": [
+                    {
+                      "label": "Lookup and early return",
+                      "startLine": 6,
+                      "endLine": 9,
+                      "excerpt": "export async function getProject(tenantId: string, slug: string) {\n  const key = `${tenantId}:${slug}`;\n  const cached = cache.get(key);\n  if (cached) return cached;\n"
+                    },
+                    {
+                      "label": "Database result cached",
+                      "startLine": 11,
+                      "endLine": 13,
+                      "excerpt": "  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n"
+                    },
+                    {
+                      "label": "Eviction key",
+                      "startLine": 16,
+                      "endLine": 18,
+                      "excerpt": "export function evictProject(tenantId: string, slug: string) {\n  cache.delete(`${tenantId}:${slug}`);\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/server/project-cache.ts",
+                  "ranges": [
+                    {
+                      "label": "Lookup and early return",
+                      "startLine": 6,
+                      "endLine": 9,
+                      "excerpt": "export async function getProject(tenantId: string, slug: string) {\n  const key = slug;\n  const cached = cache.get(key);\n  if (cached) return cached;\n"
+                    },
+                    {
+                      "label": "Database result cached",
+                      "startLine": 11,
+                      "endLine": 13,
+                      "excerpt": "  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n"
+                    },
+                    {
+                      "label": "Eviction key",
+                      "startLine": 16,
+                      "endLine": 18,
+                      "excerpt": "export function evictProject(tenantId: string, slug: string) {\n  cache.delete(slug);\n}\n"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "route",
+                "label": "Request boundary",
+                "explanation": "The route has an authenticated tenant, but returns the cached object without a second ownership check.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/server/project-route.ts",
+                  "ranges": [
+                    {
+                      "label": "Authenticated lookup and response",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/server/project-route.ts",
+                  "ranges": [
+                    {
+                      "label": "Authenticated lookup and response",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "store",
+                "label": "Database isolation",
+                "explanation": "The database lookup is tenant-scoped; a cache hit bypasses this protection.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/server/project-store.ts",
+                  "ranges": [
+                    {
+                      "label": "Composite tenant key",
+                      "startLine": 1,
+                      "endLine": 5,
+                      "excerpt": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/server/project-store.ts",
+                  "ranges": [
+                    {
+                      "label": "Composite tenant key",
+                      "startLine": 1,
+                      "endLine": 5,
+                      "excerpt": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+                    }
+                  ]
+                }
+              }
+            ],
+            "assessment": {
+              "status": "supported",
+              "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+              "assumptions": [],
+              "verificationSteps": []
+            },
+            "reproduction": {
+              "prerequisites": [
+                "Illustrative fixture only; these snippets are not a runnable application."
+              ],
+              "steps": [
+                "Create onboarding projects for tenants A and B.",
+                "Request A’s project to warm the process-local cache.",
+                "Request B’s project on that same process."
+              ],
+              "expected": "Each response contains only the requesting tenant’s project.",
+              "actual": "B receives A’s cached project.",
+              "basis": "predicted"
+            },
+            "evidence": [
+              {
+                "kind": "source",
+                "label": "Cache origin",
+                "explanation": "The read and write share a slug-only key. Eviction also omits the tenant.",
+                "codeViewId": "cache"
+              },
+              {
+                "kind": "source",
+                "label": "Request boundary",
+                "explanation": "The route has an authenticated tenant, but returns the cached object without a second ownership check.",
+                "codeViewId": "route"
+              },
+              {
+                "kind": "source",
+                "label": "Database isolation",
+                "explanation": "The database lookup is tenant-scoped; a cache hit bypasses this protection.",
+                "codeViewId": "store"
+              }
+            ],
+            "limits": [
+              "Synthetic example. No model review or runtime reproduction was performed."
+            ]
+          },
+          {
+            "id": "hidden-timeout",
+            "title": "Timeout errors silently bypass both recovery handlers",
+            "severity": {
+              "value": "medium",
+              "reasoning": "An interrupted query or stream can remain pending without a visible recovery action."
+            },
+            "likelihood": {
+              "value": "medium",
+              "reasoning": "Requires a non-cancellation error whose message includes timeout or abort."
+            },
+            "problematicLocation": {
+              "kind": "head",
+              "location": {
+                "revision": "demo-head",
+                "path": "src/client/errors.ts",
+                "startLine": 1,
+                "endLine": 3
+              }
+            },
+            "whatGoesWrong": "A query or stream reporting “upstream timeout” is treated as intentional cancellation, hiding the error and recovery controls.",
+            "whyItHappens": "The classifier matches text instead of the cancellation error name. Both consumers return before recording failure, and the stream handler also skips its reconnect action.",
+            "codeViews": [
+              {
+                "id": "classifier",
+                "label": "Error classifier",
+                "explanation": "The changed predicate accepts message substrings, including a server-side timeout.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/client/errors.ts",
+                  "ranges": [
+                    {
+                      "label": "Classification rule",
+                      "startLine": 1,
+                      "endLine": 3,
+                      "excerpt": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && error.name === 'AbortError';\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/client/errors.ts",
+                  "ranges": [
+                    {
+                      "label": "Classification rule",
+                      "startLine": 1,
+                      "endLine": 3,
+                      "excerpt": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && /abort|timeout/i.test(error.message);\n}\n"
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "handlers",
+                "label": "Query + stream handlers",
+                "explanation": "These separated early returns suppress different recovery paths in the same file.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/client/result-hooks.ts",
+                  "ranges": [
+                    {
+                      "label": "Query failure path",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n"
+                    },
+                    {
+                      "label": "Stream failure path",
+                      "startLine": 14,
+                      "endLine": 18,
+                      "excerpt": "export function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/client/result-hooks.ts",
+                  "ranges": [
+                    {
+                      "label": "Query failure path",
+                      "startLine": 3,
+                      "endLine": 7,
+                      "excerpt": "export function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n"
+                    },
+                    {
+                      "label": "Stream failure path",
+                      "startLine": 14,
+                      "endLine": 18,
+                      "excerpt": "export function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n"
+                    }
+                  ]
+                }
+              }
+            ],
+            "assessment": {
+              "status": "supported",
+              "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+              "assumptions": [],
+              "verificationSteps": []
+            },
+            "reproduction": {
+              "prerequisites": [
+                "Illustrative fixture only; these snippets are not a runnable application."
+              ],
+              "steps": [
+                "Deliver Error(\"upstream timeout\") to onQueryError.",
+                "Deliver the same error to onStreamError.",
+                "Inspect the pending state and reconnect controls."
+              ],
+              "expected": "The operation becomes failed and exposes recovery controls.",
+              "actual": "Both handlers return immediately; the failure actions do not run.",
+              "basis": "predicted"
+            },
+            "evidence": [
+              {
+                "kind": "source",
+                "label": "Error classifier",
+                "explanation": "The changed predicate accepts message substrings, including a server-side timeout.",
+                "codeViewId": "classifier"
+              },
+              {
+                "kind": "source",
+                "label": "Query + stream handlers",
+                "explanation": "These separated early returns suppress different recovery paths in the same file.",
+                "codeViewId": "handlers"
+              },
+              {
+                "kind": "check",
+                "label": "Suggested reproduction",
+                "explanation": "Proposed check only; this command was not run.",
+                "command": "pnpm test -- result-hooks --timeout-recovery",
+                "outcome": "not-run",
+                "output": "No execution result is available in this illustrative report."
+              }
+            ],
+            "limits": [
+              "Synthetic example. No model review or runtime reproduction was performed."
+            ]
+          },
+          {
+            "id": "invite-retention",
+            "title": "Removing the cleanup job may leave expired invitations indefinitely",
+            "severity": {
+              "value": "medium",
+              "reasoning": "Expired invitation data could accumulate beyond the intended retention window."
+            },
+            "likelihood": {
+              "value": "unknown",
+              "reasoning": "Depends on whether an external cleanup job has already replaced this registration."
+            },
+            "problematicLocation": {
+              "kind": "deletion",
+              "location": {
+                "revision": "demo-base",
+                "path": "src/jobs/expire-pending-invites.ts",
+                "startLine": 1,
+                "endLine": 5
+              }
+            },
+            "whatGoesWrong": "If no replacement scheduler exists, expired invitation records remain stored beyond the documented cleanup window.",
+            "whyItHappens": "The patch removes the only cleanup registration visible in this example. The writer still persists invitation data. Whether the deletion is a regression depends on the deployment configuration.",
+            "codeViews": [
+              {
+                "id": "removed-job",
+                "label": "Deleted cleanup job",
+                "explanation": "The deleted file contains both the delete operation and its daily registration.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/jobs/expire-pending-invites.ts",
+                  "ranges": [
+                    {
+                      "label": "Expired-row cleanup",
+                      "startLine": 1,
+                      "endLine": 5,
+                      "excerpt": "export async function expirePendingInvites(now: Date) {\n  return db.invite.deleteMany({\n    where: { acceptedAt: null, expiresAt: { lt: now } },\n  });\n}\n"
+                    },
+                    {
+                      "label": "Daily registration",
+                      "startLine": 7,
+                      "endLine": 7,
+                      "excerpt": "registerDailyJob('expire-pending-invites', expirePendingInvites);\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "absent",
+                  "reason": "deleted"
+                }
+              },
+              {
+                "id": "writer",
+                "label": "Invitation writer",
+                "explanation": "The remaining writer records an expiration timestamp; it does not delete expired rows.",
+                "before": {
+                  "kind": "present",
+                  "revision": "demo-base",
+                  "path": "src/server/invites.ts",
+                  "ranges": [
+                    {
+                      "label": "Persisted expiry",
+                      "startLine": 1,
+                      "endLine": 5,
+                      "excerpt": "export async function createInvite(email: string) {\n  return db.invite.create({\n    data: { email, expiresAt: addDays(new Date(), 7) },\n  });\n}\n"
+                    }
+                  ]
+                },
+                "after": {
+                  "kind": "present",
+                  "revision": "demo-head",
+                  "path": "src/server/invites.ts",
+                  "ranges": [
+                    {
+                      "label": "Persisted expiry",
+                      "startLine": 1,
+                      "endLine": 5,
+                      "excerpt": "export async function createInvite(email: string) {\n  return db.invite.create({\n    data: { email, expiresAt: addDays(new Date(), 7) },\n  });\n}\n"
+                    }
+                  ]
+                }
+              }
+            ],
+            "assessment": {
+              "status": "needs-verification",
+              "reasoning": "The repository shows the deletion; the deployed replacement schedule is not captured.",
+              "assumptions": [
+                "No independently deployed service deletes expired invitations."
+              ],
+              "verificationSteps": [
+                "Inspect the deployed scheduler and identify the replacement job.",
+                "Confirm that its retention window satisfies the documented 24-hour cleanup requirement."
+              ]
+            },
+            "reproduction": {
+              "prerequisites": [
+                "Illustrative fixture only; these snippets are not a runnable application."
+              ],
+              "steps": [
+                "Confirm whether a replacement cleanup service is deployed.",
+                "If none exists, create an invitation and advance beyond its expiration plus 24 hours.",
+                "Check whether its database row remains."
+              ],
+              "expected": "Expired invitation records are removed within 24 hours.",
+              "actual": "Without a replacement job, the row is never removed by the illustrated code.",
+              "basis": "predicted"
+            },
+            "evidence": [
+              {
+                "kind": "source",
+                "label": "Deleted cleanup job",
+                "explanation": "The deleted file contains both the delete operation and its daily registration.",
+                "codeViewId": "removed-job"
+              },
+              {
+                "kind": "source",
+                "label": "Invitation writer",
+                "explanation": "The remaining writer records an expiration timestamp; it does not delete expired rows.",
+                "codeViewId": "writer"
+              }
+            ],
+            "limits": [
+              "Synthetic example. No model review or runtime reproduction was performed."
+            ]
+          }
+        ]
+      },
+      "attempts": []
+    },
+    {
+      "reviewer": "claude-opus",
+      "requestedModel": "claude-opus",
+      "effort": "high",
+      "status": "failed",
+      "failure": {
+        "kind": "startup-timeout",
+        "message": "SIMULATED: Claude emitted no startup event before the deadline. The bounded retry also timed out. Claude supplied no review; it contributed no findings."
+      },
+      "report": null,
+      "attempts": [
+        {
+          "number": 1,
+          "startedAt": "example start",
+          "finishedAt": "example deadline",
+          "failure": {
+            "kind": "startup-timeout",
+            "message": "SIMULATED: Claude emitted no startup event before the deadline. The bounded retry also timed out. Claude supplied no review; it contributed no findings."
+          },
+          "eventsPath": null,
+          "stderrPath": null
+        },
+        {
+          "number": 2,
+          "startedAt": "example start",
+          "finishedAt": "example deadline",
+          "failure": {
+            "kind": "startup-timeout",
+            "message": "SIMULATED: Claude emitted no startup event before the deadline. The bounded retry also timed out. Claude supplied no review; it contributed no findings."
+          },
+          "eventsPath": null,
+          "stderrPath": null
+        }
+      ]
+    }
+  ],
+  "reviewStatus": "partial",
+  "consolidationStatus": "completed",
+  "consolidation": null,
+  "whatChanged": [
+    "Tenant-aware project caching becomes slug-only caching.",
+    "Cancellation detection changes from error identity to a message pattern.",
+    "The session implementation is renamed without updating its public re-export.",
+    "The invitation cleanup job is removed; an empty-state copy file is added."
+  ],
+  "findings": [
+    {
+      "finding": {
+        "id": "cache-leak",
+        "title": "A shared project slug returns another tenant’s cached data",
+        "severity": {
+          "value": "high",
+          "reasoning": "A response can expose one tenant’s project data to another tenant."
+        },
+        "likelihood": {
+          "value": "high",
+          "reasoning": "Two tenants using a common slug such as onboarding is a routine scenario when they share a server process."
+        },
+        "problematicLocation": {
+          "kind": "head",
+          "location": {
+            "revision": "demo-head",
+            "path": "src/server/project-cache.ts",
+            "startLine": 6,
+            "endLine": 9
+          }
+        },
+        "whatGoesWrong": "Tenant B requesting onboarding can receive the project cached by tenant A in the same server process.",
+        "whyItHappens": "The refactor removes tenantId from the cache key. The route supplies a tenant, but a cache hit returns before the tenant-scoped database lookup. The invalidation path repeats the same key collision.",
+        "codeViews": [
+          {
+            "id": "cache",
+            "label": "Cache origin",
+            "explanation": "The read and write share a slug-only key. Eviction also omits the tenant.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "src/server/project-cache.ts",
+              "ranges": [
+                {
+                  "label": "Lookup and early return",
+                  "startLine": 6,
+                  "endLine": 9,
+                  "excerpt": "export async function getProject(tenantId: string, slug: string) {\n  const key = `${tenantId}:${slug}`;\n  const cached = cache.get(key);\n  if (cached) return cached;\n"
+                },
+                {
+                  "label": "Database result cached",
+                  "startLine": 11,
+                  "endLine": 13,
+                  "excerpt": "  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n"
+                },
+                {
+                  "label": "Eviction key",
+                  "startLine": 16,
+                  "endLine": 18,
+                  "excerpt": "export function evictProject(tenantId: string, slug: string) {\n  cache.delete(`${tenantId}:${slug}`);\n}\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "src/server/project-cache.ts",
+              "ranges": [
+                {
+                  "label": "Lookup and early return",
+                  "startLine": 6,
+                  "endLine": 9,
+                  "excerpt": "export async function getProject(tenantId: string, slug: string) {\n  const key = slug;\n  const cached = cache.get(key);\n  if (cached) return cached;\n"
+                },
+                {
+                  "label": "Database result cached",
+                  "startLine": 11,
+                  "endLine": 13,
+                  "excerpt": "  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n"
+                },
+                {
+                  "label": "Eviction key",
+                  "startLine": 16,
+                  "endLine": 18,
+                  "excerpt": "export function evictProject(tenantId: string, slug: string) {\n  cache.delete(slug);\n}\n"
+                }
+              ]
+            }
+          },
+          {
+            "id": "route",
+            "label": "Request boundary",
+            "explanation": "The route has an authenticated tenant, but returns the cached object without a second ownership check.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "src/server/project-route.ts",
+              "ranges": [
+                {
+                  "label": "Authenticated lookup and response",
+                  "startLine": 3,
+                  "endLine": 7,
+                  "excerpt": "export async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "src/server/project-route.ts",
+              "ranges": [
+                {
+                  "label": "Authenticated lookup and response",
+                  "startLine": 3,
+                  "endLine": 7,
+                  "excerpt": "export async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n"
+                }
+              ]
+            }
+          },
+          {
+            "id": "store",
+            "label": "Database isolation",
+            "explanation": "The database lookup is tenant-scoped; a cache hit bypasses this protection.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "src/server/project-store.ts",
+              "ranges": [
+                {
+                  "label": "Composite tenant key",
+                  "startLine": 1,
+                  "endLine": 5,
+                  "excerpt": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "src/server/project-store.ts",
+              "ranges": [
+                {
+                  "label": "Composite tenant key",
+                  "startLine": 1,
+                  "endLine": 5,
+                  "excerpt": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+                }
+              ]
+            }
+          }
+        ],
+        "assessment": {
+          "status": "supported",
+          "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+          "assumptions": [],
+          "verificationSteps": []
+        },
+        "reproduction": {
+          "prerequisites": [
+            "Illustrative fixture only; these snippets are not a runnable application."
+          ],
+          "steps": [
+            "Create onboarding projects for tenants A and B.",
+            "Request A’s project to warm the process-local cache.",
+            "Request B’s project on that same process."
+          ],
+          "expected": "Each response contains only the requesting tenant’s project.",
+          "actual": "B receives A’s cached project.",
+          "basis": "predicted"
+        },
+        "evidence": [
+          {
+            "kind": "source",
+            "label": "Cache origin",
+            "explanation": "The read and write share a slug-only key. Eviction also omits the tenant.",
+            "codeViewId": "cache"
+          },
+          {
+            "kind": "source",
+            "label": "Request boundary",
+            "explanation": "The route has an authenticated tenant, but returns the cached object without a second ownership check.",
+            "codeViewId": "route"
+          },
+          {
+            "kind": "source",
+            "label": "Database isolation",
+            "explanation": "The database lookup is tenant-scoped; a cache hit bypasses this protection.",
+            "codeViewId": "store"
+          }
+        ],
+        "limits": [
+          "Synthetic example. No model review or runtime reproduction was performed."
+        ]
+      },
+      "sources": [
+        {
+          "reviewer": "codex-astra",
+          "findingId": "cache-leak"
+        },
+        {
+          "reviewer": "codex-sol",
+          "findingId": "cache-leak"
+        }
+      ],
+      "disagreements": []
+    },
+    {
+      "finding": {
+        "id": "hidden-timeout",
+        "title": "Timeout errors silently bypass both recovery handlers",
+        "severity": {
+          "value": "medium",
+          "reasoning": "An interrupted query or stream can remain pending without a visible recovery action."
+        },
+        "likelihood": {
+          "value": "medium",
+          "reasoning": "Requires a non-cancellation error whose message includes timeout or abort."
+        },
+        "problematicLocation": {
+          "kind": "head",
+          "location": {
+            "revision": "demo-head",
+            "path": "src/client/errors.ts",
+            "startLine": 1,
+            "endLine": 3
+          }
+        },
+        "whatGoesWrong": "A query or stream reporting “upstream timeout” is treated as intentional cancellation, hiding the error and recovery controls.",
+        "whyItHappens": "The classifier matches text instead of the cancellation error name. Both consumers return before recording failure, and the stream handler also skips its reconnect action.",
+        "codeViews": [
+          {
+            "id": "classifier",
+            "label": "Error classifier",
+            "explanation": "The changed predicate accepts message substrings, including a server-side timeout.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "src/client/errors.ts",
+              "ranges": [
+                {
+                  "label": "Classification rule",
+                  "startLine": 1,
+                  "endLine": 3,
+                  "excerpt": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && error.name === 'AbortError';\n}\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "src/client/errors.ts",
+              "ranges": [
+                {
+                  "label": "Classification rule",
+                  "startLine": 1,
+                  "endLine": 3,
+                  "excerpt": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && /abort|timeout/i.test(error.message);\n}\n"
+                }
+              ]
+            }
+          },
+          {
+            "id": "handlers",
+            "label": "Query + stream handlers",
+            "explanation": "These separated early returns suppress different recovery paths in the same file.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "src/client/result-hooks.ts",
+              "ranges": [
+                {
+                  "label": "Query failure path",
+                  "startLine": 3,
+                  "endLine": 7,
+                  "excerpt": "export function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n"
+                },
+                {
+                  "label": "Stream failure path",
+                  "startLine": 14,
+                  "endLine": 18,
+                  "excerpt": "export function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "src/client/result-hooks.ts",
+              "ranges": [
+                {
+                  "label": "Query failure path",
+                  "startLine": 3,
+                  "endLine": 7,
+                  "excerpt": "export function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n"
+                },
+                {
+                  "label": "Stream failure path",
+                  "startLine": 14,
+                  "endLine": 18,
+                  "excerpt": "export function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n"
+                }
+              ]
+            }
+          }
+        ],
+        "assessment": {
+          "status": "supported",
+          "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+          "assumptions": [],
+          "verificationSteps": []
+        },
+        "reproduction": {
+          "prerequisites": [
+            "Illustrative fixture only; these snippets are not a runnable application."
+          ],
+          "steps": [
+            "Deliver Error(\"upstream timeout\") to onQueryError.",
+            "Deliver the same error to onStreamError.",
+            "Inspect the pending state and reconnect controls."
+          ],
+          "expected": "The operation becomes failed and exposes recovery controls.",
+          "actual": "Both handlers return immediately; the failure actions do not run.",
+          "basis": "predicted"
+        },
+        "evidence": [
+          {
+            "kind": "source",
+            "label": "Error classifier",
+            "explanation": "The changed predicate accepts message substrings, including a server-side timeout.",
+            "codeViewId": "classifier"
+          },
+          {
+            "kind": "source",
+            "label": "Query + stream handlers",
+            "explanation": "These separated early returns suppress different recovery paths in the same file.",
+            "codeViewId": "handlers"
+          },
+          {
+            "kind": "check",
+            "label": "Suggested reproduction",
+            "explanation": "Proposed check only; this command was not run.",
+            "command": "pnpm test -- result-hooks --timeout-recovery",
+            "outcome": "not-run",
+            "output": "No execution result is available in this illustrative report."
+          }
+        ],
+        "limits": [
+          "Synthetic example. No model review or runtime reproduction was performed."
+        ]
+      },
+      "sources": [
+        {
+          "reviewer": "codex-astra",
+          "findingId": "hidden-timeout"
+        },
+        {
+          "reviewer": "codex-sol",
+          "findingId": "hidden-timeout"
+        }
+      ],
+      "disagreements": [
+        {
+          "reviewer": "codex-sol",
+          "explanation": "Illustrative disagreement: rates likelihood low because the exact production error messages are not captured. Consolidated likelihood is medium for the concrete timeout trigger shown here."
+        }
+      ]
+    },
+    {
+      "finding": {
+        "id": "broken-export",
+        "title": "The public auth export still points to the renamed module",
+        "severity": {
+          "value": "high",
+          "reasoning": "Consumers of the public auth entry point cannot resolve the renamed module."
+        },
+        "likelihood": {
+          "value": "high",
+          "reasoning": "Every build that resolves the package entry point encounters the stale relative path."
+        },
+        "problematicLocation": {
+          "kind": "head",
+          "location": {
+            "revision": "demo-head",
+            "path": "packages/auth/src/index.ts",
+            "startLine": 1,
+            "endLine": 2
+          }
+        },
+        "whatGoesWrong": "Importing createSession through the auth package entry point cannot resolve ./session after the file rename.",
+        "whyItHappens": "The implementation moved to session-store.ts while index.ts retained its original relative export. The origin is the stale reference; the supporting view shows the rename.",
+        "codeViews": [
+          {
+            "id": "barrel",
+            "label": "Public entry point",
+            "explanation": "This unchanged export still uses the old relative module name.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "packages/auth/src/index.ts",
+              "ranges": [
+                {
+                  "label": "Stale module path",
+                  "startLine": 1,
+                  "endLine": 2,
+                  "excerpt": "export { createSession, expireSession } from './session';\nexport type { Session } from './types';\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "packages/auth/src/index.ts",
+              "ranges": [
+                {
+                  "label": "Stale module path",
+                  "startLine": 1,
+                  "endLine": 2,
+                  "excerpt": "export { createSession, expireSession } from './session';\nexport type { Session } from './types';\n"
+                }
+              ]
+            }
+          },
+          {
+            "id": "rename",
+            "label": "Renamed implementation",
+            "explanation": "Before and After are different filenames, with the same exported functions.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "packages/auth/src/session.ts",
+              "ranges": [
+                {
+                  "label": "Session creation",
+                  "startLine": 1,
+                  "endLine": 3,
+                  "excerpt": "export function createSession(userId: string) {\n  return { userId, createdAt: Date.now() };\n}\n"
+                },
+                {
+                  "label": "Session expiration",
+                  "startLine": 5,
+                  "endLine": 7,
+                  "excerpt": "export function expireSession(session: Session) {\n  return { ...session, expired: true };\n}\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "packages/auth/src/session-store.ts",
+              "ranges": [
+                {
+                  "label": "Session creation",
+                  "startLine": 1,
+                  "endLine": 3,
+                  "excerpt": "export function createSession(userId: string) {\n  return { userId, createdAt: Date.now() };\n}\n"
+                },
+                {
+                  "label": "Session expiration",
+                  "startLine": 5,
+                  "endLine": 7,
+                  "excerpt": "export function expireSession(session: Session) {\n  return { ...session, expired: true };\n}\n"
+                }
+              ]
+            }
+          }
+        ],
+        "assessment": {
+          "status": "supported",
+          "reasoning": "The illustrated source establishes this failure path. It has not been executed.",
+          "assumptions": [],
+          "verificationSteps": []
+        },
+        "reproduction": {
+          "prerequisites": [
+            "Illustrative fixture only; these snippets are not a runnable application."
+          ],
+          "steps": [
+            "Resolve packages/auth/src/index.ts in a clean checkout.",
+            "Follow the ./session re-export.",
+            "Observe that only session-store.ts exists in the reviewed revision."
+          ],
+          "expected": "The package entry point resolves createSession and expireSession.",
+          "actual": "The old module path has no target.",
+          "basis": "predicted"
+        },
+        "evidence": [
+          {
+            "kind": "source",
+            "label": "Public entry point",
+            "explanation": "This unchanged export still uses the old relative module name.",
+            "codeViewId": "barrel"
+          },
+          {
+            "kind": "source",
+            "label": "Renamed implementation",
+            "explanation": "Before and After are different filenames, with the same exported functions.",
+            "codeViewId": "rename"
+          }
+        ],
+        "limits": [
+          "Synthetic example. No model review or runtime reproduction was performed."
+        ]
+      },
+      "sources": [
+        {
+          "reviewer": "codex-astra",
+          "findingId": "broken-export"
+        }
+      ],
+      "disagreements": []
+    },
+    {
+      "finding": {
+        "id": "invite-retention",
+        "title": "Removing the cleanup job may leave expired invitations indefinitely",
+        "severity": {
+          "value": "medium",
+          "reasoning": "Expired invitation data could accumulate beyond the intended retention window."
+        },
+        "likelihood": {
+          "value": "unknown",
+          "reasoning": "Depends on whether an external cleanup job has already replaced this registration."
+        },
+        "problematicLocation": {
+          "kind": "deletion",
+          "location": {
+            "revision": "demo-base",
+            "path": "src/jobs/expire-pending-invites.ts",
+            "startLine": 1,
+            "endLine": 5
+          }
+        },
+        "whatGoesWrong": "If no replacement scheduler exists, expired invitation records remain stored beyond the documented cleanup window.",
+        "whyItHappens": "The patch removes the only cleanup registration visible in this example. The writer still persists invitation data. Whether the deletion is a regression depends on the deployment configuration.",
+        "codeViews": [
+          {
+            "id": "removed-job",
+            "label": "Deleted cleanup job",
+            "explanation": "The deleted file contains both the delete operation and its daily registration.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "src/jobs/expire-pending-invites.ts",
+              "ranges": [
+                {
+                  "label": "Expired-row cleanup",
+                  "startLine": 1,
+                  "endLine": 5,
+                  "excerpt": "export async function expirePendingInvites(now: Date) {\n  return db.invite.deleteMany({\n    where: { acceptedAt: null, expiresAt: { lt: now } },\n  });\n}\n"
+                },
+                {
+                  "label": "Daily registration",
+                  "startLine": 7,
+                  "endLine": 7,
+                  "excerpt": "registerDailyJob('expire-pending-invites', expirePendingInvites);\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "absent",
+              "reason": "deleted"
+            }
+          },
+          {
+            "id": "writer",
+            "label": "Invitation writer",
+            "explanation": "The remaining writer records an expiration timestamp; it does not delete expired rows.",
+            "before": {
+              "kind": "present",
+              "revision": "demo-base",
+              "path": "src/server/invites.ts",
+              "ranges": [
+                {
+                  "label": "Persisted expiry",
+                  "startLine": 1,
+                  "endLine": 5,
+                  "excerpt": "export async function createInvite(email: string) {\n  return db.invite.create({\n    data: { email, expiresAt: addDays(new Date(), 7) },\n  });\n}\n"
+                }
+              ]
+            },
+            "after": {
+              "kind": "present",
+              "revision": "demo-head",
+              "path": "src/server/invites.ts",
+              "ranges": [
+                {
+                  "label": "Persisted expiry",
+                  "startLine": 1,
+                  "endLine": 5,
+                  "excerpt": "export async function createInvite(email: string) {\n  return db.invite.create({\n    data: { email, expiresAt: addDays(new Date(), 7) },\n  });\n}\n"
+                }
+              ]
+            }
+          }
+        ],
+        "assessment": {
+          "status": "needs-verification",
+          "reasoning": "The repository shows the deletion; the deployed replacement schedule is not captured.",
+          "assumptions": [
+            "No independently deployed service deletes expired invitations."
+          ],
+          "verificationSteps": [
+            "Inspect the deployed scheduler and identify the replacement job.",
+            "Confirm that its retention window satisfies the documented 24-hour cleanup requirement."
+          ]
+        },
+        "reproduction": {
+          "prerequisites": [
+            "Illustrative fixture only; these snippets are not a runnable application."
+          ],
+          "steps": [
+            "Confirm whether a replacement cleanup service is deployed.",
+            "If none exists, create an invitation and advance beyond its expiration plus 24 hours.",
+            "Check whether its database row remains."
+          ],
+          "expected": "Expired invitation records are removed within 24 hours.",
+          "actual": "Without a replacement job, the row is never removed by the illustrated code.",
+          "basis": "predicted"
+        },
+        "evidence": [
+          {
+            "kind": "source",
+            "label": "Deleted cleanup job",
+            "explanation": "The deleted file contains both the delete operation and its daily registration.",
+            "codeViewId": "removed-job"
+          },
+          {
+            "kind": "source",
+            "label": "Invitation writer",
+            "explanation": "The remaining writer records an expiration timestamp; it does not delete expired rows.",
+            "codeViewId": "writer"
+          }
+        ],
+        "limits": [
+          "Synthetic example. No model review or runtime reproduction was performed."
+        ]
+      },
+      "sources": [
+        {
+          "reviewer": "codex-sol",
+          "findingId": "invite-retention"
+        }
+      ],
+      "disagreements": []
+    }
+  ],
+  "excluded": [],
+  "warnings": [
+    "ILLUSTRATIVE EXAMPLE — source, findings, reviewer outcomes, and revision labels are synthetic. No agents were run.",
+    "Simulated incomplete review: Claude failed to start on both attempts. Only the two simulated Codex reports are represented."
+  ],
+  "limits": [
+    "This report demonstrates UI states and handoff data. It makes no claims about your repositories.",
+    "The invitation finding intentionally needs deployment verification. No checks were executed."
+  ],
+  "sourceFiles": [
+    {
+      "revision": "demo-base",
+      "path": "src/server/project-cache.ts",
+      "language": "ts",
+      "content": "import { loadProject } from './project-store';\nimport type { Project } from './types';\n\nconst cache = new Map<string, Project>();\n\nexport async function getProject(tenantId: string, slug: string) {\n  const key = `${tenantId}:${slug}`;\n  const cached = cache.get(key);\n  if (cached) return cached;\n\n  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n}\n\nexport function evictProject(tenantId: string, slug: string) {\n  cache.delete(`${tenantId}:${slug}`);\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "src/server/project-cache.ts",
+      "language": "ts",
+      "content": "import { loadProject } from './project-store';\nimport type { Project } from './types';\n\nconst cache = new Map<string, Project>();\n\nexport async function getProject(tenantId: string, slug: string) {\n  const key = slug;\n  const cached = cache.get(key);\n  if (cached) return cached;\n\n  const project = await loadProject(tenantId, slug);\n  cache.set(key, project);\n  return project;\n}\n\nexport function evictProject(tenantId: string, slug: string) {\n  cache.delete(slug);\n}\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "src/server/project-route.ts",
+      "language": "ts",
+      "content": "import { getProject } from './project-cache';\n\nexport async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "src/server/project-route.ts",
+      "language": "ts",
+      "content": "import { getProject } from './project-cache';\n\nexport async function projectRoute(request: RequestContext) {\n  const session = await request.requireSession();\n  const slug = request.params.slug;\n  const project = await getProject(session.tenantId, slug);\n  return { status: 200, body: project };\n}\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "src/server/project-store.ts",
+      "language": "ts",
+      "content": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "src/server/project-store.ts",
+      "language": "ts",
+      "content": "export async function loadProject(tenantId: string, slug: string) {\n  return db.project.findUniqueOrThrow({\n    where: { tenantId_slug: { tenantId, slug } },\n  });\n}\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "src/client/errors.ts",
+      "language": "ts",
+      "content": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && error.name === 'AbortError';\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "src/client/errors.ts",
+      "language": "ts",
+      "content": "export function isExpectedCancellation(error: unknown): boolean {\n  return error instanceof Error && /abort|timeout/i.test(error.message);\n}\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "src/client/result-hooks.ts",
+      "language": "ts",
+      "content": "import { isExpectedCancellation } from './errors';\n\nexport function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n\nexport function onQuerySuccess(data: unknown) {\n  updateResults(data);\n  clearPendingState();\n}\n\nexport function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n\nexport function onStreamMessage(message: unknown) {\n  appendResult(message);\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "src/client/result-hooks.ts",
+      "language": "ts",
+      "content": "import { isExpectedCancellation } from './errors';\n\nexport function onQueryError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  showErrorToast(error);\n  markQueryFailed(error);\n}\n\nexport function onQuerySuccess(data: unknown) {\n  updateResults(data);\n  clearPendingState();\n}\n\nexport function onStreamError(error: unknown) {\n  if (isExpectedCancellation(error)) return;\n  markStreamFailed(error);\n  showReconnectAction();\n}\n\nexport function onStreamMessage(message: unknown) {\n  appendResult(message);\n}\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "packages/auth/src/session.ts",
+      "language": "ts",
+      "content": "export function createSession(userId: string) {\n  return { userId, createdAt: Date.now() };\n}\n\nexport function expireSession(session: Session) {\n  return { ...session, expired: true };\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "packages/auth/src/session-store.ts",
+      "language": "ts",
+      "content": "export function createSession(userId: string) {\n  return { userId, createdAt: Date.now() };\n}\n\nexport function expireSession(session: Session) {\n  return { ...session, expired: true };\n}\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "packages/auth/src/index.ts",
+      "language": "ts",
+      "content": "export { createSession, expireSession } from './session';\nexport type { Session } from './types';\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "packages/auth/src/index.ts",
+      "language": "ts",
+      "content": "export { createSession, expireSession } from './session';\nexport type { Session } from './types';\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "src/jobs/expire-pending-invites.ts",
+      "language": "ts",
+      "content": "export async function expirePendingInvites(now: Date) {\n  return db.invite.deleteMany({\n    where: { acceptedAt: null, expiresAt: { lt: now } },\n  });\n}\n\nregisterDailyJob('expire-pending-invites', expirePendingInvites);\n"
+    },
+    {
+      "revision": "demo-base",
+      "path": "src/server/invites.ts",
+      "language": "ts",
+      "content": "export async function createInvite(email: string) {\n  return db.invite.create({\n    data: { email, expiresAt: addDays(new Date(), 7) },\n  });\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "src/server/invites.ts",
+      "language": "ts",
+      "content": "export async function createInvite(email: string) {\n  return db.invite.create({\n    data: { email, expiresAt: addDays(new Date(), 7) },\n  });\n}\n"
+    },
+    {
+      "revision": "demo-head",
+      "path": "src/client/empty-state.ts",
+      "language": "ts",
+      "content": "export const emptyState = {\n  title: 'No results yet',\n  description: 'Run a query to see your projects.',\n};\n"
+    }
+  ],
+  "fileViews": [
+    {
+      "id": "file-0",
+      "label": "src/server/project-cache.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "src/server/project-cache.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "src/server/project-cache.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-1",
+      "label": "src/server/project-route.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "src/server/project-route.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "src/server/project-route.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-2",
+      "label": "src/server/project-store.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "src/server/project-store.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "src/server/project-store.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-3",
+      "label": "src/client/errors.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "src/client/errors.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "src/client/errors.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-4",
+      "label": "src/client/result-hooks.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "src/client/result-hooks.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "src/client/result-hooks.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-5",
+      "label": "packages/auth/src/session.ts → packages/auth/src/session-store.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "packages/auth/src/session.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "packages/auth/src/session-store.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-6",
+      "label": "packages/auth/src/index.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "packages/auth/src/index.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "packages/auth/src/index.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-7",
+      "label": "src/jobs/expire-pending-invites.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "src/jobs/expire-pending-invites.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "absent",
+        "reason": "deleted"
+      }
+    },
+    {
+      "id": "file-8",
+      "label": "src/server/invites.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "present",
+        "revision": "demo-base",
+        "path": "src/server/invites.ts",
+        "ranges": []
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "src/server/invites.ts",
+        "ranges": []
+      }
+    },
+    {
+      "id": "file-9",
+      "label": "src/client/empty-state.ts",
+      "explanation": "Illustrative source; independently browsable even when no finding cites it.",
+      "before": {
+        "kind": "absent",
+        "reason": "added"
+      },
+      "after": {
+        "kind": "present",
+        "revision": "demo-head",
+        "path": "src/client/empty-state.ts",
+        "ranges": []
+      }
+    }
+  ],
+  "verification": {
+    "status": "not-run",
+    "details": "UI playground. Automated tests were not run."
+  }
+}

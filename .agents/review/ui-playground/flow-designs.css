@@ -1,0 +1,127 @@
+/* Continuous review experiments. All source and triage controls use the same data. */
+.flow{overflow-anchor:none;--rail:0px;--blue:#153ccc;--line:#e0e5ee;--ink:#26334a;--muted:#728097;color:var(--ink);background:#fff;min-height:100vh}
+.flow-layout{margin-left:var(--rail);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+.flow-reading{min-width:0;padding-bottom:120px;overflow-anchor:none}
+.flow-code{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;min-width:0;border-left:1px solid var(--line);background:#fcfcff;overflow:hidden}
+.flow-code .editor-panel{flex:1;min-height:0;border:0;border-radius:0}
+.flow-code-heading{display:flex;align-items:center;gap:11px;padding:12px 18px;min-height:62px;flex-shrink:0;background:#f7f9fc;border-bottom:1px solid var(--line)}
+.flow-code-index{font:11px ui-monospace,monospace;background:#e8eeff;color:#153ccc;display:grid;place-items:center;width:29px;height:29px;border-radius:5px;flex-shrink:0}
+.flow-code-heading>div{min-width:0;flex:1}
+.flow-code-heading small{font-size:9px;color:#8490a3;display:block;margin-bottom:3px}
+.flow-code-heading strong{font-size:12px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.follow-indicator{font-size:9px;color:#8794a8;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.follow-indicator i{display:block;width:5px;height:5px;border-radius:50%;background:#527ae3}
+.flow-code .editor-panel .code-line{font-size:12px}
+.flow-code-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;height:100%;padding:50px;color:#7b889d}
+.flow-code-empty>span{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#e4eee9;color:#3e7659;font-size:22px;margin-bottom:24px}
+.flow-code-empty h2{font-size:21px;color:#3e4f68}
+.flow-code-empty p{max-width:280px}
+.flow .primary{background:var(--blue);color:#fff}
+.flow .brand-symbol{background:var(--blue)}
+.flow p{font-size:14px;line-height:1.8;color:#58687e}
+.flow .eyebrow{font-size:10px;color:#7b88a0}
+.flow .tags{margin:16px 0;align-items:center;gap:7px}
+.flow .badge{font-size:10px}
+.flow .badge.likelihood{background:#edf1f8;color:#5a6980}
+.flow .reviewer-attribution{font-family:system-ui,sans-serif}
+.flow .reviewer-avatar{width:22px;height:22px}
+.flow h3{font-size:14px;font-weight:650}
+.flow .repro{padding:22px 0 12px}
+.flow .repro h3{margin:0 0 17px}
+.flow .repro ol{font-size:13px;line-height:1.75;padding-left:22px}
+.flow .repro li{padding:4px 0 7px}
+.flow .expected,.flow .actual{font-size:13px;line-height:1.7;padding:13px 15px}
+.flow .repro small{font-size:11px}
+.flow .confidence-limits{padding:24px 0 0;margin:15px 0 0}
+.flow .confidence-limits p{font-size:12px;line-height:1.85;color:#6a7890}
+.flow .note-label{margin-top:0;font-size:11px}
+.flow .note-label>span{font-size:10px}
+.flow .note-label textarea{min-height:64px;font-size:12px;background:#fff}
+.flow-decision{margin-top:26px;border-top:1px solid var(--line);padding-top:23px}
+.flow .decision-actions{margin:14px 0 0}
+.flow .decision-actions button{padding:9px 16px}
+.flow-overview{padding:32px 36px 26px;border-bottom:1px solid var(--line)}
+.flow-topline{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:25px}
+.flow-topline .brand{font-size:17px}
+.flow-overview h1{font-size:34px;line-height:1.14;font-weight:650;letter-spacing:-1.2px}
+.overview-deck{margin:13px 0 18px!important;font-size:13px!important;color:#7b889b!important}
+.flow-scope{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:10px;color:#8290a4;margin:20px 0 25px}
+.flow-scope code{font:10px ui-monospace,monospace;color:#78859b}
+.change-list{list-style:none;padding:0;margin:23px 0;display:flex;flex-direction:column;gap:14px}
+.change-list li{display:flex;gap:12px;align-items:baseline;font-size:14px;line-height:1.65;color:#3e516d}
+.change-number{font:10px ui-monospace,monospace;color:#94a2b8;flex-shrink:0}
+.flow-coverage{padding:13px 15px;border:1px solid #e4d9bd;background:#fffbf1;border-radius:5px;margin:24px 0 12px;color:#78643a}
+.flow-coverage>span{display:block;font-size:11px;line-height:1.8}
+.flow-coverage .agent-logo{display:inline-block;vertical-align:middle;width:14px;height:14px;margin-right:5px}
+.flow-coverage small{display:block;font-size:10px;color:#9a8d73;margin-top:5px}
+.flow-context{padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:18px}
+.flow-context summary{display:flex;justify-content:space-between;font-size:11px;color:#6c7a91}
+.flow-context p{font-size:12px}
+.flow-context[open] summary span{transform:rotate(45deg)}
+.overview-tail{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 0 2px}
+.flow-counts{display:flex;gap:17px;flex-wrap:wrap;font-size:10px;color:#7a889c}
+.flow-counts strong{font-size:13px;color:#485d7d;font-weight:650;margin-right:2px}
+.findings-start{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:28px 36px 21px}
+.findings-start h2{font-size:18px;letter-spacing:-.3px}
+.findings-start>span{font-size:10px;color:#8391a6}
+.flow-finding{padding:30px 36px 36px;border-top:1px solid var(--line);position:relative;scroll-margin-top:25vh}
+.finding-chapter{display:flex;justify-content:space-between;gap:12px;color:#8997ac;font:10px/1.5 ui-monospace,monospace;margin-bottom:14px}
+.finding-chapter>span:first-child{color:#153ccc}
+.flow-finding h2{font-size:28px;line-height:1.24;font-weight:650;letter-spacing:-.8px}
+.flow-finding-header{margin-bottom:27px;position:relative}
+.flow-finding.is-current .flow-finding-header:before{content:'';position:absolute;left:-36px;top:0;height:28px;border-left:3px solid #153ccc}
+.finding-consequence{background:#f2f5ff;border:1px solid #dce4f8;border-radius:6px;padding:18px 20px;margin-bottom:26px}
+.finding-consequence h3{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#5b75ae}
+.finding-consequence p{font-size:17px;line-height:1.65;margin:9px 0 0;color:#385580}
+.finding-mechanism{margin:25px 0 7px}
+.flow .origin{margin-top:14px;font-size:10px}
+.flow-archives{padding:35px 36px 20px;border-top:1px solid var(--line);scroll-margin-top:30px}
+.flow-archives>.eyebrow{margin-bottom:18px}
+.flow-archive{border:1px solid var(--line);border-radius:6px;margin:10px 0;background:#f9fafc}
+.flow-archive>summary{display:flex;align-items:center;gap:10px;padding:17px 18px;color:#6f7c90}
+.flow-archive>summary strong{font-size:13px;font-weight:550}
+.archive-mark{font-size:14px;color:#8e9aad}
+.archive-count{font-size:10px;background:#e9edf3;padding:2px 7px;border-radius:4px}
+.archive-chevron{margin-left:auto;color:#939fb0;transition:transform .15s}
+.flow-archive[open] .archive-chevron{transform:rotate(180deg)}
+.flow-archive .flow-finding{background:#fff;padding:26px 23px 30px;border-top:1px solid var(--line)}
+.flow-archive .flow-finding h2{font-size:23px}
+.flow-archive .flow-finding.is-current .flow-finding-header:before{left:-23px}
+.flow-archive .flow-finding .journal-chapter-number,.flow-archive .flow-finding .journey-node{display:none}
+.archive-empty{padding:0 18px 15px;font-size:12px!important}
+.flow-endnote{font-size:10px!important;color:#9aa5b5!important;margin-top:25px}
+.flow-rail{position:fixed;top:0;left:0;bottom:0;width:var(--rail);overflow:auto;display:flex;flex-direction:column;border-right:1px solid var(--line);padding:26px 14px;background:#f8f9fb}
+.flow-rail-brand{padding:0 11px 30px}
+.flow-rail .brand{font-size:14px}
+.overview-link{text-align:left;padding:11px 12px;font-size:12px;color:#63738d}
+.flow-rail-label{font-size:9px;letter-spacing:.1em;padding:26px 12px 13px;color:#99a4b6}
+.flow-rail-items{display:flex;flex-direction:column;gap:4px}
+.flow-rail-items button{display:flex;gap:10px;padding:13px 11px;border-radius:6px;text-align:left;border:1px solid transparent}
+.flow-rail-items button.active{background:#edf1ff;border-color:#cbd7f5}
+.rail-number{font:10px/1.8 ui-monospace,monospace;color:#8ea0bc}
+.rail-title{font-size:12px;font-weight:550;line-height:1.45;flex:1;color:#5d6d84}
+.rail-title small{display:block;font-size:9px;font-weight:400;margin-top:6px;color:#97a3b6}
+.flow-rail-items button.active .rail-title,.flow-rail-items button.active .rail-number{color:#153ccc}
+.rail-check{font-size:10px;color:#8393aa}
+.flow-rail-bottom{margin-top:auto;padding:28px 11px 100px}
+.flow-rail-bottom .flow-counts{gap:12px;flex-direction:column}
+.flow-rail-bottom>small{display:block;font-size:10px;color:#a0abba;line-height:1.8;margin-top:26px}
+.flow-toast{position:fixed;bottom:82px;left:calc(var(--rail) + 24px);z-index:80;display:flex;align-items:center;gap:20px;padding:12px 16px;background:#263853;color:#fff;box-shadow:0 5px 20px #0002;border-radius:7px;font-size:12px}
+.flow-toast button{font-weight:650;color:#bacbff;text-decoration:underline;font-size:11px}
+body:is([data-variant="11"],[data-variant="17"],[data-variant="15"],[data-variant="16"]) .prototype-switcher{left:16px;bottom:16px;transform:none;padding:7px;gap:4px;border-radius:10px}
+body:is([data-variant="11"],[data-variant="17"],[data-variant="15"],[data-variant="16"]) .switcher-label,
+body:is([data-variant="11"],[data-variant="17"],[data-variant="15"],[data-variant="16"]) .switcher-description{display:none}
+body:is([data-variant="11"],[data-variant="17"],[data-variant="15"],[data-variant="16"]) .design-options button{font-size:10px;padding:8px 9px}
+body:is([data-variant="11"],[data-variant="17"],[data-variant="15"],[data-variant="16"]) .design-options button span{font-size:9px;padding-right:5px}
+
+/* 11 FEED: full-width recap, then a continuous split reading surface. */
+.feed{--rail:0px}
+.feed .flow-overview{background:#fafbfe;padding:32px 48px 26px}
+.feed>.findings-start{padding-left:48px;padding-right:48px}
+.feed .flow-overview .change-list{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px 48px}
+.feed .flow-finding{padding-bottom:45px}
+.feed .flow-finding+.flow-finding{border-top:9px solid #f0f3f8}
+.feed .flow-archives{background:#fafbfc}
+
+
+.flow-code .code-body{overscroll-behavior:contain}

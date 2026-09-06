@@ -165,13 +165,28 @@ evidence-based; absence of a finding is not inferred dissent.
 
 ## UI, migration, and verification
 
-The source viewer lets readers choose a named code view, switch its revision,
-select one or all labeled ranges, and open the full file. Switching revision
-preserves the selected view. Source browsing also works with zero findings.
+The bundled desktop Feed design starts with a full-width “What changed” recap,
+scope, reviewer completion/failures, and expandable run details. Findings follow
+in a continuous feed, sorted by severity × likelihood (unknown likelihood last,
+severity breaking ties). Finding details and source each occupy half the available
+width. The source pane starts at the first finding and sticks to the full viewport
+height; the last finding title to pass the viewport midpoint selects its source.
+
+The source viewer shows the full captured file, highlights every cited range,
+and offers compact file tabs with a comment-icon toggle and Before/After controls
+on their right. The comment toggle shows or hides all inline review annotations.
+The filename/revision sits in a bottom status bar. Switching revision preserves
+the selected view. Source browsing also works with zero findings, including
+explicit absent/unavailable states. Syntax highlighting uses embedded highlight.js
+with GitHub colors. The selected `r/` logo, reviewer logos, font, and scripts are
+embedded; opening a report makes no network requests.
 Structured evidence opens the associated source, captured document, external
 reference, or check output. Conditional findings display their unresolved
-assessment prominently. Open/Done/Rejected, reopening, comments, and complete
-copying remain independent of that assessment.
+assessment prominently. Reproduction and confidence/limits remain expanded.
+Severity, likelihood, and reviewer attribution appear beside the finding title.
+Done and Discarded move to separate collapsed sections at the bottom; reopening,
+undo, saved decision notes, and complete copying remain independent of assessment.
+Decision notes appear with the finding details, outside the code block.
 
 Report/finding IDs preserve browser decisions across re-rendering the same report.
 `--render /absolute/report.json` performs no model calls. Version-1 reports from
@@ -181,11 +196,19 @@ Other historical report formats are not silently interpreted as version 1.
 
 Browser verification uses a temporary copy and separate browser context/profile;
 it closes its own tab afterward. It checks every finding and code view, both
-revisions, every range and all ranges together, exact rendered source, full files,
+revisions, all highlighted ranges, exact rendered source, full files,
 source browsing without findings, evidence/assessment rendering, switching between
-findings, independent comments/statuses through a reload, and complete copy content.
+findings, the all-comments toggle, collapsed archives, independent notes/statuses
+through a reload, and complete copy content.
 OS clipboard transport is simulated. Verification code is absent from the delivered
 HTML. External URLs are not fetched by rendering or verification.
+
+Template assets are in `assets/report.html`, `report.css`, and `report.js`.
+`scripts/render.py` embeds those assets and report JSON into the delivered HTML;
+no prototype switcher or sample-specific text is included. Vendored assets are
+highlight.js 11.11.1 (BSD-3-Clause), DM Sans (OFL), and Simple Icons OpenAI 11.15.0 /
+Claude 14.15.0 (CC0; marks belong to their respective owners). The bundled font and
+highlighter licenses are also embedded in the generated report.
 
 Exit 0 means complete delivery; exit 2 means partial delivery with a report; exit 1
 means failed review (a failure page when possible, null reportPath for an early or

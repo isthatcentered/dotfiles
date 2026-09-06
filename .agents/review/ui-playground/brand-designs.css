@@ -1,0 +1,205 @@
+/* Visual references: GitHub Primer and aihero.dev. Local prototype, not affiliated. */
+@font-face{font-family:'Review DM Sans';src:url(data:font/ttf;base64,__DM_SANS_FONT__) format('truetype');font-style:normal;font-weight:100 1000;font-display:swap}
+
+/* 15 GITHUB: repository context, compact boxes, review threads and green actions. */
+.github{--blue:#0969da;--ink:#1f2328;--muted:#59636e;--line:#d1d9e0;background:#fff;color:#1f2328;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.github p{color:#1f2328;font-size:14px}
+.github .gh-overview{padding:0;border-bottom:1px solid #d1d9e0}
+.gh-repo-bar{display:flex;align-items:center;gap:12px;background:#f6f8fa;border-bottom:1px solid #d1d9e0;padding:20px 36px;font-size:14px;color:#0969da}
+.gh-repo-bar b{font-weight:600;color:#1f2328}
+.gh-repo-icon{font-size:24px;line-height:1;color:#59636e}
+.gh-private{font-size:11px;border:1px solid #d1d9e0;color:#59636e;border-radius:20px;padding:1px 8px}
+.gh-repo-bar .sample{margin-left:auto}
+.gh-review-title{padding:28px 40px 25px}
+.github .gh-review-title h1{font-size:30px;font-weight:400;letter-spacing:-.5px}
+.gh-review-title h1>span{color:#59636e;font-weight:300}
+.gh-review-subtitle{display:flex;align-items:center;gap:12px;margin-top:14px;color:#59636e;font-size:12px}
+.gh-state{background:#1f883d;color:#fff;font-size:12px;border-radius:20px;padding:5px 12px}
+.gh-review-subtitle code{font:11px ui-monospace,monospace;background:#ddf4ff;color:#0969da;border-radius:5px;padding:3px 7px}
+.gh-recap-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:32px;padding:0 40px 30px}
+.gh-description{border:1px solid #d1d9e0;border-radius:6px;overflow:hidden}
+.gh-box-heading{background:#f6f8fa;border-bottom:1px solid #d1d9e0;display:flex;justify-content:space-between;align-items:center;padding:13px 18px;font-size:12px}
+.gh-box-heading>span{font-size:11px;color:#59636e}
+.gh-description-body{padding:6px 20px 0}
+.github .change-list{gap:10px;margin:17px 0 21px}
+.github .change-list li{font-size:14px;line-height:1.6;color:#1f2328;gap:10px}
+.github .change-number{width:4px;height:4px;background:#59636e;border-radius:50%;font-size:0;align-self:flex-start;margin-top:9px}
+.github .flow-context{margin-bottom:5px;padding:12px 0;border-top:1px solid #d1d9e0;border-bottom:0}
+.github .flow-context summary{font-size:12px;color:#59636e}
+.gh-review-meta h3{font-size:12px;font-weight:600;margin-bottom:10px}
+.github .flow-coverage{background:#fff8c5;border:1px solid #d4a72c66;color:#633c01;border-radius:6px;padding:12px;margin:0 0 22px}
+.github .flow-coverage small{color:#7d652d}
+.github .flow-counts{gap:15px;color:#59636e;margin-bottom:18px}
+.github .flow-counts strong{color:#1f2328}
+.github .primary{background:#1f883d;border:1px solid #1f232826;border-radius:6px;box-shadow:0 1px 0 #1f23281a;color:#fff;padding:7px 14px;font-size:12px;font-weight:600}
+.github .primary:hover{background:#1a7f37}
+.github .secondary{background:#f6f8fa;color:#25292e;border-color:#d1d9e0;box-shadow:0 1px 0 #1f23280a;padding:7px 14px;font-size:12px}
+.github>.findings-start{padding:18px 40px;border-bottom:1px solid #d1d9e0;background:#f6f8fa}
+.github>.findings-start h2{font-size:15px;font-weight:600}
+.github>.findings-start>span{color:#59636e;font-size:11px}
+.github .flow-reading{padding:24px 26px 110px 58px}
+.github .active-findings{position:relative}
+.github .active-findings:before{content:'';position:absolute;left:-24px;top:10px;bottom:0;width:2px;background:#d1d9e0}
+.github .flow-finding{padding:0 22px 24px;border:1px solid #d1d9e0;border-radius:6px;background:#fff;margin-bottom:28px}
+.github .active-findings>.flow-finding:before{content:'◉';position:absolute;left:-36px;top:11px;border:4px solid #fff;background:#f6f8fa;color:#1f883d;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:14px;line-height:1}
+.gh-thread-meta{display:flex;align-items:center;gap:8px;padding:12px 16px;margin:0 -22px 21px;background:#f6f8fa;border-bottom:1px solid #d1d9e0;border-radius:6px 6px 0 0;font-size:11px;color:#59636e}
+.gh-thread-meta>span:first-child{color:#1f883d;font-size:14px}
+.gh-thread-meta strong{font-weight:600;color:#1f2328}
+.gh-thread-state{margin-left:auto;border:1px solid #d1d9e0;border-radius:20px;font-size:10px;padding:0 7px}
+.github .flow-finding.is-current{border-color:#54aeff}
+.github .flow-finding.is-current .gh-thread-meta{background:#ddf4ff;border-bottom-color:#b6e3ff}
+.github .flow-finding-header:before{display:none}
+.github .finding-chapter{display:none}
+.github .flow-finding h2{font-size:23px;line-height:1.3;font-weight:600;letter-spacing:-.4px}
+.github .tags{margin:14px 0 19px;gap:6px}
+.github .badge{border-radius:20px;font-size:10px;padding:2px 8px;border:1px solid #d1d9e0;background:#f6f8fa;color:#59636e}
+.github .badge.high{background:#ffebe9;border-color:#ff818266;color:#a40e26}
+.github .badge.medium{background:#fff8c5;border-color:#d4a72c66;color:#7d4e00}
+.github .badge.supported{background:#dafbe1;border-color:#4ac26b66;color:#116329}
+.github .badge.uncertain{background:#fff8c5;border-color:#d4a72c66;color:#7d4e00}
+.github .reviewer-attribution{color:#59636e}
+.github .finding-consequence{background:transparent;border:0;border-left:3px solid #0969da;border-radius:0;padding:0 0 0 15px;margin:23px 0}
+.github .finding-consequence h3{font-size:13px;letter-spacing:0;text-transform:none;color:#0969da;font-weight:600}
+.github .finding-consequence p{font-size:15px;line-height:1.7;color:#1f2328}
+.github .finding-mechanism h3,.github .repro h3,.github .confidence-limits h3{font-size:14px;font-weight:600}
+.github .repro{padding-top:17px}
+.github .confidence-limits p{color:#59636e;font-size:12px}
+.github .flow-decision{padding-top:17px}
+.github textarea{background:#f6f8fa!important;border-color:#d1d9e0;border-radius:6px}
+.github .flow-archives{padding:22px 0;border:0}
+.github .flow-archive{background:#f6f8fa;border-color:#d1d9e0}
+.github .flow-archive .flow-finding{padding:0 22px 24px;border-radius:0;margin:0}
+.github .flow-code-heading{background:#f6f8fa;border-color:#d1d9e0}
+.github .flow-code-index{background:#ddf4ff;color:#0969da}
+.github .flow-code-heading small,.github .follow-indicator{color:#59636e}
+.github .editor-toolbar{background:#fff;border-color:#d1d9e0}
+.github .editor-panel .file-tabs button{font-size:11px;color:#59636e}
+.github .editor-panel .file-tabs button.active{color:#1f2328;border-bottom-color:#fd8c73}
+.github .editor-panel .segmented{border:1px solid #d1d9e0;background:#f6f8fa;padding:2px}
+.github .editor-panel .segmented button.active{background:#fff;color:#1f2328;box-shadow:0 1px 3px #1f232826}
+.github .editor-panel .code-body{background:#fff}
+.github .editor-panel .code-line.highlight{background:#ddf4ff;box-shadow:inset 2px 0 #54aeff}
+.github .editor-panel .source-status{background:#f6f8fa;border-color:#d1d9e0;color:#59636e}
+.github .editor-panel .inline-review-comment{border-color:#d1d9e0;border-radius:6px;padding:0;box-shadow:0 1px 0 #1f23280a;overflow:hidden}
+.github .inline-comment-heading{padding:9px 13px;background:#f6f8fa;border-bottom:1px solid #d1d9e0}
+.github .editor-panel .inline-review-comment p{margin:0;padding:12px 13px;color:#1f2328}
+:is(.github,.feed) .code-body .hljs-keyword{color:#cf222e}
+:is(.github,.feed) .code-body .hljs-title{color:#8250df}
+:is(.github,.feed) .code-body .hljs-string{color:#0a3069}
+:is(.github,.feed) .code-body .hljs-number,:is(.github,.feed) .code-body .hljs-literal{color:#0550ae}
+
+/* 16 AI HERO: bold DM Sans, mono labels, yellow actions and warm spectrum accents. */
+.aihero{--blue:#edb52f;--ink:#14161a;--muted:#63676c;--line:#d9dadd;background:#fafafb;color:#14161a;font-family:'Review DM Sans',sans-serif}
+.aihero p{font-family:'Review DM Sans',sans-serif;color:#626467}
+.aihero .ai-overview{padding:0 48px 30px;position:relative;isolation:isolate;background:#fafafb}
+.ai-topbar{display:flex;align-items:center;gap:18px;border-bottom:1px solid #d9dadd;padding:24px 0}
+.ai-topbar>strong{font:700 17px ui-monospace,monospace;color:#14161a}
+.ai-topbar>strong>span{color:#b1b3b8}
+.ai-ref{font-size:12px;color:#7b7d82}
+.ai-topbar .sample{margin-left:auto}
+.ai-recap-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:70px;padding:55px 0 45px;position:relative}
+.ai-hero-copy{position:relative}
+.ai-kicker{font:10px/1.7 ui-monospace,monospace;letter-spacing:.11em;color:#73767c}
+.aihero .ai-hero-copy h1{font-family:'Review DM Sans',sans-serif;font-size:clamp(58px,5.8vw,90px);font-weight:750;letter-spacing:-.055em;line-height:.97;margin:22px 0 22px;color:#14161a}
+.ai-period{color:#e5ac28}
+.aihero .ai-hero-copy>p{font-size:19px;line-height:1.5;margin:0 0 25px;color:#686a70}
+.ai-stats{display:flex;gap:55px;border-top:1px solid #d9dadd;padding-top:20px;margin-bottom:27px;max-width:440px}
+.ai-stats strong{display:block;font:500 29px/1.2 ui-monospace,monospace;color:#14161a}
+.ai-stats span{font:9px ui-monospace,monospace;color:#7c7e84;letter-spacing:.07em;display:block;margin-top:7px}
+.ai-change-sheet{position:relative;align-self:center;background:#fff;border:1px solid #d6d7db;padding:27px 29px;box-shadow:7px 7px 0 #ececef}
+.ai-change-sheet:before{content:'';position:absolute;z-index:-1;inset:-24px -20px 15px -24px;background:linear-gradient(120deg,#f7c64f33,#ff80398c 45%,#fc56a680 75%,#ff4b324d);filter:blur(18px)}
+.ai-sheet-heading{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #d9dadd;padding-bottom:19px;font:10px ui-monospace,monospace;letter-spacing:.1em;color:#787a81}
+.aihero .change-list{gap:0;margin:0}
+.aihero .change-list li{padding:21px 0;border-bottom:1px solid #e2e2e6;font-size:16px;line-height:1.55;color:#303238;gap:18px}
+.aihero .change-number{font:11px ui-monospace,monospace;color:#8d8f97}
+.aihero .flow-context{border:0;margin:9px 0 0;padding:8px 0}
+.aihero .flow-context summary{color:#777a80;font-size:11px}
+.aihero .flow-context p{font-size:12px}
+.aihero .flow-coverage{margin:4px 0 0;background:#f8f2df;border:1px solid #e6d8aa;border-radius:0;padding:12px 17px}
+.aihero .flow-coverage>span{font-size:12px;color:#79612a}
+.aihero .flow-coverage small{font-size:10px}
+.aihero .primary{background:#f7c64f;color:#17191d;border:1px solid #f0bf4a;border-radius:6px;font-family:'Review DM Sans',sans-serif;font-size:13px;font-weight:750;padding:12px 21px;box-shadow:none}
+.aihero .primary:hover{background:#efbb37}
+.aihero .secondary{background:transparent;border:1px solid #cdced3;color:#303238;font-size:13px;padding:12px 21px}
+.aihero>.findings-start{padding:28px 48px;background:#f0f1f4;border-bottom:1px solid #d9dadd}
+.aihero>.findings-start h2{font-size:27px;font-weight:750;letter-spacing:-.8px}
+.aihero>.findings-start>span{font:10px ui-monospace,monospace;color:#878991}
+.aihero .flow-finding{padding:38px 44px 45px;background:#fafafb;border-color:#d9dadd}
+.aihero .flow-finding+.flow-finding{border-top:10px solid #eeeff2}
+.ai-finding-kicker{display:flex;align-items:center;gap:15px;margin-bottom:25px}
+.ai-finding-number{font:500 24px ui-monospace,monospace;color:#b8bbc3}
+.ai-finding-kicker>span:last-child{font:9px ui-monospace,monospace;letter-spacing:.11em;color:#888b91}
+.aihero .flow-finding h2{font-family:'Review DM Sans',sans-serif;font-size:clamp(29px,2.8vw,43px);font-weight:750;line-height:1.06;letter-spacing:-.045em;color:#14161a}
+.aihero .flow-finding.is-current .flow-finding-header:before{left:-44px;height:34px;top:0;border-color:#f7c64f;border-width:4px}
+.aihero .tags{gap:7px;margin:23px 0 28px}
+.aihero .badge{font:500 9px/1.5 ui-monospace,monospace;text-transform:uppercase;letter-spacing:.015em;padding:4px 7px;border:1px solid #d9dadd;border-radius:3px;background:#f0f1f4;color:#6c7077}
+.aihero .badge.high{background:#fbece8;color:#ab5948;border-color:#f1d4cb}
+.aihero .badge.medium,.aihero .badge.uncertain{background:#fff3d0;color:#8b6925;border-color:#ebd8a7}
+.aihero .badge.supported{background:#edf4ec;color:#527550;border-color:#d7e5d3}
+.aihero .reviewer-attribution{color:#82858c;font-size:10px}
+.aihero .finding-consequence{border:1px solid #e4d9b7;border-left:3px solid #efc450;background:#faf5e5;border-radius:0;padding:22px 24px;margin:0 0 30px}
+.aihero .finding-consequence h3{font:10px ui-monospace,monospace;letter-spacing:.08em;color:#9a7b35}
+.aihero .finding-consequence p{font-size:20px;line-height:1.5;font-weight:500;color:#3a3630;margin-top:12px}
+.aihero .finding-mechanism h3,.aihero .repro h3,.aihero .confidence-limits h3{font-family:'Review DM Sans',sans-serif;font-size:19px;letter-spacing:-.4px;font-weight:700;color:#24262b}
+.aihero .finding-mechanism p{font-size:16px;line-height:1.8;color:#62656b}
+.aihero .repro ol{font-size:14px;color:#62656b}
+.aihero .confidence-limits p{font-size:13px;color:#74777f}
+.aihero .origin{color:#999da7;font-size:10px}
+.aihero .origin b{color:#707785}
+.aihero .flow-decision{border-color:#d9dadd}
+.aihero .note-label{color:#555960}
+.aihero textarea{border-radius:3px;background:#fff;border-color:#d9dadd}
+.aihero .flow-archives{background:#f0f1f4;padding-left:44px;padding-right:44px;border-color:#d9dadd}
+.aihero .flow-archive{border-radius:3px;border-color:#d9dadd;background:#fafafb}
+.aihero .flow-archive .flow-finding{padding:30px 25px}
+.aihero .flow-archive .flow-finding h2{font-size:27px}
+.aihero .flow-code-heading{background:#eeeff2;border-color:#d9dadd}
+.aihero .flow-code-index{font-family:ui-monospace,monospace;background:#f7c64f;color:#353126;border-radius:3px}
+.aihero .flow-code-heading strong{font-family:'Review DM Sans',sans-serif;font-size:13px;color:#303238}
+.aihero .follow-indicator{font-family:ui-monospace,monospace;color:#8d9097;font-size:9px}
+.aihero .follow-indicator i{background:#d9ad3e}
+.aihero .editor-toolbar,.aihero .editor-panel .file-tabs{background:#fafafb}
+.aihero .editor-panel .file-tabs button{color:#888c95;font-size:11px}
+.aihero .editor-panel .file-tabs button.active{color:#373a41;border-bottom-color:#edbd43}
+.aihero .editor-panel .segmented{background:#e9eaee}
+.aihero .editor-panel .segmented button.active{background:#f7c64f;color:#25272b}
+.aihero .editor-panel .code-body{background:#fafafb}
+.aihero .editor-panel .code-line.highlight{background:#fbf3d9;box-shadow:inset 2px 0 #edbd43}
+.aihero .editor-panel .inline-review-comment{background:#fff;border-color:#dfdfe4;border-radius:2px;box-shadow:3px 3px 0 #ebecf0}
+.aihero .editor-panel .inline-comment-heading strong{color:#877441}
+.aihero .editor-panel .inline-review-comment p{font-family:'Review DM Sans',sans-serif;font-size:13px;color:#6a6f7b}
+.aihero .editor-panel .source-status{background:#eeeff2;border-color:#d9dadd;color:#737782}
+.aihero .comment-icon.active{background:#f6efd9;color:#8f7b3f}
+.aihero .flow-toast{background:#282b32}
+.aihero .flow-toast button{color:#f7c64f}
+
+/* Review identity: the same vector mark in the header and the browser tab. */
+.review-logo{width:34px;height:34px;display:block;flex-shrink:0}
+.review-identity{display:flex;align-items:center;gap:10px;font:700 18px/1.2 'Review DM Sans',system-ui,sans-serif;letter-spacing:-.4px;color:#1e2432;white-space:nowrap}
+.feed-identity{display:flex;align-items:center;gap:22px}
+.feed-identity>.eyebrow{font-size:9px;letter-spacing:.06em;font-weight:500}
+.gh-repo-bar>.review-logo{width:28px;height:28px}
+.ai-topbar .review-identity{font-size:20px}
+
+/* 17 YELLOW FEED: Feed's layout and GitHub syntax colors, with AI Hero's yellow accent. */
+.feed-yellow{--blue:#f7c64f}
+.feed-yellow .primary{background:#f7c64f;color:#292717;border:1px solid #efbd43;font-weight:700}
+.feed-yellow .primary:hover{background:#efbe40}
+.feed-yellow .flow-overview{background:#fcfbf7}
+.feed-yellow .flow-finding.is-current .flow-finding-header:before{border-color:#f7c64f}
+.feed-yellow .finding-chapter>span:first-child{color:#927020}
+.feed-yellow .finding-consequence{background:#fcf7e7;border-color:#eadba8}
+.feed-yellow .finding-consequence h3{color:#8e722d}
+.feed-yellow .finding-consequence p{color:#655534}
+.feed-yellow .flow-code-index{background:#faedbf;color:#846821}
+.feed-yellow .follow-indicator i{background:#dfac2c}
+.feed-yellow .editor-panel .file-tabs button.active{border-bottom-color:#edbd43}
+.feed-yellow .editor-panel .segmented button.active{background:#f7c64f;color:#292717}
+.feed-yellow .editor-panel .comment-icon.active{background:#f9f0d3;color:#8e7530}
+.feed-yellow .editor-panel .comment-icon:hover{border-color:#ead698;color:#725d26;background:#fcf6e4}
+.feed-yellow .editor-panel .code-line.highlight{background:#fcf4d8;box-shadow:inset 2px 0 #edbd43}
+.feed-yellow .editor-panel .inline-review-comment{border-color:#e8dfc3}
+.feed-yellow .editor-panel .inline-comment-heading strong{color:#8d793f}
+.feed-yellow .editor-panel .comment-mark{color:#b39b59}
+.feed-yellow .flow-toast button{color:#f7c64f}
+.feed-yellow button:focus-visible,.feed-yellow summary:focus-visible,.feed-yellow textarea:focus-visible{outline-color:#ddb02c}

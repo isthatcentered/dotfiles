@@ -10,7 +10,7 @@ Spin up 2 codex high using the $spin-up-codex and 1 claude opus high using the $
 
 The user might have given you an exception (a change in behavior done during the behavior), if that's the case, add it to the prompt in {{exceptions}} otherwise, replace it with "None".
 
-Do not use the code-review skill, this is not a code review, this is an audit to verify that each piece of code changed maintains the previous behavior.
+This is not a code review, this is an audit to verify that each piece of code changed maintains the previous behavior.
 
 <Prompt>
 Audit each commit made on this branch, this is a refactor only, the behavior before and after the changes on this branch shoudld be the exact same.

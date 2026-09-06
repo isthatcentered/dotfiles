@@ -1,5 +1,6 @@
 """Standalone rendering plus browser checks using an isolated Chrome context."""
 from html import unescape
+import base64
 import json
 import os
 from pathlib import Path
@@ -22,8 +23,25 @@ def render_report(report, destination):
     template = (SKILL / "assets/report.html").read_text()
     if template.count("__REPORT_DATA__") != 1:
         raise ValueError("Report template must contain exactly one data slot")
-    script = (SKILL / "assets/report.js").read_text()
-    Path(destination).write_text(template.replace("__REPORT_DATA__", data).replace("__REPORT_SCRIPT__", script))
+    assets = SKILL / "assets"
+
+    def encoded(path):
+        return base64.b64encode((assets / path).read_bytes()).decode("ascii")
+
+    style = (assets / "report.css").read_text().replace("__DM_SANS_FONT__", encoded("vendor/dm-sans.ttf"))
+    for name in ("dm-sans-LICENSE.txt", "highlight-LICENSE"):
+        style += "\n/* " + (assets / "vendor" / name).read_text().replace("*/", "* /") + " */\n"
+    slots = {
+        "__REPORT_DATA__": data,
+        "__REPORT_SCRIPT__": (assets / "report.js").read_text(),
+        "__REPORT_STYLE__": style,
+        "__HIGHLIGHT_SCRIPT__": (assets / "vendor/highlight.min.js").read_text().replace("</script", "<\\/script"),
+        "__APP_LOGO__": "data:image/svg+xml;base64," + encoded("review-logo.svg"),
+        "__AGENT_ICONS__": json.dumps({name: "data:image/svg+xml;base64," + encoded("vendor/" + name + ".svg")
+                                     for name in ("openai", "claude")}),
+    }
+    # Substitute once: literal template markers inside review data stay literal.
+    Path(destination).write_text(re.sub("|".join(map(re.escape, slots)), lambda match: slots[match[0]], template))
 
 
 def browser_command(config):

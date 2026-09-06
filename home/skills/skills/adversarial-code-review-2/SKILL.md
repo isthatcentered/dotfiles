@@ -37,7 +37,10 @@ The script launches Codex Astra high, Codex Sol high, and Claude Opus high in
 separate temporary clones, then Codex Sol medium for consolidation. It owns
 timeouts, one bounded retry for transient failures, validation, source capture,
 rendering, environment preparation, and verification. Do not orchestrate additional reviewers yourself.
-The UI is a reusable bundled template; no UI agent is needed on each run.
+Use the bundled Feed template unchanged; no UI agent is needed on each run.
+It opens with a full-width “What changed” recap, then continuous findings beside
+a sticky source pane that follows the finding being read. Review failures remain
+explicit at the top. Done and discarded findings move to separate collapsed groups.
 Findings have one primary location and multiple labeled source views with their
 own Before/After paths and ranges. The report preserves evidence, explicit
 verification needs, and source browsing even with no findings. Existing
