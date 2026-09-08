@@ -5,6 +5,7 @@ ui_scale = 0.95000000670552254
 enabled = true
 
 [bar.default]
+end = [ "media", "tray", "notifications", "clipboard", "isthatcentered/aware-wifi:badge", "network", "bluetooth", "volume", "brightness", "battery", "control-center", "session" ]
 background_opacity = 0.71999998390674591
 margin_ends = 0
 radius = 0
@@ -132,3 +133,21 @@ directory = "/home/isthatcentered/Pictures/Wallpapers"
 
     [wallpaper.monitors.HDMI-A-1]
     path = "/home/isthatcentered/Pictures/Wallpapers/daniele-colucci--_5dCixJ6FI-unsplash.jpg"
+
+[plugins]
+enabled = [ "isthatcentered/aware-wifi" ]
+
+    [[plugins.source]]
+    kind = "git"
+    location = "https://github.com/noctalia-dev/official-plugins"
+    name = "official"
+
+    [[plugins.source]]
+    kind = "git"
+    location = "https://github.com/noctalia-dev/community-plugins"
+    name = "community"
+
+    [[plugins.source]]
+    kind = "path"
+    location = "/home/isthatcentered/.config/noctalia/plugins"
+    name = "personal"

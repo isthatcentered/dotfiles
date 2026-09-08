@@ -1,0 +1,11 @@
+id = "isthatcentered/aware-wifi"
+name = "AWARE Wi-Fi"
+version = "1.0.0"
+plugin_api = 3
+author = "isthatcentered"
+description = "Green when the AWARE Wi-Fi connection is active, red otherwise."
+dependencies = ["nmcli"]
+
+[[widget]]
+id = "badge"
+entry = "widget.luau"
