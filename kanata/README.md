@@ -3,6 +3,8 @@
 macOS and Linux use the same `kanata.kbd`: home-row modifiers, navigation,
 number, symbol, and function layers, media keys, and chords. No device filters
 are configured; Kanata uses its default device detection on each platform.
+Hold the `e` + `r` chord for the accent layer: `u` outputs `é`, `i` outputs
+`è`, `o` outputs `à`, and `p` outputs `ç`.
 
 Installation is manual. The Go dotfiles manager only discovers manifests under
 `home/`, so it does not install anything in this directory.

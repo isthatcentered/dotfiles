@@ -33,6 +33,9 @@
 
   numly (layer-toggle nums)
   symly (layer-toggle symbols)
+  accly (layer-toggle accents)
+  che (chord er e)
+  chr (chord er r)
   chc (chord cv c)
   chv (chord cv v)
   chd (chord fd d)
@@ -47,7 +50,7 @@
 
 (deflayer base
   brdn  brup  _    _    _    _   prev  pp  next  mute  vold  volu
-  tab @escctrl e r y @chu @chi o p
+  tab @escctrl @che @chr y @chu @chi o p
   @a @s @chd @chf h @chj @chk @l @;
   @shnum @chc @chv n @chm @chcomma .
   @spcl
@@ -56,11 +59,20 @@
 
 (deflayer fn
   f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  tab @escctrl _ _ _ (unicode U+00E9) (unicode U+00E8) (unicode U+00E0) _
+  tab @escctrl _ _ _ _ _ _ _
   _ _ _ _ _ _ _ _ _
   @shnum _ _ _ _ _ _
   spc
   fn
+)
+
+(deflayer accents
+  _    _    _    _    _    _   _     _     _     _     _     _
+  _    _    _    _    _    (unicode U+00E9) (unicode U+00E8) (unicode U+00E0) (unicode U+00E7)
+  _    _    _    _    _    _     _     _     _
+  _    _    _    _    _    _     _
+  _
+  _
 )
 
 (deflayer nav
@@ -100,6 +112,12 @@
   (f  ) @f
   (  d) @d
   (f d) @symly
+)
+
+(defchords er $duo-time
+  (e  ) e
+  (  r) r
+  (e r) @accly
 )
 
 (defchords jk $duo-time
