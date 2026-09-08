@@ -99,6 +99,9 @@ widget_order = [ "lockscreen-login-box@DP-3", "lockscreen-login-box@DP-2", "lock
         show_unlock_hint = true
         show_weather = true
 
+[osd.kinds]
+media = false
+
 [shell]
 polkit_agent = true
 
