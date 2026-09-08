@@ -1,10 +1,27 @@
-# Report UI
+# Bundled Feed report
 
-Use an editorial layout with readable typography and clear hierarchy.
+Generate with `scripts/generate-report.py`; use the bundled template unchanged.
+This describes the design's behavior, not instructions to build a UI.
 
-- Keep each finding's title, problematic location, severity, likelihood, reviewer count, and "What goes wrong" visible in the findings list. Selection reveals its full explanation, reproduction, and evidence limits.
-- Show syntax-highlighted Before and After code in a right sidebar, alongside the finding. Allow opening the full file at each recorded revision with its recorded line range highlighted. Clearly label an absent side for added or deleted code.
-- Give each finding an editable comment and an Open, Done, or Rejected status. Done and Rejected findings move to a separate list at the bottom; reopening returns them to the active list.
-- Persist statuses and comments across reloads in the same browser, keyed by report and stable finding ID.
-- Provide a copy action containing the complete finding: revision-specific paths and start/end lines, severity and likelihood with reasoning, Before/After code, explanation, reproduction, evidence limits, reviewer count, and the user's comment if present.
-- Show reviewer completion status and coverage limits separately from findings. If none are supported, display "No supported findings identified" without implying failed or incomplete reviews succeeded.
+- Desktop Feed with the blue accent, selected `r/` logo, and GitHub syntax colors.
+- Full-width “What changed” recap, pinned scope, and explicit reviewer completion
+  and failures. Coverage, checks, and limits remain available with zero findings.
+- Continuous findings sorted by severity × likelihood, unknown likelihood last.
+  Reviewer counts and provider logos accompany the top tags.
+- Equal-width finding/source columns. Code starts with the first finding, sticks
+  to the viewport, and follows the last title to pass the screen midpoint.
+- Compact file tabs with the all-comments icon and Before/After switch on their
+  right. Full files always display, with cited ranges highlighted and review
+  annotations inline. Filename/revision sit in the bottom status bar.
+- Multiple files/ranges, independent Before/After paths for renames, explicit
+  absent/unavailable states, and file browsing without findings.
+- Expanded reproduction and confidence/limits; distinct colors for expected and
+  actual/predicted outcomes. Preserve source, document, external, and check evidence.
+- Decision notes outside code. Done and Discarded findings move to separate
+  collapsed sections. Reopening, undo, browser persistence, and complete copying.
+- Standalone HTML with embedded assets and no automatic network requests.
+
+Assets/scripts are independent copies, not links to skill 2. Vendored assets:
+highlight.js 11.11.1 (BSD-3-Clause), DM Sans (OFL), Simple Icons OpenAI 11.15.0 and
+Claude 14.15.0 (CC0; marks belong to their owners). Font and highlighter licenses
+are bundled and embedded in generated reports.

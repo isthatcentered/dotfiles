@@ -35,12 +35,46 @@ For each finding, record the distinct reviewers who independently reported it an
 
 Preserve every finding field required by REVIEW-PROMPT.md, including revision-specific locations and exact excerpts. Do not add suggested fixes.
 
+Keep the original reviewer report files. After consolidation, encode the results as
+`handoff.json` using [references/report-generator.md](./references/report-generator.md).
+Translate the reviewers' Markdown without changing their prompts, inventing
+evidence, or treating an unexecuted reproduction as observed. Preserve complementary
+files and ranges, reviewer coverage, disagreements, and exclusions.
+
 ## 4. Build report
 
-Create `.agents/review/{timestamp}/index.html`, using a filesystem-safe timestamp. Follow [REPORT-UI.md](./REPORT-UI.md) for layout and interactions. Include the resolved scope, what changed, reviewer completion status, and coverage limits, even when there are no findings.
+Use this skill's bundled Feed template generator. Do not build or redesign the UI
+or launch a UI agent. Resolve this skill's directory to an absolute path; its
+template and generator are independent of `adversarial-code-review-2`.
+
+Save the handoff in `.agents/review/{timestamp}/handoff.json`, using a filesystem-safe
+timestamp and a stable run ID. Run:
+
+```sh
+python3 /absolute/path/to/adversarial-code-review/scripts/generate-report.py \
+  --repo /absolute/path/to/reviewed/repository \
+  --input /absolute/path/to/.agents/review/{timestamp}/handoff.json
+```
+
+The generator validates the handoff and source citations, captures full files from
+the pinned Git revisions, writes `report.json`, and renders `index.html`. Feed opens
+with the full-width “What changed” recap, followed by continuous findings and a
+sticky source pane. It includes scope, reviewer failures, and coverage limits even
+with no findings. [REPORT-UI.md](./REPORT-UI.md) describes the bundled design.
 
 ## 5. Verify and deliver
 
-Open the report and verify finding selection, revision-specific code views, status changes, reopening, comments, persistence after reload, and copying a full finding. Check that added/deleted code and an empty findings list render correctly when present. Disclose any verification limits.
+The generator runs browser checks in an isolated context and saves their actual
+outcome in `verification.json`. Read the final stdout JSON and `result.json`:
 
-Return the HTML file's absolute path.
+- Exit 0: complete review and verified delivery.
+- Exit 2: report exists, but review, consolidation, or browser verification is incomplete.
+- Exit 1: failed review (a failure report when possible) or invalid handoff (`reportPath: null`).
+
+Fix malformed handoff data using the original evidence and rerun the generator.
+Never mark a failed reviewer as completed to make validation pass. Disclose browser
+verification failures or limits. Do not rerun reviewers solely because rendering
+or browser verification failed.
+
+Return the clickable absolute `reportPath`, disclosing partial reviews, failed
+stages, and verification limits. A failed review is never “no findings.”
