@@ -1,9 +1,9 @@
 id = "isthatcentered/aware-wifi"
 name = "AWARE Wi-Fi"
-version = "1.0.0"
+version = "1.0.1"
 plugin_api = 3
 author = "isthatcentered"
-description = "Green when the AWARE Wi-Fi connection is active, red otherwise."
+description = "Green only when AWARE Wi-Fi and its configured VPN are both active."
 dependencies = ["nmcli"]
 
 [[widget]]

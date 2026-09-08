@@ -7,33 +7,53 @@ local function showStatus(connected, tooltip)
   barWidget.setTooltip(tooltip)
 end
 
-showStatus(false, "Checking AWARE Wi-Fi connection…")
+showStatus(false, "Checking AWARE Wi-Fi and VPN…")
 noctalia.setUpdateInterval(3000)
 
 function update()
   if pending then return end
   pending = true
   local accepted = noctalia.runAsync(
-    "LC_ALL=C nmcli -t -f NAME,TYPE connection show --active",
+    "LC_ALL=C nmcli -g connection.uuid,connection.secondaries connection show 'AWARE Wi-Fi' && LC_ALL=C nmcli -t -f UUID,TYPE,STATE connection show --active",
     function(result)
       pending = false
       if result.exitCode ~= 0 or result.timedOut or result.stdoutTruncated then
-        showStatus(false, "Unable to check AWARE Wi-Fi connection")
+        showStatus(false, "Unable to check AWARE Wi-Fi and VPN")
         return
       end
-      local connected = false
-      for line in string.gmatch(result.stdout, "[^\r\n]+") do
-        if line == "AWARE Wi-Fi:802-11-wireless" then
-          connected = true
-          break
+      local wifiUuid, secondaries, connections = string.match(result.stdout, "^([^\n]+)\n([^\n]*)\n(.*)$")
+      if not wifiUuid then
+        showStatus(false, "Unable to read AWARE Wi-Fi profile")
+        return
+      end
+      local active = {}
+      for uuid, kind, state in string.gmatch(connections, "([^:\r\n]+):([^:\r\n]+):([^:\r\n]+)") do
+        if state == "activated" then
+          active[uuid] = kind
         end
       end
-      showStatus(connected, connected and "Connected to AWARE Wi-Fi" or "Not connected to AWARE Wi-Fi")
+      if active[wifiUuid] ~= "802-11-wireless" then
+        showStatus(false, "AWARE Wi-Fi is not connected")
+        return
+      end
+      local vpnCount = 0
+      for uuid in string.gmatch(secondaries, "[^,; %s]+") do
+        vpnCount = vpnCount + 1
+        if active[uuid] ~= "vpn" then
+          showStatus(false, "AWARE Wi-Fi connected; required VPN is not connected")
+          return
+        end
+      end
+      if vpnCount == 0 then
+        showStatus(false, "AWARE Wi-Fi has no VPN configured")
+        return
+      end
+      showStatus(true, "AWARE Wi-Fi and its required VPN are connected")
     end
   )
   if not accepted then
     pending = false
-    showStatus(false, "Unable to check AWARE Wi-Fi connection")
+    showStatus(false, "Unable to check AWARE Wi-Fi and VPN")
   end
 end
 
