@@ -16,12 +16,15 @@
       path
 
   Install:
-    sudo cp cfg_samples/kanata.plist /Library/LaunchDaemons/dev.kanata.kanata.plist
+    sudo cp kanata.plist /Library/LaunchDaemons/dev.kanata.kanata.plist
     sudo chown root:wheel /Library/LaunchDaemons/dev.kanata.kanata.plist
     sudo launchctl bootstrap system /Library/LaunchDaemons/dev.kanata.kanata.plist
 
-  Reload after editing your kanata config (or this plist):
+  Restart after editing your kanata config:
     sudo launchctl kickstart -k system/dev.kanata.kanata
+
+  After editing this plist, unload the installed daemon, copy the new plist,
+  and bootstrap it again. See README.md in this directory.
 
   Uninstall:
     sudo launchctl bootout system/dev.kanata.kanata
@@ -37,7 +40,7 @@
     <array>
       <string>/Users/edouardpenin/.cargo/bin/kanata</string>
       <string>--cfg</string>
-      <string>/Users/edouardpenin/Test/dotfiles/kanata/macos/kanata.kbd</string>
+      <string>/Users/edouardpenin/Test/dotfiles/kanata/kanata.kbd</string>
     </array>
 
     <key>UserName</key>

@@ -1,4 +1,4 @@
-;; defsrc is still necessary
+;; Shared by macOS and Linux. Keep all key mappings in this file.
 (defcfg
   process-unmapped-keys yes
 )
