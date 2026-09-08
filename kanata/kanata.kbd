@@ -56,7 +56,7 @@
 
 (deflayer fn
   f1   f2   f3   f4   f5   f6   f7   f8   f9   f10   f11   f12
-  tab @escctrl _ _ _ _ _ _ _
+  tab @escctrl _ _ _ (unicode U+00E9) (unicode U+00E8) (unicode U+00E0) _
   _ _ _ _ _ _ _ _ _
   @shnum _ _ _ _ _ _
   spc
