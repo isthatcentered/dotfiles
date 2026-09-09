@@ -9,4 +9,4 @@ Ask the questions up to 3 at a time, waiting for feedback on each question befor
 
 If a *fact* can be found by exploring the codebase, look it up rather than asking me. The *decisions*, though, are mine — put each one to me and wait for my answer.
 
-Do not enact the plan until I confirm we have reached a shared understanding.
+Treat shared understanding as the stopping condition: state it clearly and wait for my next instruction.

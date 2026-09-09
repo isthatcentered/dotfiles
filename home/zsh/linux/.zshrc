@@ -14,6 +14,11 @@ source /usr/share/cachyos-zsh-config/cachyos-config.zsh
 export PATH="/home/isthatcentered/.local/bin:$PATH"
 # <<< Codex installer <<<
 
+
+# Aliases 
+alias codex='codex --sandbox danger-full-access'
+alias claude='claude --dangerously-skip-permissions'
+
 eval "$(direnv hook zsh)"
 
 export NVM_DIR="$HOME/.nvm"
