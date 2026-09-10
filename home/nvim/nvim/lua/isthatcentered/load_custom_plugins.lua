@@ -19,9 +19,9 @@ local PERSONAL_PLUGINS = {
         scoped:toggle()
       end, { desc = 'Open ListsEditor' })
 
-      vim.keymap.set('n', '<C-j>', function()
-        scoped:next_in_current_window()
-      end, { desc = 'Go to next file in lit' })
+      -- vim.keymap.set('n', '<C-j>', function()
+      --   scoped:next_in_current_window()
+      -- end, { desc = 'Go to next file in lit' })
 
       vim.keymap.set('n', '<C-k>', function()
         scoped:previous_in_current_window()

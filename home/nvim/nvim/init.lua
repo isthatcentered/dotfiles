@@ -200,6 +200,7 @@ vim.api.nvim_create_autocmd('FileChangedShell', {
 -- ============================================================================
 require 'isthatcentered/load_custom_plugins'
 require 'isthatcentered.diagnostics'
+require 'isthatcentered.siblings'
 require 'isthatcentered.autosave'
 require 'isthatcentered.autorun'
 require 'isthatcentered.go'
