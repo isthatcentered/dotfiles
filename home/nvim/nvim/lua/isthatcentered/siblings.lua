@@ -11,8 +11,9 @@ local function alphabetical(left, right)
   return lower_left < lower_right
 end
 
+---@param direction integer
 ---@return boolean
-function M.next_file()
+local function switch_file(direction)
   local path = vim.api.nvim_buf_get_name(0)
   if vim.bo.buftype ~= '' or path == '' then
     return false
@@ -45,8 +46,8 @@ function M.next_file()
   table.sort(files, alphabetical)
   for index, name in ipairs(files) do
     if name == current_name then
-      local next_path = directory .. '/' .. files[index % #files + 1]
-      vim.cmd('hide edit ' .. vim.fn.fnameescape(next_path))
+      local target_path = directory .. '/' .. files[(index - 1 + direction) % #files + 1]
+      vim.cmd('hide edit ' .. vim.fn.fnameescape(target_path))
       return true
     end
   end
@@ -54,6 +55,17 @@ function M.next_file()
   return false
 end
 
+---@return boolean
+function M.next_file()
+  return switch_file(1)
+end
+
+---@return boolean
+function M.previous_file()
+  return switch_file(-1)
+end
+
 vim.keymap.set('n', '<C-j>', M.next_file, { desc = 'Next sibling file' })
+vim.keymap.set('n', '<C-k>', M.previous_file, { desc = 'Previous sibling file' })
 
 return M

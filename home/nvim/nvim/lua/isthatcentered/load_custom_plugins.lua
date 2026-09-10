@@ -23,9 +23,9 @@ local PERSONAL_PLUGINS = {
       --   scoped:next_in_current_window()
       -- end, { desc = 'Go to next file in lit' })
 
-      vim.keymap.set('n', '<C-k>', function()
-        scoped:previous_in_current_window()
-      end, { desc = 'Go to prev in current window' })
+      -- vim.keymap.set('n', '<C-k>', function()
+      --   scoped:previous_in_current_window()
+      -- end, { desc = 'Go to prev in current window' })
 
       vim.keymap.set('n', 'sfa', function()
         scoped:add_current_file_to_current_list()

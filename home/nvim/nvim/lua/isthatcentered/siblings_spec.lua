@@ -65,6 +65,20 @@ describe('isthatcentered.siblings', function()
     end
   end)
 
+  it('cycles backwards through siblings and wraps from the first to the last', function()
+    for _, name in ipairs { 'apple', 'Banana', 'cherry', 'subfolder/D' } do
+      create_file(name)
+    end
+    open_file 'apple'
+    local window = vim.api.nvim_get_current_win()
+
+    for _, expected in ipairs { 'cherry', 'Banana', 'apple' } do
+      assert.is_true(siblings.previous_file())
+      assert.equals(expected, current_name())
+      assert.equals(window, vim.api.nvim_get_current_win())
+    end
+  end)
+
   it('includes hidden files and files listed in gitignore', function()
     create_file('.gitignore', { 'ignored.log' })
     create_file '.hidden'
@@ -93,7 +107,7 @@ describe('isthatcentered.siblings', function()
     assert.same({ 'A' }, vim.fn.readfile(directory .. '/A'))
     assert.is_false(vim.o.hidden)
 
-    siblings.next_file()
+    siblings.previous_file()
     assert.equals(buffer, vim.api.nvim_get_current_buf())
     assert.same({ 'unsaved edits' }, vim.api.nvim_buf_get_lines(0, 0, -1, false))
   end)
@@ -128,6 +142,7 @@ describe('isthatcentered.siblings', function()
     local buffer = open_file 'A'
 
     assert.is_false(siblings.next_file())
+    assert.is_false(siblings.previous_file())
     assert.equals(buffer, vim.api.nvim_get_current_buf())
   end)
 
@@ -138,16 +153,18 @@ describe('isthatcentered.siblings', function()
     vim.bo[buffer].buftype = 'nofile'
 
     assert.is_false(siblings.next_file())
+    assert.is_false(siblings.previous_file())
     assert.equals(buffer, vim.api.nvim_get_current_buf())
 
     local unnamed = vim.api.nvim_create_buf(true, false)
     vim.api.nvim_win_set_buf(0, unnamed)
     assert.is_false(siblings.next_file())
+    assert.is_false(siblings.previous_file())
     assert.equals(unnamed, vim.api.nvim_get_current_buf())
     vim.api.nvim_buf_delete(unnamed, { force = true })
   end)
 
-  it('binds Ctrl+j to sibling navigation in normal mode', function()
+  it('binds Ctrl+j and Ctrl+k to next and previous siblings in normal mode', function()
     create_file 'A'
     create_file 'B'
     open_file 'A'
@@ -156,5 +173,10 @@ describe('isthatcentered.siblings', function()
     assert.equals('Next sibling file', mapping.desc)
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<C-j>', true, false, true), 'xt', false)
     assert.equals('B', current_name())
+
+    local previous_mapping = vim.fn.maparg('<C-k>', 'n', false, true)
+    assert.equals('Previous sibling file', previous_mapping.desc)
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<C-k>', true, false, true), 'xt', false)
+    assert.equals('A', current_name())
   end)
 end)
