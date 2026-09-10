@@ -1,0 +1,18 @@
+clear
+line-width 3
+super+semicolon start,grid 2x2
+
+q cell-select 1,warp
+w cell-select 2,warp
+a cell-select 3,warp
+s cell-select 4,warp
+
+h move-left,warp
+j move-down,warp
+k move-up,warp
+l move-right,warp
+
+space warp,click 1
+BackSpace history-back
+semicolon end
+Return end
