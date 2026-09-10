@@ -64,6 +64,7 @@ zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 
 # Aliases
 alias codex='codex --sandbox danger-full-access'
+alias sol='codex --model gpt-5.6-sol --config model_reasoning_effort=high'
 alias webcodex="codex \
     -c 'mcp_servers.chrome-devtools.command=\"npx\"' \
     -c 'mcp_servers.chrome-devtools.args=[\"-y\", \"chrome-devtools-mcp@latest\"]' \

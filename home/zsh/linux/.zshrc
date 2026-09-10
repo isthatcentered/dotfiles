@@ -17,6 +17,7 @@ export PATH="/home/isthatcentered/.local/bin:$PATH"
 
 # Aliases 
 alias codex='codex --sandbox danger-full-access'
+alias sol='codex --model gpt-5.6-sol --config model_reasoning_effort=high'
 alias claude='claude --dangerously-skip-permissions'
 
 eval "$(direnv hook zsh)"
