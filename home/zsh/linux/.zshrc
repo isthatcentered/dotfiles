@@ -30,3 +30,7 @@ export PATH="$(go env GOPATH)/bin:$PATH"
 . "$HOME/.atuin/bin/env"
 
 eval "$(atuin init zsh)"
+
+# Enable vim mode in the terminal
+bindkey -v
+export KEYTIMEOUT=1
