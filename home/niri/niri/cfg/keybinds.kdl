@@ -11,7 +11,7 @@ binds {
     // ─── Applications ───
     Mod+Return                          hotkey-overlay-title="Open Terminal: Alacritty" { spawn "alacritty"; }
     Mod+B                               hotkey-overlay-title="Open Browser: firefox" { spawn "firefox"; }
-    Mod+semicolon                       repeat=false hotkey-overlay-title="Keyboard Pointer: waynav" { spawn-sh "exec \"$HOME/.local/bin/waynav\""; }
+    Mod+P                               repeat=false hotkey-overlay-title="Keyboard Pointer: waynav" { spawn-sh "exec \"$HOME/.local/bin/waynav\""; }
 
     // --- Noctalia ---
     Mod+Shift+Return                    hotkey-overlay-title="Open Wallpaper Selector: noctalia wallpaper toggle" { spawn-sh "noctalia msg panel-toggle wallpaper"; }
