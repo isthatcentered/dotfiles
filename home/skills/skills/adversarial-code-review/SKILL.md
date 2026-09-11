@@ -20,7 +20,7 @@ Clarify ambiguity before launching reviewers. Read [REVIEW-PROMPT.md](./REVIEW-P
 Pass the same completed prompt to three independent reviewers:
 
 - Codex Astra, high reasoning, using $spin-up-codex.
-- Codex Sol, high reasoning, using $spin-up-codex.
+- Codex Astra, high reasoning, using $spin-up-codex.
 - Claude Opus, high reasoning, using $spin-up-claude.
 
 Collect their report files. Record each reviewer's identity, completion status, coverage, and limits. Distinguish a completed review with no findings from a failed or incomplete review; disclose missing coverage in the final report.

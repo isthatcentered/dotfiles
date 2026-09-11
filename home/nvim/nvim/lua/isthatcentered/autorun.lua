@@ -37,7 +37,7 @@
 
 ---@alias VitestJson {
 --- numFailedTestSuites: number,
---- numFailedTests: number,
+--- numFailedTests: numberjj,
 --- numPassedTestSuites: number,
 --- numPassedTests: number,
 --- numPendingTestSuites: number,

@@ -1,5 +1,11 @@
 local PERSONAL_PLUGINS_PATH = vim.fn.stdpath 'config' .. '/lua/isthatcentered'
 local PERSONAL_PLUGINS = {
+  {
+    name = 'todo-prototype',
+    config = function()
+      require('todo_prototype').setup()
+    end,
+  },
   { name = 'acid', opts = {} },
   -- { name = 'snitch', opts = {} },
   {
