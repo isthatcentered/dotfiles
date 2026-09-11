@@ -53,6 +53,7 @@ binds {
     // ─── Applications ───
     Mod+Return                          hotkey-overlay-title="Open Terminal: Ghostty" { spawn "ghostty"; }
     Mod+B                               hotkey-overlay-title="Open Browser: Google Chrome" { spawn "google-chrome-stable"; }
+    Mod+semicolon                       repeat=false hotkey-overlay-title="Keyboard Pointer: waynav" { spawn-sh "exec \"$HOME/.local/bin/waynav\""; }
     ALT+Space                           repeat=false allow-inhibiting=false hotkey-overlay-title="Toggle Dictation: Handy" { spawn "handy" "--toggle-transcription"; }
 
     // --- Noctalia ---
