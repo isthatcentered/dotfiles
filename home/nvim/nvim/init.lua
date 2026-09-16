@@ -133,6 +133,10 @@ vim.api.nvim_create_autocmd('textyankpost', {
 })
 
 -- use system clipboard
+if vim.env.TMUX then
+  vim.g.clipboard = 'tmux'
+end
+
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
