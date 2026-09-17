@@ -64,6 +64,8 @@ end
 local function lane(p, state, name)
   add(p, '  ' .. name:upper() .. '  ·  ' .. #state[name], 'TodoProtoAccent')
   add(p)
+  p.lane_rows = p.lane_rows or {}
+  p.lane_rows[name] = #p.lines + 1
   if #state[name] == 0 then
     local empty = { done = '  Nothing done yet. Tab: Discarded.', discarded = '  Nothing discarded. Tab: Queue.' }
     add(p, empty[name] or '  Empty — a: add a task', 'TodoProtoMuted')

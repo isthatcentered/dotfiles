@@ -56,6 +56,7 @@ describe('manager persistence integration', function()
     eq(loaded()[1].description, 'A description\nwith two lines')
     key 'm'
     eq(loaded()[1].status.kind, 'triaged')
+    key 'h'
     key 'e'
     edit { 'New title', '', 'New description' }
     eq(loaded()[1].title, 'New title')
@@ -75,6 +76,64 @@ describe('manager persistence integration', function()
     key 'x'
     eq(loaded()[1].status.kind, 'triaged')
   end)
+  for _, lane in ipairs { 'triaged', 'backlog' } do
+    for _, index in ipairs { 1, 2, 3 } do
+      it(('keeps selection in %s after moving task %d'):format(lane, index), function()
+        local directory = tempdir()
+        local destination = lane == 'triaged' and 'backlog' or 'triaged'
+        local tasks = { task(1, lane), task(2, lane), task(3, lane), task(4, destination) }
+        for _, t in ipairs(tasks) do
+          t.title = 'Task ' .. t.id
+        end
+        open(directory, tasks)
+        key(lane == 'triaged' and 'h' or 'l')
+        for _ = 2, index do
+          key 'j'
+        end
+        key 'm'
+        local next_id = index == 3 and 2 or index + 1
+        assert(api.nvim_get_current_line():find('Task ' .. next_id, 1, true))
+        eq(api.nvim_get_current_line():match('%[ %] (%d+)%.'), tostring(math.min(index, 2)))
+        local loaded = assert(repositories.new(directory):load())
+        local destination_ids = {}
+        for _, t in ipairs(loaded) do
+          if t.status.kind == destination then
+            destination_ids[#destination_ids + 1] = t.id
+          end
+        end
+        eq(destination_ids, { 4, index })
+      end)
+    end
+    it('keeps focus in an emptied ' .. lane .. ' list', function()
+      local directory = tempdir()
+      local destination = lane == 'triaged' and 'backlog' or 'triaged'
+      open(directory, { task(1, lane), task(2, destination) })
+      key(lane == 'triaged' and 'h' or 'l')
+      key 'm'
+      local function assert_empty_focus()
+        assert(api.nvim_get_current_line():find('Empty', 1, true))
+        local row = api.nvim_win_get_cursor(0)[1]
+        local header = api.nvim_buf_get_lines(0, row - 3, row - 2, false)[1]
+        assert(header:find(lane:upper(), 1, true))
+      end
+      assert_empty_focus()
+      local before = read(directory .. '/todo.jsonl')
+      key 'm'
+      eq(read(directory .. '/todo.jsonl'), before)
+      key '<C-p>'
+      assert_empty_focus()
+      key 'a'
+      edit { 'New task in the empty list' }
+      local loaded = assert(repositories.new(directory):load())
+      for _, t in ipairs(loaded) do
+        if t.title == 'New task in the empty list' then
+          eq(t.status.kind, lane)
+          return
+        end
+      end
+      error('new task was not saved')
+    end)
+  end
   it('persists queue reorder keys', function()
     local directory = tempdir()
     open(directory, { task(1), task(2), task(3) })

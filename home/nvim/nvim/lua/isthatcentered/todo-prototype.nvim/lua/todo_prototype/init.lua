@@ -55,9 +55,15 @@ local function select_visible(index)
   local tasks = visible_tasks()
   for _, t in ipairs(tasks) do
     if t.id == state.selected then
+      state.empty_lane = nil
       return
     end
   end
+  if state.screen == 'queue' and state.empty_lane and #state[state.empty_lane] == 0 then
+    state.selected = nil
+    return
+  end
+  state.empty_lane = nil
   local next_task = tasks[math.min(index or 1, #tasks)]
   state.selected = next_task and next_task.id or nil
 end
@@ -67,6 +73,7 @@ local function switch_screen()
     return
   end
   state.screen_selected[state.screen] = state.selected
+  state.empty_lane = nil
   state.screen = views.next_screen[state.screen]
   state.selected = state.screen_selected[state.screen]
   select_visible()
@@ -185,7 +192,16 @@ local function reorder(delta)
 end
 
 local function move()
-  if state.selected and change('move', state.selected) then
+  local t, _, index = selected()
+  if not t or (t.status.kind ~= 'triaged' and t.status.kind ~= 'backlog') then
+    return
+  end
+  local lane = t.status.kind
+  if change('move', t.id) then
+    local remaining = state[lane]
+    local next_task = remaining[math.min(index, #remaining)]
+    state.selected = next_task and next_task.id or nil
+    state.empty_lane = not next_task and lane or nil
     M.render()
   end
 end
@@ -198,7 +214,7 @@ local function edit(is_new, draft_lines, draft_lane)
   if not is_new and not t then
     return
   end
-  local lane = draft_lane or (t and (t.status.kind == 'triaged' or t.status.kind == 'backlog') and t.status.kind or 'backlog')
+  local lane = draft_lane or state.empty_lane or (t and (t.status.kind == 'triaged' or t.status.kind == 'backlog') and t.status.kind or 'backlog')
   local buf = api.nvim_create_buf(false, true)
   vim.bo[buf].buftype = 'acwrite'
   vim.bo[buf].bufhidden = 'wipe'
@@ -347,7 +363,7 @@ local function mappings(buf)
     vim.notify(table.concat({
       'TODO UI PROTOTYPE — tasks saved to todo.jsonl',
       'j/k: select task across lists; h/l: triaged/backlog; gg/G: first/last',
-      'J/K: reorder within the list; m: move to the end of the other list',
+      'J/K: reorder within the list; m: move to the end of the other list, keeping focus here',
       'Tab in queue: Queue / Done / Discarded; x: complete / restore from Done',
       'd in queue: discard / restore from Discarded; a: add; Enter/e: edit',
       'Ctrl-p: toggle preview (shown when opening the queue)',
@@ -407,6 +423,9 @@ function M.render()
     p.win, p.buf =
       window({ row = y + 3 + p.y, col = x + p.x, width = p.w, height = p.h, border = 'rounded', title = views.fit(p.title, p.w - 2) }, p.lines, true)
     if not p.detail then
+      if state.empty_lane then
+        target, target_row = p.win, p.lane_rows[state.empty_lane]
+      end
       vim.keymap.set('n', '<Tab>', switch_screen, { buffer = p.buf, nowait = true, desc = 'Switch Queue / Done / Discarded' })
       vim.keymap.set('n', 'd', toggle_discarded, { buffer = p.buf, nowait = true, desc = 'Discard task / restore from Discarded' })
     end
@@ -458,6 +477,7 @@ function M.open()
     project()
     if not same_project then
       state.selected, state.screen, state.screen_selected = nil, 'queue', {}
+      state.empty_lane = nil
     end
     editor_draft = drafts[session.path]
     origin = api.nvim_get_current_win()

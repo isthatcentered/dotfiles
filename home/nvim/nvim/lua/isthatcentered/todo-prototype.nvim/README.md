@@ -40,9 +40,9 @@ Neovim 0.11+; terminal minimum 60 × 18, preferably 100 × 25 or larger.
 | `gg` / `G` | First / last task |
 | `x` | Move to Done; in Done, restore to the previous list and position |
 | `d` in the queue | Move to Discarded; in Discarded, restore to the previous list and position |
-| `m` | Move selected task to the end of the other list |
+| `m` | Move selected task to the end of the other list, keeping focus in the original list |
 | `J` / `K` | Reorder selected task within its list |
-| `a` | Add to the selected working list; from Done, Discarded, or an empty screen, add to Backlog |
+| `a` | Add to the selected working list, including a list emptied with `m`; from Done, Discarded, or an empty screen, add to Backlog |
 | `Enter` / `e` | Edit title and full multiline description |
 | `Ctrl-p` | Show / hide the preview |
 | `Ctrl-w w` | Focus another pane for scrolling |
