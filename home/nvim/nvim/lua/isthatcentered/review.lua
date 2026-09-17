@@ -1,12 +1,21 @@
-local MARKER = '// @TODO(REVIEW):'
+local selected_tag = 'REVIEW'
 local EMPTY_COMMENT_PLACEHOLDER = '<empty>'
+
+local function selected_marker()
+  return '// @TODO(' .. selected_tag .. '):'
+end
+
+local function toggle_tag()
+  selected_tag = selected_tag == 'REVIEW' and 'IMPLEMENTATION' or 'REVIEW'
+  vim.notify('Now using ' .. selected_tag)
+end
 
 local function insert_review_marker_above_cursor()
   local cursor = vim.api.nvim_win_get_cursor(0)
   local row = cursor[1]
   local current_line = vim.api.nvim_get_current_line()
   local indent = current_line:match '^%s*' or ''
-  local todo_line = indent .. MARKER .. ' '
+  local todo_line = indent .. selected_marker() .. ' '
 
   vim.api.nvim_buf_set_lines(0, row - 1, row - 1, false, { todo_line })
   vim.api.nvim_win_set_cursor(0, { row, #todo_line })
@@ -15,9 +24,9 @@ end
 
 local function open_review_picker()
   require('fzf-lua').grep {
-    search = MARKER,
+    search = selected_marker(),
     cwd = vim.fn.getcwd(),
-    prompt = 'Review TODOs> ',
+    prompt = selected_tag .. ' TODOs> ',
   }
 end
 
@@ -30,18 +39,18 @@ local function grep_review_to_quickfix()
     '--fixed-strings',
     '--glob',
     '!.git',
-    MARKER,
+    selected_marker(),
     cwd,
   }
   local exit_code = vim.v.shell_error
 
   if exit_code > 1 then
-    vim.notify('Review grep failed', vim.log.levels.ERROR)
+    vim.notify(selected_tag .. ' grep failed', vim.log.levels.ERROR)
     return
   end
 
   vim.fn.setqflist({}, ' ', {
-    title = 'Review TODOs',
+    title = selected_tag .. ' TODOs',
     lines = lines,
     efm = '%f:%l:%c:%m',
   })
@@ -67,7 +76,7 @@ end
 ---@param source_line string
 ---@return string?
 local function extract_review_comment(source_line)
-  local _, marker_end = source_line:find(MARKER, 1, true)
+  local _, marker_end = source_line:find(selected_marker(), 1, true)
   if not marker_end then
     return nil
   end
@@ -89,13 +98,13 @@ local function collect_review_todos_to_clipboard()
     '--fixed-strings',
     '--glob',
     '!.git',
-    MARKER,
+    selected_marker(),
     cwd,
   }
   local exit_code = vim.v.shell_error
 
   if exit_code > 1 then
-    vim.notify('Review collect failed', vim.log.levels.ERROR)
+    vim.notify(selected_tag .. ' collect failed', vim.log.levels.ERROR)
     return
   end
 
@@ -111,10 +120,11 @@ local function collect_review_todos_to_clipboard()
   end
 
   vim.fn.setreg('+', table.concat(collected_lines, '\n'))
-  vim.notify('Copied ' .. #collected_lines .. ' review todos to clipboard')
+  vim.notify('Copied ' .. #collected_lines .. ' ' .. selected_tag .. ' todos to clipboard')
 end
 
-vim.keymap.set('n', '<leader>R', insert_review_marker_above_cursor, { desc = 'Insert review TODO above current line' })
-vim.keymap.set('n', '<leader>rr', open_review_picker, { desc = 'Search review TODOs in cwd' })
-vim.keymap.set('n', '<leader>rq', grep_review_to_quickfix, { desc = 'Send review TODOs to quickfix' })
-vim.keymap.set('n', '<leader>rc', collect_review_todos_to_clipboard, { desc = 'Collect review TODOs to clipboard' })
+vim.keymap.set('n', '<leader>R', insert_review_marker_above_cursor, { desc = 'Insert selected-tag TODO above current line' })
+vim.keymap.set('n', '<leader>rr', open_review_picker, { desc = 'Search selected-tag TODOs in cwd' })
+vim.keymap.set('n', '<leader>rq', grep_review_to_quickfix, { desc = 'Send selected-tag TODOs to quickfix' })
+vim.keymap.set('n', '<leader>rc', collect_review_todos_to_clipboard, { desc = 'Collect selected-tag TODOs to clipboard' })
+vim.keymap.set('n', '<leader>rt', toggle_tag, { desc = 'Toggle TODO tag (REVIEW / IMPLEMENTATION)' })
