@@ -5,6 +5,7 @@ right. The preview starts visible each time you open the queue. Press `Ctrl-p`
 to toggle it. The queue and preview have equal widths. The queue keeps that
 same width and position when the preview is hidden.
 The preview shows a bold task title and its description in the normal text color.
+The preview heading is `#id - title`; IDs appear only in the preview.
 This remains a UI prototype with no plugin dependencies.
 
 Moving to a window outside the manager closes it and keeps focus on that window.

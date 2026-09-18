@@ -81,7 +81,8 @@ local function detail(p, t)
     add(p, '  No task selected.', 'TodoProtoText')
     return
   end
-  for _, line in ipairs(wrap(t.title, p.w - 4)) do
+  local title = ('#%.0f - %s'):format(t.id, t.title)
+  for _, line in ipairs(wrap(title, p.w - 4)) do
     add(p, '  ' .. line, 'TodoProtoTitle', t.id)
   end
   add(p)
