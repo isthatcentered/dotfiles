@@ -13,6 +13,7 @@ local languages = {
   'markdown',
   'markdown_inline',
   'json',
+  'rust',
   'javascript',
   'tsx',
   'jsx',

@@ -61,6 +61,7 @@ local LSP = {
       'lua_ls',
       'eslint',
       'gopls',
+      'rust_analyzer',
       -- 'biome',
       'oxlint',
       'ts_ls',
@@ -127,6 +128,16 @@ local LSP = {
             ignoreDir = { '__lua__', '.git', 'node_modules', '.dist', '.temp' },
           },
           telemetry = { enable = false },
+        },
+      },
+    })
+
+    vim.lsp.config('rust_analyzer', {
+      settings = {
+        ['rust-analyzer'] = {
+          check = {
+            command = 'clippy',
+          },
         },
       },
     })
