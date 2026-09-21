@@ -7,7 +7,7 @@ describe('JSONL repository', function()
     local directory = tempdir()
     local repo = repositories.new(directory)
     repo:load()
-    local tasks = model.apply({ task(1), task(2) }, 'done', 2)
+    local tasks = model.apply({ task(1), task(2) }, 'move', 2, 'done')
     tasks = model.apply(tasks, 'discard', 2)
     tasks[1].description = 'Persisted across processes\n日本語'
     assert(repo:save(tasks))
@@ -23,7 +23,7 @@ describe('JSONL repository', function()
     )
     local result = vim.system({ vim.v.progpath, '--headless', '-u', 'NONE', '-l', script }, { text = true }):wait(10000)
     eq(result.code, 0)
-    eq(model.find(assert(repo:load()), 2).status.kind, 'done')
+    eq(model.find(assert(repo:load()), 2).status, 'discarded')
   end)
   it('creates an empty todo.jsonl only in the exact directory', function()
     local parent = tempdir()
@@ -45,21 +45,20 @@ describe('JSONL repository', function()
     eq(#vim.fn.readfile(repo.path), 1)
     eq(repositories.new(vim.fn.fnamemodify(repo.path, ':h')):load(), { t })
   end)
-  it('persists every domain action and restoration metadata across fresh repositories', function()
+  it('persists board actions across fresh repositories', function()
     local directory = tempdir()
     local session = assert(sessions.open(repositories.new(directory)))
     for i = 1, 3 do
       assert(session:change('add', nil, { title = 'Task ' .. i, description = '' }))
     end
     for _, command in ipairs {
-      { 'move', 2 },
-      { 'move', 3 },
+      { 'move', 2, 'active' },
+      { 'move', 3, 'active' },
       { 'reorder', 3, -1 },
       { 'edit', 3, { title = 'Changed', description = 'line 1\nline 2' } },
-      { 'done', 3 },
-      { 'discard', 3 },
-      { 'discard', 3 },
-      { 'done', 3 },
+      { 'move', 3, 'done' },
+      { 'move', 3, 'active' },
+      { 'discard', 1 },
     } do
       assert(session:change(unpack(command)))
       local expected = session:tasks()
@@ -68,7 +67,7 @@ describe('JSONL repository', function()
     end
     local ids = {}
     for _, t in ipairs(session:tasks()) do
-      if t.status.kind == 'triaged' then
+      if t.status == 'active' then
         ids[#ids + 1] = t.id
       end
     end
@@ -240,4 +239,67 @@ describe('JSONL repository', function()
     eq(read(repo.path), '')
     eq(vim.fn.glob(repo.path .. '.*'), '')
   end)
+end)
+
+describe('version 1 migration', function()
+  local function legacy(id, status)
+    local t = task(id)
+    t.version, t.status = 1, status
+    t.description = 'Preserve text\n日本語'
+    return t
+  end
+  it('backs up exact bytes and converts all statuses without losing order or task content', function()
+    local directory = tempdir()
+    local repo = repositories.new(directory)
+    local originals = {
+      legacy(8, { kind = 'triaged' }),
+      legacy(3, { kind = 'backlog' }),
+      legacy(7, { kind = 'done', restore = { kind = 'triaged' }, index = 2 }),
+      legacy(9, { kind = 'discarded', restore = { kind = 'done', restore = { kind = 'backlog' }, index = 1 }, index = 3 }),
+    }
+    local bytes = '\r\n' .. table.concat(vim.tbl_map(vim.json.encode, originals), '\r\n')
+    write(repo.path, bytes)
+    assert(vim.uv.fs_chmod(repo.path, 416))
+    local migrated = assert(repo:load())
+    eq(read(assert(repo.migration_backup)), bytes)
+    for i, status in ipairs { 'active', 'backlog', 'done', 'discarded' } do
+      local expected = vim.deepcopy(originals[i])
+      expected.version, expected.status = 2, status
+      eq(migrated[i], expected)
+    end
+    eq(vim.uv.fs_stat(repo.path).mode % 512, 416)
+    eq(vim.uv.fs_stat(repo.migration_backup).mode % 512, 416)
+    local saved = read(repo.path)
+    local reopened = repositories.new(directory)
+    eq(reopened:load(), migrated)
+    eq(reopened.migration_backup, nil)
+    eq(read(repo.path), saved)
+    eq(#vim.fn.glob(repo.path .. '.v1-backup.*', false, true), 1)
+  end)
+  it('validates the entire old file before creating a backup or writing', function()
+    local repo = repositories.new(tempdir())
+    local bytes = vim.json.encode(legacy(1, { kind = 'triaged' })) .. '\n' .. vim.json.encode(legacy(2, { kind = 'done' }))
+    write(repo.path, bytes)
+    eq(repo:load(), nil)
+    eq(read(repo.path), bytes)
+    eq(vim.fn.glob(repo.path .. '.*'), '')
+  end)
+  for _, operation in ipairs { 'fs_mkstemp', 'fs_write', 'fs_fsync', 'fs_rename' } do
+    it('leaves version 1 intact if migration fails at ' .. operation, function()
+      local directory = tempdir()
+      local path = directory .. '/todo.jsonl'
+      local bytes = vim.json.encode(legacy(1, { kind = 'triaged' })) .. '\n'
+      write(path, bytes)
+      local fs = setmetatable({}, { __index = vim.uv })
+      fs[operation] = function() return nil, 'migration failed' end
+      local repo = repositories.new(directory, fs)
+      local tasks, err = repo:load()
+      eq(tasks, nil)
+      assert(err:find('migration failed', 1, true))
+      eq(read(path), bytes)
+      eq(vim.fn.glob(path .. '.tmp.*'), '')
+      eq(vim.uv.fs_stat(path .. '.lock'), nil)
+      eq(repositories.new(directory):load()[1].status, 'active')
+    end)
+  end
 end)

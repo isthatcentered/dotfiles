@@ -26,7 +26,7 @@ function tempdir()
   return path
 end
 function task(id, kind)
-  return { version = 1, id = id or 1, title = 'A task', description = '', status = { kind = kind or 'backlog' } }
+  return { version = 2, id = id or 1, title = 'A task', description = '', status = kind or 'backlog' }
 end
 function read(path)
   local file = assert(io.open(path, 'rb'))
@@ -39,7 +39,7 @@ function write(path, value)
   file:write(value)
   file:close()
 end
-for _, name in ipairs { 'model_spec', 'repository_spec', 'ui_spec' } do
+for _, name in ipairs { 'model_spec', 'repository_spec', 'views_spec', 'ui_spec' } do
   dofile(root .. '/tests/' .. name .. '.lua')
 end
 for _, directory in ipairs(directories) do

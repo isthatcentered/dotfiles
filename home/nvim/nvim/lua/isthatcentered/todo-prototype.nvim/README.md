@@ -1,144 +1,113 @@
-# To-do UI prototype
+# To-do manager
 
-The Focus layout: a Triaged/Backlog queue with an optional task preview on the
-right. The preview starts visible each time you open the queue. Press `Ctrl-p`
-to toggle it. The queue and preview have equal widths. The queue keeps that
-same width and position when the preview is hidden.
-The preview shows a bold task title and its description in the normal text color.
+One Kanban board: **Backlog → Active → Done**, with equal-width columns and an
+optional right sidebar showing the selected task's ID, title, and description.
 The preview heading is `#id - title`; IDs appear only in the preview.
-This remains a UI prototype with no plugin dependencies.
+The board uses Acid's purple and yellow palette, a very pale purple background,
+a white focused column, rounded borders, and full-height separators.
 
-Moving to a window outside the manager closes it and keeps focus on that window.
-Switching buffers inside the queue or preview (for example with `Ctrl-o`)
-also closes it and shows the destination buffer in the window you opened it from.
-You can move between the queue, preview, and task editor without closing it.
-If you leave while editing a task, the unfinished edit resumes when you reopen.
+Press `<leader>TT` (`Space`, `T`, `T` in this config) to toggle the manager,
+or use `:TodoPrototype`. This is the only manager view; there are no alternate
+queue, completed, or deleted-task screens.
 
-Press `<leader>TT` to toggle the manager (`Space`, `T`, `T` in your config).
-Unfinished task edits are preserved when toggling it closed.
-You can also open it with:
+| Key | Action |
+| --- | --- |
+| `h` / `l`, left / right | Select the adjacent column, starting at its first task |
+| `j` / `k`, up / down | Select a task within the column |
+| `gg` / `G` | First / last task |
+| `H` / `L` | Move to the top of the left / right column and follow the task |
+| `J` / `K` | Reorder within the column |
+| `a` | Add a task at the top of the selected column |
+| `e` | Edit the title and full description |
+| `d` | Delete the task: retain its record, hide it from the board |
+| `u` | Undo the last saved change during this opening, including deletion |
+| `p` / `Enter` | Show / hide the sidebar preview (initially hidden) |
+| `Ctrl-d` / `Ctrl-u` | Scroll the preview down / up |
+| `?` | Show shortcuts |
+| `q` / `Esc` | Close and return to your code |
 
-```vim
-:TodoPrototype
-```
+The editor uses line 1 for the title and the remaining lines for the description,
+with an optional blank line between them. `:w` or `Ctrl-s` saves and closes.
+`:q!` or normal-mode `q` / `Esc` cancels. The former queue shortcuts `Tab`, `m`,
+`x`, and `Ctrl-p` are no longer manager mappings.
 
-For an isolated preview, run from the dotfiles root:
+Moving to an external window closes the manager and keeps focus there. Switching
+buffers inside the board or preview also closes it and displays the destination
+in the original window. Leaving while editing preserves the draft in memory;
+reopening the same directory resumes it. Drafts and undo history do not survive
+Neovim restarts. Undo history resets when the manager is reopened.
+
+Neovim 0.11+; minimum terminal size 60 × 19. At 110 columns and above, the preview
+sits beside the board; on smaller terminals it overlays the right edge. Every
+column remains equal in width with or without the preview. Long descriptions can
+be scrolled without leaving the selected task.
+
+For an isolated instance, run from the dotfiles root:
 
 ```sh
 nvim -u home/nvim/nvim/lua/isthatcentered/todo-prototype.nvim/scripts/minimal_init.lua
 ```
 
-Pass a code file after that command to try the queue alongside your work.
-Neovim 0.11+; terminal minimum 60 × 18, preferably 100 × 25 or larger.
+## Storage and migration
 
-## Use the queue
+Opening reads or creates `todo.jsonl` in the exact current Neovim working directory
+(including `:lcd` / `:tcd`). It does not search ancestors. The path stays fixed
+until the manager closes; reopening reloads disk and resolves the directory again.
+New files are empty. Task changes and undo save immediately; navigation, preview
+controls, and cancelled edits do not write.
 
-| Key | Action |
-| --- | --- |
-| `Tab` in the queue | Cycle Queue (Triaged/Backlog) → Done → Discarded → Queue |
-| `j` / `k`, up / down | Select next / previous task in the current screen |
-| `h` / `l` | Jump to triaged / backlog |
-| `gg` / `G` | First / last task |
-| `x` | Move to Done; in Done, restore to the previous list and position |
-| `d` in the queue | Move to Discarded; in Discarded, restore to the previous list and position |
-| `m` | Move selected task to the end of the other list, keeping focus in the original list |
-| `J` / `K` | Reorder selected task within its list |
-| `a` | Add to the selected working list, including a list emptied with `m`; from Done, Discarded, or an empty screen, add to Backlog |
-| `Enter` / `e` | Edit title and full multiline description |
-| `Ctrl-p` | Show / hide the preview |
-| `Ctrl-w w` | Focus another pane for scrolling |
-| `Ctrl-d` / `Ctrl-u` | Scroll the focused pane |
-| `?` | Show shortcuts |
-| `q` / `Esc` | Close and return to your code |
-
-In the editor, line 1 is the title, followed by
-an optional blank line and the description. Use ordinary Neovim editing;
-`:w` or `Ctrl-s` saves and closes. `:q!` or normal-mode `q` / `Esc` closes
-the editor without saving.
-
-New task files start empty. Triaged holds several tasks chosen from the backlog for the current batch of work.
-List order expresses priority, while the Focus pane shows the task selected in the UI.
-Marking a task done removes it from Triaged/Backlog and appends it to Done.
-The queue selects the next remaining task. Press `Tab` in the queue to cycle
-through Queue, Done, and Discarded. Each screen remembers its selection. Restoring a task
-with `x` moves it back to its previous list, as close as possible to its old position.
-Press `d` in the queue to discard a task. It disappears from its current list and
-appears in Discarded. Press `d` there to restore it, including its completion
-status and its place in its previous list. Discarding never permanently deletes it.
-Adding a task from Done or Discarded opens the working queue after saving it.
-
-In the queue, `Ctrl-i` shares the `Tab` mapping; in the preview it remains a jump key.
-
-## Storage
-
-Opening the manager reads or creates `todo.jsonl` in the current Neovim working
-directory (including `:lcd` / `:tcd`). It does not search parent directories.
-The path stays fixed while the manager is open; closing and reopening resolves
-the current directory again and reloads the file. Drafts are kept separately per
-path in memory, and are not saved until you explicitly save the editor.
-
-Every task change saves immediately: adding, editing,
-reordering, moving between Triaged and Backlog, completing, discarding, and restoring.
-Navigation, preview toggling and cancelled edits do not write the file.
-There are no automatic sample tasks or sample-reset command.
-
-Each line is one versioned task object. Relative line order within a status defines
-its display order; multiline descriptions are escaped within a single JSON line.
-For example:
+Each line is a version 2 task. Relative line order within a status defines display
+order. Descriptions contain escaped newlines within their JSON line:
 
 ```jsonl
-{"version":1,"id":1,"title":"Ship the UI","description":"Review layout\nTry keyboard navigation","status":{"kind":"triaged"}}
-{"version":1,"id":2,"title":"Investigate storage","description":"","status":{"kind":"backlog"}}
-{"version":1,"id":3,"title":"Finished task","description":"","status":{"kind":"done","restore":{"kind":"triaged"},"index":1}}
-{"version":1,"id":4,"title":"Discarded task","description":"","status":{"kind":"discarded","restore":{"kind":"backlog"},"index":2}}
+{"version":2,"id":1,"title":"Plan the release","description":"Review scope\nChoose the next step","status":"backlog"}
+{"version":2,"id":2,"title":"Ship the UI","description":"","status":"active"}
+{"version":2,"id":3,"title":"Finished task","description":"","status":"done"}
+{"version":2,"id":4,"title":"Deleted task","description":"","status":"discarded"}
 ```
 
-The tagged `status` is the only source of completion and column information:
+`status` is the only source of column and deletion state. There are no completion
+flags, separate column fields, or nested restoration statuses that can disagree.
+Deleted tasks never appear in the manager; `u` can restore a deletion during the
+same opening. IDs are unique positive safe integers, allocated above all existing
+IDs, including deleted tasks. Titles must be nonempty single lines; descriptions
+must be strings. Unknown fields, versions, invalid statuses, and duplicate IDs
+are rejected. Blank lines, CRLF, and missing final newlines are accepted.
 
-- `backlog` and `triaged` have only `kind`.
-- `done` contains its previous working status in `restore` and its 1-based `index`.
-- `discarded` contains its previous working or done status and its `index`.
-  Discarding a done task nests the done status, retaining both restoration steps.
+Version 1 files migrate automatically on opening. The entire file is validated
+first, then copied byte for byte to an adjacent `todo.jsonl.v1-backup.XXXXXX` file
+before atomic replacement. `triaged` becomes `active`; the other statuses keep
+their meaning. Obsolete restoration positions are removed. IDs, titles,
+descriptions, deleted records, and relative order are preserved. Empty files need
+no migration. Already migrated files are not rewritten on opening.
 
-There is no separate `done` boolean or `lane` that can contradict the status.
-IDs are unique positive integers, allocated above the highest existing ID.
-Titles must be nonempty single lines; descriptions are strings.
-Unknown fields, versions, duplicate IDs, and impossible restoration states are rejected.
-Blank lines, CRLF and files without a final newline are accepted.
+`model.lua` owns validation and transitions; `session.lua` publishes a new snapshot
+only after the repository saves it. `repository.lua` owns filesystem access,
+validation at the disk boundary, and migration. `views.lua` builds the board and
+sidebar; `theme.lua` applies the palette and follows Acid variant changes.
 
-`model.lua` owns validation and task transitions. `session.lua` applies a command
-to a copy, asks a repository to save it, and publishes it only after success.
-`repository.lua` implements `load()` / `save(tasks)` and contains all filesystem
-access. The UI only calls the session; tests can substitute a repository.
-
-Writes use a temporary file in the same directory, flush it, and atomically rename
-it over the original while holding `todo.jsonl.lock`. Existing permissions are
-preserved; new files are private (`0600`). Cooperating plugin instances serialize
-writes and compare against the loaded bytes to detect stale data. On a conflict,
-close and reopen to reload before retrying. External editors do not honor this
-lock, so simultaneous external writes during a save cannot be fully prevented.
+Writes use a flushed temporary file in the same directory and atomic rename while
+holding `todo.jsonl.lock`. Existing permissions are preserved; new files are
+private (`0600`). Cooperating instances compare loaded bytes to detect concurrent
+changes. On a conflict, close and reopen before retrying; unfinished editor text
+is preserved. External editors do not honor the lock, so simultaneous external
+writes cannot be fully prevented. An old plugin instance cannot overwrite a file
+that has since been migrated: its loaded-byte check rejects the save.
 
 Invalid files are left untouched with a path/line error. Failed saves retain the
-previous task state and leave the editor draft available. Symlinks and directories
-at the task file path are rejected. A process killed during a save may leave a
-lock or temporary file: remove a leftover `todo.jsonl.lock` only after confirming
-no manager is writing, then reopen. Unsaved editor drafts do not survive a normal
-Neovim restart.
+previous task state. Task-file symlinks and directories are rejected. A process
+killed during a save may leave a lock or temporary file; remove a stale lock only
+once no manager is writing. Migration backups remain available alongside the file.
 
 ## Tests
 
-From this plugin directory:
-
-```sh
-make test
-```
-
-Or from the dotfiles root:
+From this plugin directory, run `make test`, or from the dotfiles root:
 
 ```sh
 nvim --headless -u NONE -l home/nvim/nvim/lua/isthatcentered/todo-prototype.nvim/tests/run.lua
 ```
 
-The dependency-free suite uses temporary directories, injected filesystem failures,
-and actual manager mappings. It covers round trips, process restarts, ordering,
-restoration, malformed data, concurrent sessions, write failures, and cwd isolation.
+The dependency-free suite exercises actual manager mappings, persistence across
+processes, all board transitions, hidden deletion, undo, drafts, conflicts,
+column geometry, preview wrapping and scrolling, migration, and injected disk
+failures using temporary directories.

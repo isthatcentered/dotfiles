@@ -54,11 +54,13 @@ function M.new(directory, fs)
   end
 
   local function decode(data)
-    local tasks, ids = {}, {}
+    local tasks, ids, migrated = {}, {}, false
     for line_number, line in ipairs(vim.split(data, '\n', { plain = true })) do
       if line:find '%S' then
         local ok, task = pcall(function()
-          local value = model.validate_task(vim.json.decode(line))
+          local raw = vim.json.decode(line)
+          local value = model.migrate_task(raw)
+          migrated = migrated or raw.version == 1
           assert(not ids[value.id], 'duplicate task id: ' .. value.id)
           return value
         end)
@@ -67,11 +69,11 @@ function M.new(directory, fs)
         tasks[#tasks + 1] = task
       end
     end
-    return tasks
+    return tasks, migrated
   end
 
-  local function replace(data, mode)
-    local fd, temp = fs.fs_mkstemp(path .. '.tmp.XXXXXX')
+  local function replace(data, mode, backup)
+    local fd, temp = fs.fs_mkstemp(path .. (backup and '.v1-backup.XXXXXX' or '.tmp.XXXXXX'))
     assert(fd, temp)
     local ok, err = pcall(function()
       assert(fs.fs_fchmod(fd, mode or 384))
@@ -84,7 +86,9 @@ function M.new(directory, fs)
       assert(fs.fs_fsync(fd))
       assert(fs.fs_close(fd))
       fd = nil
-      assert(fs.fs_rename(temp, path))
+      if not backup then
+        assert(fs.fs_rename(temp, path))
+      end
     end)
     if fd then
       fs.fs_close(fd)
@@ -93,17 +97,32 @@ function M.new(directory, fs)
       fs.fs_unlink(temp)
       error(err)
     end
+    return temp
+  end
+
+  local function encode(tasks)
+    local lines = {}
+    for _, task in ipairs(tasks) do
+      lines[#lines + 1] = vim.json.encode(task)
+    end
+    return #lines == 0 and '' or table.concat(lines, '\n') .. '\n'
   end
 
   function repo:load()
     local ok, result = pcall(function()
       return locked(function()
-        local data = read()
+        local data, stat = read()
         if data == nil then
           replace ''
           data = ''
         end
-        local tasks = decode(data)
+        local tasks, migrated = decode(data)
+        if migrated then
+          -- A complete, flushed copy exists before the original is replaced.
+          repo.migration_backup = replace(data, stat.mode % 512, true)
+          data = encode(tasks)
+          replace(data, stat.mode % 512)
+        end
         snapshot = data
         return tasks
       end)
@@ -118,11 +137,7 @@ function M.new(directory, fs)
     local ok, err = pcall(function()
       assert(snapshot ~= nil, 'load the repository before saving')
       model.validate(tasks)
-      local lines = {}
-      for _, task in ipairs(tasks) do
-        lines[#lines + 1] = vim.json.encode(task)
-      end
-      local data = #lines == 0 and '' or table.concat(lines, '\n') .. '\n'
+      local data = encode(tasks)
       locked(function()
         local current, stat = read()
         assert(current == snapshot, 'todo.jsonl changed outside this manager; close and reopen to reload before retrying')

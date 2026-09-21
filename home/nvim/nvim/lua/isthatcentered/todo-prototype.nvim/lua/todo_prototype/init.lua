@@ -1,23 +1,25 @@
--- Focus UI. Durable task changes go through the application session/repository.
+-- Kanban manager. Durable changes go through the application session/repository.
 local M = {}
 local api = vim.api
 local views = require 'todo_prototype.views'
+local theme = require 'todo_prototype.theme'
 local repository = require 'todo_prototype.repository'
 local sessions = require 'todo_prototype.session'
 local session
 local drafts = {}
 local ns = api.nvim_create_namespace 'todo_prototype'
-local state = { triaged = {}, backlog = {}, done = {}, discarded = {}, selected = nil, preview_visible = true, screen = 'queue', screen_selected = {} }
+local state = { backlog = {}, active = {}, done = {}, lane = 1, selected = nil, preview_visible = false }
 local windows, buffers, panes = {}, {}, {}
 local origin, editor, opened, rendering = nil, nil, false, false
 local editor_draft
 local group = api.nvim_create_augroup('TodoPrototype', { clear = true })
 
 local function project()
-  state.triaged, state.backlog, state.done, state.discarded = {}, {}, {}, {}
-  local tasks = session:tasks()
-  for _, task in ipairs(tasks) do
-    table.insert(state[task.status.kind], task)
+  state.backlog, state.active, state.done = {}, {}, {}
+  for _, task in ipairs(session:tasks()) do
+    if state[task.status] then
+      table.insert(state[task.status], task)
+    end
   end
 end
 
@@ -32,91 +34,26 @@ local function change(action, id, value)
 end
 
 local function selected()
-  for _, lane in ipairs { 'triaged', 'backlog', 'done', 'discarded' } do
-    for i, t in ipairs(state[lane]) do
-      if t.id == state.selected then
-        return t, state[lane], i
+  for lane, name in ipairs(views.lanes) do
+    for i, task in ipairs(state[name]) do
+      if task.id == state.selected then
+        return task, lane, i
       end
     end
   end
 end
 
 local function visible_tasks()
-  local result = {}
-  for _, lane in ipairs(state.screen == 'queue' and { 'triaged', 'backlog' } or { state.screen }) do
-    for _, t in ipairs(state[lane]) do
-      result[#result + 1] = t
-    end
-  end
-  return result
+  return state[views.lanes[state.lane]]
 end
 
 local function select_visible(index)
+  for _, task in ipairs(visible_tasks()) do
+    if task.id == state.selected then return end
+  end
   local tasks = visible_tasks()
-  for _, t in ipairs(tasks) do
-    if t.id == state.selected then
-      state.empty_lane = nil
-      return
-    end
-  end
-  if state.screen == 'queue' and state.empty_lane and #state[state.empty_lane] == 0 then
-    state.selected = nil
-    return
-  end
-  state.empty_lane = nil
   local next_task = tasks[math.min(index or 1, #tasks)]
   state.selected = next_task and next_task.id or nil
-end
-
-local function switch_screen()
-  if editor then
-    return
-  end
-  state.screen_selected[state.screen] = state.selected
-  state.empty_lane = nil
-  state.screen = views.next_screen[state.screen]
-  state.selected = state.screen_selected[state.screen]
-  select_visible()
-  M.render()
-end
-
-local function transition(action)
-  local t = selected()
-  if not t then
-    return
-  end
-  local visible_index = 1
-  for i, task in ipairs(visible_tasks()) do
-    if task.id == t.id then
-      visible_index = i
-    end
-  end
-  if change(action, t.id) then
-    select_visible(visible_index)
-    M.render()
-  end
-end
-
-local function toggle_done()
-  transition 'done'
-end
-
-local function toggle_discarded()
-  transition 'discard'
-end
-
-local function colors()
-  api.nvim_set_hl(0, 'TodoProtoTitle', { default = true, bold = true })
-  for name, link in pairs {
-    Text = 'NormalFloat',
-    Muted = 'Comment',
-    Accent = 'Title',
-    Border = 'FloatBorder',
-    Selected = 'PmenuSel',
-    Done = 'DiagnosticOk',
-  } do
-    api.nvim_set_hl(0, 'TodoProto' .. name, { default = true, link = link })
-  end
 end
 
 local function clean_windows()
@@ -171,38 +108,61 @@ local function close_after_buffer_switch(win)
 end
 
 local function navigate(delta)
+  local _, _, index = selected()
   local tasks = visible_tasks()
-  if #tasks == 0 then
-    return
-  end
-  local index = 1
-  for i, t in ipairs(tasks) do
-    if t.id == state.selected then
-      index = i
-    end
-  end
-  state.selected = tasks[(index - 1 + delta) % #tasks + 1].id
+  local task = tasks[math.max(1, math.min(#tasks, (index or 1) + delta))]
+  state.selected = task and task.id or nil
+  M.render()
+end
+
+local function change_lane(delta)
+  state.lane = math.max(1, math.min(3, state.lane + delta))
+  select_visible()
   M.render()
 end
 
 local function reorder(delta)
-  if state.selected and change('reorder', state.selected, delta) then
+  if state.selected and change('reorder', state.selected, delta) then M.render() end
+end
+
+local function move(delta)
+  local task, lane = selected()
+  if not task or lane + delta < 1 or lane + delta > 3 then return end
+  if change('move', task.id, views.lanes[lane + delta]) then
+    state.lane = lane + delta
     M.render()
   end
 end
 
-local function move()
-  local t, _, index = selected()
-  if not t or (t.status.kind ~= 'triaged' and t.status.kind ~= 'backlog') then
+local function discard()
+  local task, _, index = selected()
+  if task and change('discard', task.id) then
+    select_visible(index)
+    M.render()
+  end
+end
+
+local function undo()
+  local ok, id_or_error = session:undo()
+  if not ok then
+    if id_or_error then vim.notify('Tasks were not saved: ' .. id_or_error, vim.log.levels.ERROR) end
     return
   end
-  local lane = t.status.kind
-  if change('move', t.id) then
-    local remaining = state[lane]
-    local next_task = remaining[math.min(index, #remaining)]
-    state.selected = next_task and next_task.id or nil
-    state.empty_lane = not next_task and lane or nil
-    M.render()
+  project()
+  state.selected = id_or_error
+  local _, lane = selected()
+  state.lane = lane or state.lane
+  M.render()
+end
+
+local function scroll_preview(direction)
+  for _, p in ipairs(panes) do
+    if p.preview then
+      local position = api.nvim_win_get_cursor(p.win)[1]
+      local next_row = math.max(1, math.min(#p.lines, position + direction * math.max(1, math.floor(p.height / 2))))
+      api.nvim_win_set_cursor(p.win, { next_row, 0 })
+      api.nvim_win_call(p.win, function() vim.cmd('normal! zt') end)
+    end
   end
 end
 
@@ -214,7 +174,7 @@ local function edit(is_new, draft_lines, draft_lane)
   if not is_new and not t then
     return
   end
-  local lane = draft_lane or state.empty_lane or (t and (t.status.kind == 'triaged' or t.status.kind == 'backlog') and t.status.kind or 'backlog')
+  local lane = draft_lane or views.lanes[state.lane]
   local buf = api.nvim_create_buf(false, true)
   vim.bo[buf].buftype = 'acwrite'
   vim.bo[buf].bufhidden = 'wipe'
@@ -232,10 +192,11 @@ local function edit(is_new, draft_lines, draft_lane)
     height = height,
     style = 'minimal',
     border = 'rounded',
-    zindex = 80,
+    zindex = 100,
     title = is_new and (' New task → ' .. lane .. ' ') or ' Edit task ',
     footer = ' Title on line 1 · description below · :w save · q cancel (normal mode) ',
   })
+  theme.window(win, true)
   editor = { win = win, buf = buf, is_new = is_new, id = t and t.id, lane = lane }
   vim.wo[win].wrap = true
   vim.wo[win].linebreak = true
@@ -260,7 +221,9 @@ local function edit(is_new, draft_lines, draft_lane)
       return
     end
     if is_new then
-      state.screen = 'queue'
+      for i, name in ipairs(views.lanes) do
+        if name == lane then state.lane = i end
+      end
     end
     state.selected = id
     vim.bo[buf].modified = false
@@ -295,65 +258,36 @@ local function mappings(buf)
   local function map(key, callback, desc)
     vim.keymap.set('n', key, callback, { buffer = buf, nowait = true, silent = true, desc = desc })
   end
-  map('q', M.close, 'Close prototype')
-  map('<Esc>', M.close, 'Close prototype')
-  map('<C-p>', function()
+  local function preview()
     state.preview_visible = not state.preview_visible
     M.render()
-  end, 'Toggle preview')
-  map('j', function()
-    navigate(vim.v.count1)
-  end, 'Next task')
-  map('k', function()
-    navigate(-vim.v.count1)
-  end, 'Previous task')
-  map('<Down>', function()
-    navigate(1)
-  end, 'Next task')
-  map('<Up>', function()
-    navigate(-1)
-  end, 'Previous task')
-  map('J', function()
-    reorder(1)
-  end, 'Move task down')
-  map('K', function()
-    reorder(-1)
-  end, 'Move task up')
-  map('m', move, 'Move between triaged and backlog')
-  map('x', toggle_done, 'Complete task / restore from Done')
-  map('a', function()
-    edit(true)
-  end, 'Add task')
-  map('<CR>', function()
-    edit(false)
-  end, 'Edit title and description')
-  map('e', function()
-    edit(false)
-  end, 'Edit title and description')
-  map('gg', function()
-    local ts = visible_tasks()
-    state.selected = ts[1] and ts[1].id
-    M.render()
-  end, 'First task')
-  map('G', function()
-    local ts = visible_tasks()
-    state.selected = ts[#ts] and ts[#ts].id
-    M.render()
-  end, 'Last task')
-  for key, lane in pairs { h = 'triaged', l = 'backlog' } do
-    map(key, function()
-      if state[lane][1] then
-        state.screen = 'queue'
-        state.selected = state[lane][1].id
-        M.render()
-      end
-    end, 'Select ' .. lane)
   end
+  map('q', M.close, 'Close tasks')
+  map('<Esc>', M.close, 'Close tasks')
+  map('p', preview, 'Toggle preview')
+  map('<CR>', preview, 'Toggle preview')
+  map('<C-d>', function() scroll_preview(1) end, 'Scroll preview down')
+  map('<C-u>', function() scroll_preview(-1) end, 'Scroll preview up')
+  for key, delta in pairs { j = 1, k = -1, ['<Down>'] = 1, ['<Up>'] = -1 } do
+    map(key, function() navigate(delta * vim.v.count1) end, 'Select task')
+  end
+  for key, delta in pairs { h = -1, l = 1, ['<Left>'] = -1, ['<Right>'] = 1 } do
+    map(key, function() change_lane(delta) end, 'Select column')
+  end
+  map('gg', function() navigate(-math.huge) end, 'First task')
+  map('G', function() navigate(math.huge) end, 'Last task')
+  map('H', function() move(-1) end, 'Move task to left column')
+  map('L', function() move(1) end, 'Move task to right column')
+  map('J', function() reorder(1) end, 'Move task down')
+  map('K', function() reorder(-1) end, 'Move task up')
+  map('d', discard, 'Delete task')
+  map('u', undo, 'Undo last task change')
+  map('a', function() edit(true) end, 'Add task')
+  map('e', function() edit(false) end, 'Edit title and description')
   map('<LeftRelease>', function()
-    local win = api.nvim_get_current_win()
     for _, p in ipairs(panes) do
-      if p.win == win then
-        state.selected = p.ids[api.nvim_win_get_cursor(win)[1]] or state.selected
+      if p.lane and p.win == api.nvim_get_current_win() then
+        state.lane, state.selected = p.lane, p.ids[api.nvim_win_get_cursor(p.win)[1]]
         M.render()
         return
       end
@@ -361,104 +295,121 @@ local function mappings(buf)
   end, 'Select task under mouse')
   map('?', function()
     vim.notify(table.concat({
-      'TODO UI PROTOTYPE — tasks saved to todo.jsonl',
-      'j/k: select task across lists; h/l: triaged/backlog; gg/G: first/last',
-      'J/K: reorder within the list; m: move to the end of the other list, keeping focus here',
-      'Tab in queue: Queue / Done / Discarded; x: complete / restore from Done',
-      'd in queue: discard / restore from Discarded; a: add; Enter/e: edit',
-      'Ctrl-p: toggle preview (shown when opening the queue)',
+      'TASKS — Backlog / Active / Done',
+      'h/l: column; j/k: task; gg/G: first/last; arrows also work',
+      'H/L: move to top of left/right column and follow; J/K: reorder',
+      'a: add in selected column; e: edit title and description',
+      'd: delete (kept in file, hidden); u: undo during this opening',
+      'p / Enter: preview title and description; Ctrl-d/u: scroll preview',
       'Editor: :w or Ctrl-s saves; :q! or normal-mode q / Esc cancels',
-      'Ctrl-w w: focus another pane; Ctrl-d/u: scroll; q: close',
-      'Moving to another window or buffer closes the manager; unfinished edits resume on reopening',
+      'q / Esc: close; moving outside the manager closes it too',
+      'Changes save immediately. Unfinished edits resume on reopening.',
     }, '\n'))
   end, 'Show help')
 end
 
-local function window(config, lines, focusable)
+local function window(p)
   local buf = api.nvim_create_buf(false, true)
   buffers[#buffers + 1] = buf
   vim.bo[buf].bufhidden = 'wipe'
   vim.bo[buf].filetype = 'todo_prototype'
-  api.nvim_buf_set_lines(buf, 0, -1, false, #lines > 0 and lines or { '' })
+  vim.b[buf].todo_lane = p.lane
+  vim.b[buf].todo_preview = p.preview
+  api.nvim_buf_set_lines(buf, 0, -1, false, #p.lines > 0 and p.lines or { '' })
   vim.bo[buf].modifiable = false
-  config.relative, config.style, config.focusable = 'editor', 'minimal', focusable
-  config.zindex = 50
-  local win = api.nvim_open_win(buf, false, config)
+  local win = api.nvim_open_win(buf, false, {
+    relative = 'editor', style = 'minimal', focusable = p.lane ~= nil or p.preview == true,
+    row = p.y, col = p.x, width = p.width, height = p.height,
+    border = p.border, zindex = p.zindex,
+  })
   windows[#windows + 1] = win
-  vim.wo[win].winhighlight = 'Normal:NormalFloat,FloatBorder:TodoProtoBorder'
+  theme.window(win, p.focused)
   vim.wo[win].wrap = false
   vim.wo[win].scrolloff = 2
   vim.wo[win].sidescrolloff = 0
   vim.wo[win].cursorline = false
-  if focusable then
-    mappings(buf)
-  end
+  if p.lane or p.preview then mappings(buf) end
   return win, buf
 end
 
-function M.render()
-  if not opened or editor or rendering then
-    return
+local function same_layout(next_panes)
+  if #panes ~= #next_panes then return false end
+  for i, p in ipairs(panes) do
+    local next_pane = next_panes[i]
+    if not api.nvim_win_is_valid(p.win) or not api.nvim_buf_is_valid(p.buf) then return false end
+    for _, field in ipairs { 'x', 'y', 'width', 'height', 'border', 'zindex', 'lane', 'preview' } do
+      if not vim.deep_equal(p[field], next_pane[field]) then return false end
+    end
   end
-  if vim.o.columns < 60 or vim.o.lines < 18 then
+  return true
+end
+
+local function update_lines(buf, before, after)
+  local first, last_before, last_after = 1, #before, #after
+  while first <= last_before and first <= last_after and before[first] == after[first] do first = first + 1 end
+  while last_before >= first and last_after >= first and before[last_before] == after[last_after] do
+    last_before, last_after = last_before - 1, last_after - 1
+  end
+  if first > last_before and first > last_after then return end
+  vim.bo[buf].modifiable = true
+  api.nvim_buf_set_lines(buf, first - 1, last_before, false, vim.list_slice(after, first, last_after))
+  vim.bo[buf].modifiable = false
+end
+
+function M.render()
+  if not opened or editor or rendering then return end
+  if vim.o.columns < 60 or vim.o.lines < 19 then
     M.close()
-    vim.notify('Focus needs at least 60 columns × 18 rows.', vim.log.levels.INFO)
+    vim.notify('Tasks need at least 60 columns × 19 rows.', vim.log.levels.INFO)
     return
   end
   rendering = true
   select_visible()
-  clean_windows()
-  colors()
-  local width, height = math.min(114, vim.o.columns - 6), math.min(32, vim.o.lines - 10)
-  local x = math.floor((vim.o.columns - width) / 2)
-  local y = math.max(0, math.floor((vim.o.lines - height - 8) / 2))
-  local header = {
-    'FOCUS / ' .. state.screen,
-    views.fit(('PROTOTYPE · %d triaged / %d backlog / %d done / %d discarded'):format(#state.triaged, #state.backlog, #state.done, #state.discarded), width),
-  }
-  window({ row = y, col = x, width = width, height = 2, border = 'none' }, header, false)
-  panes = views.build(state, width, height)
+  local next_panes = views.build(state, vim.o.columns, vim.o.lines)
+  local reuse = same_layout(next_panes)
+  if not reuse then
+    clean_windows()
+    theme.apply()
+    panes = next_panes
+  end
   local target, target_row
-  for _, p in ipairs(panes) do
-    p.win, p.buf =
-      window({ row = y + 3 + p.y, col = x + p.x, width = p.w, height = p.h, border = 'rounded', title = views.fit(p.title, p.w - 2) }, p.lines, true)
-    if not p.detail then
-      if state.empty_lane then
-        target, target_row = p.win, p.lane_rows[state.empty_lane]
-      end
-      vim.keymap.set('n', '<Tab>', switch_screen, { buffer = p.buf, nowait = true, desc = 'Switch Queue / Done / Discarded' })
-      vim.keymap.set('n', 'd', toggle_discarded, { buffer = p.buf, nowait = true, desc = 'Discard task / restore from Discarded' })
+  for i, p in ipairs(panes) do
+    if reuse then
+      local next_pane = next_panes[i]
+      update_lines(p.buf, p.lines, next_pane.lines)
+      api.nvim_buf_clear_namespace(p.buf, ns, 0, -1)
+      if p.focused ~= next_pane.focused then theme.window(p.win, next_pane.focused) end
+      -- Keep the pane object used by its CursorMoved callback current.
+      p.lines, p.ids, p.highlights, p.marks, p.focused = next_pane.lines, next_pane.ids, next_pane.highlights, next_pane.marks, next_pane.focused
+    else
+      p.win, p.buf = window(p)
     end
+    if p.lane == state.lane then target, target_row = p.win, 2 end
     for row, text in ipairs(p.lines) do
-      local hl = p.highlights[row]
-      if hl then
-        api.nvim_buf_set_extmark(p.buf, ns, row - 1, 0, { end_col = #text, hl_group = hl, hl_eol = p.ids[row] == state.selected })
+      if p.highlights[row] then
+        api.nvim_buf_set_extmark(p.buf, ns, row - 1, 0, { end_col = #text, hl_group = p.highlights[row], hl_eol = true })
       end
-      if not p.detail and p.ids[row] == state.selected and not target then
-        target, target_row = p.win, row
-      end
+      if p.lane == state.lane and p.ids[row] == state.selected then target_row = row end
+    end
+    for _, mark in ipairs(p.marks) do
+      api.nvim_buf_set_extmark(p.buf, ns, mark.line - 1, 0, { end_col = mark.bytes, hl_group = mark.hl, priority = 110 })
+    end
+    if p.lane and not reuse then
+      api.nvim_create_autocmd('CursorMoved', {
+        group = group, buffer = p.buf,
+        callback = function()
+          if rendering or not opened or editor or not api.nvim_win_is_valid(p.win) or api.nvim_get_current_win() ~= p.win then return end
+          local id = p.ids[api.nvim_win_get_cursor(p.win)[1]]
+          if state.lane ~= p.lane or (id and id ~= state.selected) then
+            state.lane, state.selected = p.lane, id
+            vim.schedule(M.render)
+          end
+        end,
+      })
     end
   end
-  window({ row = y + height + 5, col = x, width = width, height = 2, border = 'none' }, {
-    views.fit(
-      'Tab: '
-        .. views.next_screen[state.screen]
-        .. '  '
-        .. (
-          state.screen == 'discarded' and 'd: restore  j/k: task  J/K: reorder  a: add  Enter: edit  ?: help  q: close'
-          or (state.screen == 'done' and 'x: restore' or 'x: done') .. '  d: discard  j/k: task  J/K: reorder  a: add  Enter: edit  ?: help  q: close'
-        ),
-      width
-    ),
-    views.fit('Ctrl-p: ' .. (state.preview_visible and 'hide' or 'show') .. ' preview', width),
-  }, false)
-  api.nvim_set_current_win(target or panes[1].win)
-  if target then
-    api.nvim_win_set_cursor(target, { target_row, 0 })
-    api.nvim_win_call(target, function()
-      vim.cmd 'normal! zz'
-    end)
-  end
+  api.nvim_set_current_win(target)
+  api.nvim_win_set_cursor(target, { target_row, 0 })
   rendering = false
 end
 
@@ -476,12 +427,11 @@ function M.open()
     session = next_session
     project()
     if not same_project then
-      state.selected, state.screen, state.screen_selected = nil, 'queue', {}
-      state.empty_lane = nil
+      state.selected, state.lane = nil, 1
     end
     editor_draft = drafts[session.path]
     origin = api.nvim_get_current_win()
-    state.preview_visible = true
+    state.preview_visible = false
   end
   opened = true
   M.render()
@@ -490,6 +440,8 @@ function M.open()
     editor_draft, drafts[session.path] = nil, nil
     if draft.id then
       state.selected = draft.id
+      local _, lane = selected()
+      state.lane = lane or state.lane
     end
     if not draft.is_new and not selected() then
       -- Keep the text editable if the original task was deleted externally.
@@ -511,11 +463,13 @@ function M.toggle()
 end
 
 function M.setup()
-  colors()
+  theme.apply()
   vim.keymap.set('n', '<leader>TT', M.toggle, { desc = 'Toggle to-do manager' })
   api.nvim_create_user_command('TodoPrototype', function()
     M.open()
-  end, { desc = 'Open the Focus to-do queue' })
+  end, { desc = 'Open the Kanban to-do manager' })
+  api.nvim_create_autocmd('ColorScheme', { group = group, callback = theme.apply })
+  api.nvim_create_autocmd('User', { group = group, pattern = 'AcidVariantChanged', callback = theme.apply })
   api.nvim_create_autocmd('VimResized', {
     group = group,
     callback = function()
@@ -545,6 +499,14 @@ function M.setup()
         end
         for _, win in ipairs(windows) do
           if current == win then
+            for _, pane in ipairs(panes) do
+              if pane.win == current and pane.lane and pane.lane ~= state.lane then
+                state.lane = pane.lane
+                select_visible()
+                M.render()
+                break
+              end
+            end
             return
           end
         end

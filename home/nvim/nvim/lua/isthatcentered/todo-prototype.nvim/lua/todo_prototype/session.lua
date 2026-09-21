@@ -8,6 +8,7 @@ function M.open(repository)
     return nil, err
   end
   local session = { path = repository.path }
+  local history = {}
 
   function session:tasks()
     return vim.deepcopy(tasks)
@@ -23,9 +24,23 @@ function M.open(repository)
       if not saved then
         return nil, save_err
       end
+      history[#history + 1] = { tasks = tasks, id = id }
       tasks = next_tasks
     end
     return selected
+  end
+
+  function session:undo()
+    local previous = history[#history]
+    if not previous then
+      return nil
+    end
+    local saved, save_err = repository:save(previous.tasks)
+    if not saved then
+      return nil, save_err
+    end
+    tasks = table.remove(history).tasks
+    return true, previous.id
   end
 
   return session
