@@ -119,7 +119,8 @@ Linux and macOS use separate containers with the same target but different conte
 home/zsh/
 ├── linux/
 │   ├── manage.json
-│   └── .zshrc
+│   ├── .zshrc
+│   └── .p10k.zsh
 └── macos/
     ├── manage.json
     ├── .zshrc
@@ -140,6 +141,7 @@ The macOS manifest has the same target and declares `"platforms": ["macos"]`. Ru
 ```text
 # Linux
 ~/.zshrc → <repository>/home/zsh/linux/.zshrc
+~/.p10k.zsh → <repository>/home/zsh/linux/.p10k.zsh
 
 # macOS
 ~/.zshrc → <repository>/home/zsh/macos/.zshrc

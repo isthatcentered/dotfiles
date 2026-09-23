@@ -1,4 +1,9 @@
-# Keep the CachyOS shell plugins without its Powerlevel10k theme.
+# Show the prompt while the remaining shell configuration loads.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Keep the CachyOS shell plugins and load Powerlevel10k explicitly below.
 export ZSH=/usr/share/oh-my-zsh
 ZSH_THEME=""
 DISABLE_MAGIC_FUNCTIONS=true
@@ -29,6 +34,9 @@ alias tb="nc termbin.com 9999"
 alias cleanup='sudo pacman -Rsn $(pacman -Qtdq)'
 alias jctl="journalctl -p 3 -xb"
 alias rip="expac --timefmt='%Y-%m-%d %T' '%l\t%n %v' | sort | tail -200 | nl"
+
+source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
