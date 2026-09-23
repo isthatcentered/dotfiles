@@ -31,8 +31,7 @@ Directories under `home/` may group related configurations however you find usef
     └── zsh/
         └── linux/
             ├── manage.json
-            ├── .zshrc
-            └── .p10k.zsh
+            └── .zshrc
 ```
 
 Manifests may appear at any depth beneath `home/`:
@@ -120,8 +119,7 @@ Linux and macOS use separate containers with the same target but different conte
 home/zsh/
 ├── linux/
 │   ├── manage.json
-│   ├── .zshrc
-│   └── .p10k.zsh
+│   └── .zshrc
 └── macos/
     ├── manage.json
     ├── .zshrc
