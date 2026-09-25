@@ -51,7 +51,7 @@ export PATH="/home/isthatcentered/.local/bin:$PATH"
 
 # Aliases 
 alias codex='codex --sandbox danger-full-access'
-alias sol='codex --model gpt-5.6-sol --config model_reasoning_effort=high'
+alias sol='codex --model gpt-6-sol --config model_reasoning_effort=high'
 alias claude='claude --dangerously-skip-permissions'
 
 eval "$(direnv hook zsh)"
@@ -68,3 +68,10 @@ eval "$(atuin init zsh)"
 # Enable vim mode in the terminal
 bindkey -v
 export KEYTIMEOUT=1
+
+# bun completions
+[ -s "/home/isthatcentered/.bun/_bun" ] && source "/home/isthatcentered/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
