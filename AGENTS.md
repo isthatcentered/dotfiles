@@ -1,4 +1,5 @@
 - Always rebase before doing any work
 - Always preserve my changes
 - Commit and push once your changes are validated
+- Re-link the files using go run . {linux|macos} once a change is done
 - Never force push
