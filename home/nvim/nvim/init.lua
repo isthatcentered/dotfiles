@@ -107,9 +107,9 @@ vim.keymap.set('n', '<C-h>', ':b#<cr>', { desc = 'Go to alternate buffer' })
 -- vim.keymap.set('v', '<a-j>', ":m '>+1<cr>gv=gv", { desc = 'move selection down' })
 -- vim.keymap.set('v', '<a-k>', ":m '<-2<cr>gv=gv", { desc = 'move selection up' })
 
--- -- better indenting in visual mode
--- vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
--- vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
+-- better indenting in visual mode
+vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
+vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
 
 -- quick file navigation
 -- vim.keymap.set("n", "<leader>fe", ":explore<cr>", { desc = "open file explorer" })
