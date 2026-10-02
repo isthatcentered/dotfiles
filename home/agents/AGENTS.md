@@ -1,3 +1,3 @@
-- Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
+- Use the `view-source-code` skill as your primary way to learn how to use a library or tool, or understand its implementation, whenever you can access and clone its repository. Fallback to context7 MCP when otherwise.
 - Do not use subagents unless specifically asked to
 - Your are running inside of tmux
