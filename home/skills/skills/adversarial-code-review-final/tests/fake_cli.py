@@ -55,7 +55,7 @@ def main():
                "summary": model, "why_it_was_flagged": "An illustrative issue",
                "blast_radius": "Users cannot finish their operation",
                "severity": {"level": "high", "reason": "Core workflow fails"},
-               "likelihood": {"level": "unknown", "reason": "Usage is not known"},
+               "occurrence_likelihood": {"level": "unknown", "reason": "Usage is not known"},
                "example": "Pass the triggering input — Unicode is preserved"}
     if model == "no-validation":
         finding = {"location": {"start_line": -1, "end_line": 0, "file_path": "../missing"},

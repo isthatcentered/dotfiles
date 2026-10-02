@@ -41,8 +41,9 @@ FINDING_SCHEMA = object_schema({
     "why_it_was_flagged": {"type": "string", "description": "Why this code was flagged."},
     "blast_radius": {"type": "string", "description": "How the bug impacts users."},
     "severity": rating_schema(["low", "medium", "high"], "Impact if the bug occurs."),
-    "likelihood": rating_schema(["low", "medium", "high", "unknown"],
-                                "How likely users are to encounter the trigger, with reasoning."),
+    "occurrence_likelihood": rating_schema(
+        ["low", "medium", "high", "unknown"],
+        "How likely users are to encounter the trigger in expected usage, with reasoning."),
     "example": {"type": "string", "description": "How the bug can happen or be triggered."},
 })
 OUTPUT_SCHEMA = object_schema({"findings": {"type": "array", "items": FINDING_SCHEMA}})

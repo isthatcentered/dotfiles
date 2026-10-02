@@ -35,9 +35,9 @@ The CLI schema defines these fields; the script does not additionally validate o
   "why_it_was_flagged": "Why the reviewer flagged this code",
   "blast_radius": "How the bug affects users",
   "severity": {"level": "high", "reason": "Impact if the bug occurs"},
-  "likelihood": {"level": "unknown", "reason": "Trigger frequency and reasoning"},
+  "occurrence_likelihood": {"level": "unknown", "reason": "Trigger frequency and reasoning"},
   "example": "How the bug can happen or be triggered"
 }
 ```
 
-Severity levels are `low`, `medium`, and `high`. Likelihood also allows `unknown`. Locations use repository-relative paths and 1-based, inclusive line numbers. Preserve the script's stdout when returning the review; send any surrounding status messages to stderr.
+Severity levels are `low`, `medium`, and `high`. `occurrence_likelihood` also allows `unknown` and rates how likely users are to encounter the trigger in expected usage. Locations use repository-relative paths and 1-based, inclusive line numbers. Preserve the script's stdout when returning the review; send any surrounding status messages to stderr.

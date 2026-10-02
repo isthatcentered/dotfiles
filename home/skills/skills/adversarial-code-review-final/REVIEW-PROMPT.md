@@ -74,7 +74,7 @@ See [REPORT-EXAMPLE.md](./REPORT-EXAMPLE.md) for a completed finding.
 ### 1. <Trigger causes observable failure>
 
 Severity: <low | medium | high> — <impact if the bug occurs>
-Likelihood: <low | medium | high | unknown> — <how likely users are to encounter the trigger, with reasoning>
+Occurrence likelihood: <low | medium | high | unknown> — <how likely users are to encounter the trigger, with reasoning>
 
 **Problematic location**
 File: `<path>` @ `<head SHA>`
@@ -123,16 +123,16 @@ Include execution results if available; distinguish observations from prediction
 - Copy exact excerpts with enough surrounding code to explain the failure. Do not rewrite or invent code for either side.
 - For added code, write `New code — no before location or excerpt`. For deleted code, write `Deleted — no after location or excerpt` and anchor the problematic location to the deleted range at the base SHA, explicitly marking it as a deletion. Never invent a range for an absent side.
 
-### Severity and likelihood
+### Severity and occurrence likelihood
 
 - **Severity:** impact when the bug occurs.
   High: severe harm or core workflow failure.
   Medium: meaningful disruption. Low: minor consequences.
-- **Likelihood:** frequency of the trigger in expected usage.
+- **Occurrence likelihood:** frequency of the trigger in expected usage.
   High: common. Medium: occasional. Low: rare. Unknown: insufficient context.
   Explain the rating; do not invent percentages.
 
-Likelihood measures occurrence, not confidence that the finding is correct.
+Occurrence likelihood measures how likely users are to encounter the trigger in expected usage.
 
 ## Style
 

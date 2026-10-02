@@ -6,7 +6,7 @@ Illustrative example; paths and line ranges below are fictional.
 ### 1. An explicit timeout of 0 becomes 30 seconds
 
 Severity: medium — operations can be aborted despite the caller disabling the timeout.
-Likelihood: unknown — the code establishes support for `0`, but not how often callers use it.
+Occurrence likelihood: unknown — the code establishes support for `0`, but not how often callers use it.
 
 **Problematic location**
 File: `src/options.js` @ `<head SHA>`

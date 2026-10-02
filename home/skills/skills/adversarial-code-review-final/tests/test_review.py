@@ -101,6 +101,8 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual([f["summary"] for f in findings],
                          ["slow", "slow", "fast", "fast", "middle", "middle"])
         self.assertEqual(findings[0], findings[1])
+        self.assertEqual(findings[0]["occurrence_likelihood"],
+                         {"level": "unknown", "reason": "Usage is not known"})
         self.assertIn("—", result.stdout)
         records = self.read_records()
         self.assertEqual(len(records), 3)
@@ -109,6 +111,9 @@ class ReviewTests(unittest.TestCase):
         prompt = (SKILL / "REVIEW-PROMPT.md").read_text(encoding="utf-8")
         self.assertTrue(all(r["prompt"] == prompt for r in records))
         self.assertTrue(all(r["schema"] == records[0]["schema"] for r in records))
+        schema = records[0]["schema"]["properties"]["findings"]["items"]
+        self.assertIn("occurrence_likelihood", schema["required"])
+        self.assertNotIn("likelihood", schema["properties"])
         self.assertLess(max(r["started"] for r in records), min(r["finished"] for r in records))
         finished = sorted(records, key=lambda r: r["finished"])
         self.assertEqual([r["model"] for r in finished], ["fast", "middle", "slow"])
