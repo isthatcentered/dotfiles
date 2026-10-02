@@ -24,7 +24,7 @@ The script owns the workflow:
 5. Collect responses, stop remaining child processes, and remove the temporary directory. On failure or interruption, exit nonzero with diagnostics on stderr and empty stdout.
 6. Concatenate every finding in reviewer-array order, preserving each reviewer's finding order and duplicates. Print only the resulting JSON array to stdout, or `[]` when all reviewers return no findings.
 
-`PROMPT` near the top of [scripts/review.py](scripts/review.py) is currently the literal `review this prompt`. Edit that constant to change the review instructions. The script selects the checkout; the prompt determines what to review. Treat the reviewers as review-only: do not change the checked-out code or install its dependencies.
+`PROMPT` near the top of [scripts/review.py](scripts/review.py) reads [REVIEW-PROMPT.md](REVIEW-PROMPT.md) verbatim as UTF-8, relative to the script's location. Edit that Markdown file to change the instructions passed to every reviewer. The script selects the checkout; the prompt determines what to review. Treat the reviewers as review-only: do not change the checked-out code or install its dependencies.
 
 The CLI schema defines these fields; the script does not additionally validate or rewrite findings:
 

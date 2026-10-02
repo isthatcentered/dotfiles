@@ -14,7 +14,7 @@ import tempfile
 import time
 
 
-PROMPT = "review this prompt"
+PROMPT = (Path(__file__).resolve().parents[1] / "REVIEW-PROMPT.md").read_text(encoding="utf-8")
 DEFAULT_TIMEOUT_SECONDS = 20 * 60
 EFFORT = "high"
 
