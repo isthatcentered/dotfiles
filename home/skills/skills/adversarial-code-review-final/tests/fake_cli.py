@@ -28,6 +28,21 @@ def main():
     if model == "empty-session":
         record["session_id"] = ""
 
+    if model == "history":
+        def git(*arguments):
+            return subprocess.check_output(["git", *arguments], text=True).strip()
+
+        record["is_shallow"] = git("rev-parse", "--is-shallow-repository")
+        record["filter"] = git("config", "remote.origin.partialclonefilter")
+        record["remote_branches"] = git("for-each-ref", "--format=%(refname:short)",
+                                        "refs/remotes/origin").splitlines()
+        record["tags"] = git("tag", "--list").splitlines()
+        record["missing_before"] = git("rev-list", "--objects", "--missing=print", "HEAD")
+        record["history"] = git("log", "--format=%H%n%B", "--name-status", "--no-renames",
+                                "--diff-merges=first-parent", "HEAD")
+        record["historical_patch"] = git("show", "--format=%B", "--no-renames",
+                                         os.environ["REVIEW_TEST_COMMIT"])
+
     if model == "hang":
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
         child = subprocess.Popen([sys.executable, "-c",

@@ -277,7 +277,8 @@ def review(repo, branch, reviewers, timeout, logger):
     try:
         root = Path(temporary.name)
         checkout = root / "repo"
-        clone = start_worker(["git", "clone", "--quiet", "--branch", branch,
+        clone = start_worker(["git", "clone", "--quiet", "--single-branch", "--no-tags",
+                              "--filter=blob:none", "--branch", branch,
                               "--", repo, str(checkout)], root, logger.directory / "clone",
                              "clone", workers, logger)
         wait_for([clone], DEFAULT_TIMEOUT_SECONDS, logger)

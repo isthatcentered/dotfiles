@@ -30,6 +30,7 @@ class ReviewTests(unittest.TestCase):
         self.git("init", "-q", "-b", "main")
         self.git("config", "user.name", "Review Fixture")
         self.git("config", "user.email", "fixture@example.invalid")
+        self.git("config", "uploadpack.allowFilter", "true")
         (self.repo / "app.py").write_text("main branch\n")
         self.git("add", ".")
         self.git("commit", "-qm", "base")
@@ -57,7 +58,8 @@ class ReviewTests(unittest.TestCase):
         return subprocess.check_output(["git", "-C", str(self.repo), *args], text=True).strip()
 
     def invocation(self, reviewers, branch="feature/example", extra=()):
-        command = [sys.executable, str(self.script), "--repo", str(self.repo), "--branch", branch,
+        # file:// exercises Git transport and filtering instead of local hardlink cloning.
+        command = [sys.executable, str(self.script), "--repo", self.repo.as_uri(), "--branch", branch,
                    "--reviewers", json.dumps(reviewers), *extra]
         env = {**os.environ, "PATH": str(self.tools) + os.pathsep + os.environ["PATH"],
                "TMPDIR": str(self.scratch), "REVIEW_TEST_RECORDS": str(self.records),
@@ -199,6 +201,49 @@ class ReviewTests(unittest.TestCase):
         self.assertGreaterEqual(clone["duration_seconds"], 0.25)
         first_agent = next(e for e in events if e["event"] == "process.started" and e["agent"])
         self.assertGreater(first_agent["elapsed_seconds"], clone["elapsed_seconds"])
+        self.assert_cleaned()
+
+    def test_partial_clone_retains_commit_messages_files_and_historical_diffs(self):
+        historical_commit = self.git("rev-parse", "HEAD")
+        historical_blob = self.git("rev-parse", "HEAD:app.py")
+        (self.repo / "app.py").write_text("final feature branch\n")
+        self.git("commit", "-qam", "Final feature title\n\nDetailed feature description")
+        self.git("checkout", "-q", "main")
+        (self.repo / "base.txt").write_text("base change\n")
+        self.git("add", "base.txt")
+        self.git("commit", "-qm", "Base update\n\nBase description")
+        self.git("checkout", "-qb", "unrelated")
+        (self.repo / "unrelated.txt").write_text("unrelated change\n")
+        self.git("add", "unrelated.txt")
+        self.git("commit", "-qm", "Unrelated commit")
+        self.git("tag", "unrelated-tag")
+        self.git("checkout", "-q", "feature/example")
+        self.git("merge", "-q", "--no-ff", "main", "-m", "Merge main\n\nMerge description")
+        self.git("tag", "feature-tag")
+        expected_history = self.git("log", "--format=%H%n%B", "--name-status", "--no-renames",
+                                    "--diff-merges=first-parent", "HEAD")
+        expected_patch = self.git("show", "--format=%B", "--no-renames", historical_commit)
+        command, env = self.invocation([{"agent": "codex", "model": "history"},
+                                        {"agent": "claude", "model": "one"}])
+        env["REVIEW_TEST_COMMIT"] = historical_commit
+        result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        records = self.read_records()
+        self.assertEqual(len(records), 2)
+        self.assertTrue(all(record["source"] == "final feature branch\n" for record in records))
+        for record in records:
+            if record["model"] != "history":
+                continue
+            self.assertEqual(record["is_shallow"], "false")
+            self.assertEqual(record["filter"], "blob:none")
+            self.assertIn("origin/feature/example", record["remote_branches"])
+            self.assertNotIn("origin/unrelated", record["remote_branches"])
+            self.assertEqual(record["tags"], [])
+            self.assertIn(f"?{historical_blob}", record["missing_before"].splitlines())
+            self.assertEqual(record["history"], expected_history)
+            self.assertEqual(record["historical_patch"], expected_patch)
+            self.assertEqual(record["source"], "final feature branch\n")
+        self.assertEqual(len(json.loads(result.stdout)), 2)
         self.assert_cleaned()
 
     def test_simultaneous_runs_have_distinct_persistent_logs(self):
