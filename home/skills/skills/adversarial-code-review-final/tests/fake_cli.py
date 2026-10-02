@@ -8,6 +8,7 @@ import signal
 import subprocess
 import sys
 import time
+import uuid
 
 
 def main():
@@ -21,7 +22,11 @@ def main():
     record_path = records / f"{os.getpid()}.json"
     record = {"agent": agent, "model": model, "args": args, "prompt": prompt,
               "schema": schema, "cwd": os.getcwd(), "pid": os.getpid(),
+              "session_id": str(uuid.uuid4()),
+              "skip_prompt_history": os.environ.get("CLAUDE_CODE_SKIP_PROMPT_HISTORY"),
               "started": time.monotonic(), "source": Path("app.py").read_text()}
+    if model == "empty-session":
+        record["session_id"] = ""
 
     if model == "hang":
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
@@ -36,6 +41,12 @@ def main():
         temporary.replace(record_path)
 
     save_record()
+    if agent == "codex" and "--json" in args:
+        print("captured startup noise", flush=True)
+        print(json.dumps({"type": "turn.started"}), flush=True)
+        if model != "missing-session":
+            print(json.dumps({"type": "thread.started", "thread_id": record["session_id"]}),
+                  flush=True)
     deadline = time.monotonic() + 5
     while len(list(records.glob("*.json"))) < int(os.environ["REVIEW_TEST_COUNT"]):
         if time.monotonic() >= deadline:
@@ -70,6 +81,8 @@ def main():
     else:
         print("captured Claude stderr", file=sys.stderr)
         envelope = {"subtype": "success", "is_error": False}
+        if model != "missing-session":
+            envelope["session_id"] = record["session_id"]
         if model != "missing":
             envelope["structured_output"] = result
         if model == "cli-error":
@@ -77,6 +90,11 @@ def main():
         print("invalid JSON" if model == "malformed" else json.dumps(envelope))
     record["finished"] = time.monotonic()
     save_record()
+    persistent = ("--ephemeral" not in args if agent == "codex" else
+                  "--no-session-persistence" not in args and not record["skip_prompt_history"])
+    if persistent and record["session_id"]:
+        session = Path(os.environ["REVIEW_TEST_SESSIONS"]) / f"{record['session_id']}.json"
+        session.write_text(json.dumps(record))
     return 0
 
 

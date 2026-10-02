@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Clone a branch, run agent CLIs, and print their concatenated findings."""
+"""Clone a branch, run agent CLIs, and print findings grouped by agent session."""
 
 import argparse
 from dataclasses import dataclass
@@ -78,9 +78,13 @@ def start_worker(command, cwd, directory, name, workers, agent="", output_path=N
     directory.mkdir(parents=True, exist_ok=True)
     stdout_path, stderr_path = directory / "stdout.log", directory / "stderr.log"
     started = time.monotonic()
+    environment = os.environ.copy()
+    if agent == "claude":
+        environment.pop("CLAUDE_CODE_SKIP_PROMPT_HISTORY", None)
     with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
         process = subprocess.Popen(command, cwd=cwd, stdin=subprocess.DEVNULL,
-                                   stdout=stdout, stderr=stderr, start_new_session=True)
+                                   stdout=stdout, stderr=stderr, env=environment,
+                                   start_new_session=True)
     worker = Worker(name, process, started, stdout_path, stderr_path, agent, output_path)
     workers.append(worker)
     log(f"Started {name}")
@@ -94,17 +98,33 @@ def failure(worker, message):
     return ReviewError(f"{worker.name}: {message}" + (f"\n{details}" if details else ""))
 
 
-def read_findings(worker):
+def codex_session_id(worker):
+    with worker.stdout_path.open() as events:
+        for line in events:
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(event, dict) and event.get("type") == "thread.started":
+                return event["thread_id"]
+    raise failure(worker, "CLI output did not include a session ID")
+
+
+def read_review(worker):
     try:
         if worker.agent == "codex":
             result = json.loads(worker.output_path.read_text())
+            session_id = codex_session_id(worker)
         else:
             response = json.loads(worker.stdout_path.read_text())
             if response.get("is_error") or response.get("subtype", "success") != "success":
                 raise failure(worker, "review failed")
             result = response["structured_output"]
+            session_id = response["session_id"]
+        if not isinstance(session_id, str) or not session_id:
+            raise failure(worker, "CLI output did not include a session ID")
         # Decode the CLI envelope; deliberately do not validate findings.
-        return result["findings"]
+        return {"agent": worker.agent, "sessionId": session_id, "findings": result["findings"]}
     except (OSError, ValueError, KeyError, TypeError) as error:
         raise failure(worker, f"could not read findings: {error}") from error
 
@@ -119,7 +139,7 @@ def wait_for(workers, timeout):
                 if code:
                     raise failure(worker, f"exited with code {code}")
                 if worker.agent:
-                    results[index] = read_findings(worker)
+                    results[index] = read_review(worker)
                 pending.remove((index, worker))
                 log(f"Finished {worker.name}")
             elif time.monotonic() - worker.started >= timeout:
@@ -152,13 +172,13 @@ def stop_workers(workers):
 
 def reviewer_command(reviewer, schema_path, output_path):
     if reviewer["agent"] == "codex":
-        return ["codex", "exec", "--color", "never", "--ephemeral",
+        return ["codex", "exec", "--json", "--color", "never",
                 "--dangerously-bypass-approvals-and-sandbox", "--model", reviewer["model"],
                 "-c", f'model_reasoning_effort="{EFFORT}"',
                 "--output-schema", str(schema_path), "--output-last-message", str(output_path),
                 PROMPT]
     return ["claude", "-p", PROMPT, "--output-format", "json", "--model", reviewer["model"],
-            "--effort", EFFORT, "--dangerously-skip-permissions", "--no-session-persistence",
+            "--effort", EFFORT, "--dangerously-skip-permissions",
             "--json-schema", schema_path.read_text()]
 
 
@@ -185,8 +205,8 @@ def review(repo, branch, reviewers, timeout):
             results = wait_for(reviewers_running, timeout)
         finally:
             stop_workers(workers)
-    # Cleanup completes before concatenating or writing anything to stdout.
-    return [finding for findings in results for finding in findings]
+    # Cleanup completes before writing anything to stdout.
+    return results
 
 
 def nonempty(value):
@@ -237,8 +257,8 @@ def main(argv=None):
     signal.signal(signal.SIGINT, interrupt)
     signal.signal(signal.SIGTERM, interrupt)
     try:
-        findings = review(args.repo, args.branch, args.reviewers, args.timeout)
-        print(json.dumps(findings, ensure_ascii=False, indent=2))
+        results = review(args.repo, args.branch, args.reviewers, args.timeout)
+        print(json.dumps(results, ensure_ascii=False, indent=2))
         return 0
     except Interrupted as error:
         log(f"error: {error}")

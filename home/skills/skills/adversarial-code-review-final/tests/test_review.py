@@ -36,6 +36,8 @@ class ReviewTests(unittest.TestCase):
         self.scratch.mkdir()
         self.records = self.root / "records"
         self.records.mkdir()
+        self.sessions = self.root / "saved sessions"
+        self.sessions.mkdir()
         self.tools = self.root / "fake tools"
         self.tools.mkdir()
         for name in ("codex", "claude"):
@@ -53,6 +55,7 @@ class ReviewTests(unittest.TestCase):
                    "--reviewers", json.dumps(reviewers), *extra]
         env = {**os.environ, "PATH": str(self.tools) + os.pathsep + os.environ["PATH"],
                "TMPDIR": str(self.scratch), "REVIEW_TEST_RECORDS": str(self.records),
+               "REVIEW_TEST_SESSIONS": str(self.sessions), "CLAUDE_CODE_SKIP_PROMPT_HISTORY": "1",
                "REVIEW_TEST_COUNT": str(len(reviewers))}
         return command, env
 
@@ -97,7 +100,10 @@ class ReviewTests(unittest.TestCase):
                      {"agent": "claude", "model": "middle"}]
         result = self.run_review(reviewers)
         self.assertEqual(result.returncode, 0, result.stderr)
-        findings = json.loads(result.stdout)
+        groups = json.loads(result.stdout)
+        self.assertEqual([group["agent"] for group in groups], ["codex", "codex", "claude"])
+        self.assertTrue(all(set(group) == {"agent", "sessionId", "findings"} for group in groups))
+        findings = [finding for group in groups for finding in group["findings"]]
         self.assertEqual([f["summary"] for f in findings],
                          ["slow", "slow", "fast", "fast", "middle", "middle"])
         self.assertEqual(findings[0], findings[1])
@@ -106,6 +112,9 @@ class ReviewTests(unittest.TestCase):
         self.assertIn("—", result.stdout)
         records = self.read_records()
         self.assertEqual(len(records), 3)
+        sessions = {r["model"]: r["session_id"] for r in records}
+        self.assertEqual([group["sessionId"] for group in groups],
+                         [sessions["slow"], sessions["fast"], sessions["middle"]])
         self.assertEqual(len({r["cwd"] for r in records}), 1)
         self.assertTrue(all(r["source"] == "feature branch\n" for r in records))
         prompt = (SKILL / "REVIEW-PROMPT.md").read_text(encoding="utf-8")
@@ -129,23 +138,51 @@ class ReviewTests(unittest.TestCase):
     def test_main_is_a_valid_branch_and_a_single_reviewer_is_allowed(self):
         result = self.run_review([{"agent": "claude", "model": "one"}], branch="main")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(json.loads(result.stdout)), 2)
+        groups = json.loads(result.stdout)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["agent"], "claude")
+        self.assertEqual(len(groups[0]["findings"]), 2)
         self.assertEqual(self.read_records()[0]["source"], "main branch\n")
         self.assert_cleaned()
 
     def test_repeated_models_are_independent_reviewers(self):
         result = self.run_review([{"agent": "codex", "model": "same"}] * 2)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(self.read_records()), 2)
-        self.assertEqual(len(json.loads(result.stdout)), 4)
+        records = self.read_records()
+        groups = json.loads(result.stdout)
+        self.assertEqual(len(records), 2)
+        self.assertEqual(len(groups), 2)
+        self.assertEqual({group["sessionId"] for group in groups},
+                         {record["session_id"] for record in records})
+        self.assertEqual(len({group["sessionId"] for group in groups}), 2)
+        self.assertTrue(all(group["agent"] == "codex" for group in groups))
+        self.assertEqual(sum(len(group["findings"]) for group in groups), 4)
         self.assert_cleaned()
 
-    def test_no_findings_prints_empty_array(self):
+    def test_empty_findings_keep_reviewer_sessions(self):
         result = self.run_review([{"agent": "codex", "model": "empty"},
                                   {"agent": "claude", "model": "empty"}])
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.stdout, "[]\n")
+        groups = json.loads(result.stdout)
+        self.assertEqual([group["agent"] for group in groups], ["codex", "claude"])
+        self.assertEqual([group["findings"] for group in groups], [[], []])
+        self.assertEqual({group["sessionId"] for group in groups},
+                         {record["session_id"] for record in self.read_records()})
         self.assert_cleaned()
+
+    def test_sessions_persist_outside_temporary_checkout(self):
+        result = self.run_review([{"agent": "codex", "model": "one"},
+                                  {"agent": "claude", "model": "one"}])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assert_cleaned()
+        for group in json.loads(result.stdout):
+            transcript = self.sessions / f"{group['sessionId']}.json"
+            saved = json.loads(transcript.read_text())
+            self.assertEqual(saved["session_id"], group["sessionId"])
+            self.assertEqual(saved["agent"], group["agent"])
+            self.assertFalse(Path(saved["cwd"]).exists())
+            if saved["agent"] == "claude":
+                self.assertIsNone(saved["skip_prompt_history"])
 
     def test_cleanup_happens_before_stdout_is_written(self):
         command, env = self.invocation([{"agent": "codex", "model": "one"}])
@@ -158,7 +195,10 @@ class ReviewTests(unittest.TestCase):
             stdout = process.stdout.read()
             _, stderr = process.communicate(timeout=10)
             self.assertEqual(process.returncode, 0, stderr)
-            self.assertEqual(len(json.loads(first_line + stdout)), 2)
+            groups = json.loads(first_line + stdout)
+            self.assertEqual(len(groups), 1)
+            self.assertEqual(groups[0]["sessionId"], self.read_records()[0]["session_id"])
+            self.assertEqual(len(groups[0]["findings"]), 2)
         finally:
             if process.poll() is None:
                 process.kill()
@@ -169,7 +209,8 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         expected = {"location": {"start_line": -1, "end_line": 0, "file_path": "../missing"},
                     "unrecognized_field": "preserve this exactly"}
-        self.assertEqual(json.loads(result.stdout), [expected, expected])
+        groups = json.loads(result.stdout)
+        self.assertEqual(groups[0]["findings"], [expected, expected])
         self.assert_cleaned()
 
     def test_reviewer_failure_cancels_peers_without_partial_stdout_or_retry(self):
@@ -227,6 +268,12 @@ class ReviewTests(unittest.TestCase):
         for agent, model in cases:
             with self.subTest(agent=agent, model=model):
                 self.assert_failed(self.run_review([{"agent": agent, "model": model}]))
+
+    def test_missing_or_empty_session_ids_fail_without_partial_stdout(self):
+        for agent in ("codex", "claude"):
+            for model in ("missing-session", "empty-session"):
+                with self.subTest(agent=agent, model=model):
+                    self.assert_failed(self.run_review([{"agent": agent, "model": model}]))
 
     def test_missing_cli_and_missing_branch_fail_with_cleanup(self):
         (self.tools / "claude").unlink()
