@@ -43,101 +43,37 @@ logic gap may still leave a race condition. Report each separately.
 Finding one issue is not a stopping point. Report every supported
 finding; do not invent issues to fill the report.
 
+The automated checks (tests/typecheck/lint/...) have already been run, you do not need to run them. You are allowed to write some temporary tests/scripts/whatever if you want to verify a finding.
+
 ## Phase 3 — Report
 
-Write all findings to an OS temporary file using the report template below.
-Return the file’s absolute path.
-Always include coverage and limits, even when there are no findings.
-If none are supported, write `No supported findings identified` under Findings.
+Return all supported findings as a JSON object matching the structure below. If no findings are supported, return `{"findings": []}`. Output only JSON.
 
-Markdown. Concise. Fragments fine. No preamble, no closing summary.
-See [REPORT-EXAMPLE.md](./REPORT-EXAMPLE.md) for a completed finding.
-
-````
-## Scope
-<commit(s), resolved base SHA, reviewed HEAD SHA>
-
-
-## What changed
-<3–8 bullets, before → after, intent terms — not a diff readout>
-
-
-## Coverage and limits
-
-- Reviewed: <behavior and interactions inspected>
-- Checks: <checks executed and outcomes, or none>
-- Limits: <material areas left unreviewed, missing context, or blocked verification; none if applicable>
-
-
-## Findings
-
-### 1. <Trigger causes observable failure>
-
-Severity: <low | medium | high> — <impact if the bug occurs>
-Occurrence likelihood: <low | medium | high | unknown> — <how likely users are to encounter the trigger, with reasoning>
-
-**Problematic location**
-File: `<path>` @ `<head SHA>`
-Start line: <N>
-End line: <M>
-
-**What goes wrong**
-<Trigger, affected users, and observable consequence.>
-
-**Before**
-`<before path>` @ `<base SHA>`, lines <N–M>
-```<lang>
-<exact original code>
 ```
-
-**After**
-`<after path>` @ `<head SHA>`, lines <N–M>
-```<lang>
-<exact current code>
+{
+  "findings": [
+    {
+      "location": {
+        "start_line": 1, // First line of the problematic code; 1-based, inclusive.
+        "end_line": 1,   // Last line of the problematic code; 1-based, inclusive.
+        "file_path": "src/example.py" // Path relative to the repository root.
+      },
+      "summary": "...", // Short description of the issue.
+      "why_it_was_flagged": "...", // Explain how the code causes the failure, including assumptions and uncertainty.
+      "blast_radius": "...", // Describe affected users, workflows, or data and the consequences.
+      "severity": {
+        "level": "medium", // One of: low, medium, high. Rate impact if the bug occurs.
+        "reason": "..." // Explain the impact supporting this rating.
+      },
+      "occurrence_likelihood": {
+        "level": "unknown", // One of: low, medium, high, unknown. Rate how likely users are to encounter the trigger in expected usage.
+        "reason": "..." // Explain the expected trigger frequency, or why it is unknown.
+      },
+      "example": "..." // Concrete prerequisites, inputs, or actions that trigger the bug, with expected and actual behavior.
+    }
+  ]
+}
 ```
-
-**Why it happens**
-<Explain the causal chain from the changed code to the failure.
-State the violated contract or invariant and cite its supporting
-documentation, test, caller, or other evidence with revision and line range.>
-
-**How to reproduce**
-Prerequisites: <required state, configuration, environment, or none>
-
-1. <Concrete input, command, request, or action against the reviewed code>
-2. <Action that exposes the failure; specify ordering if relevant>
-
-Expected: <specific correct result>
-Actual / Predicted actual: <observed result if executed; predicted result otherwise>
-
-**Evidence and limits**
-<Code evidence, assumptions, untested consequences, and remaining uncertainty.
-Include execution results if available; distinguish observations from predictions.>
-````
-
-### Locations and code excerpts
-
-- Use repository-relative paths and resolved commit SHAs. Line numbers are 1-based and inclusive. Always provide both start and end, even for a single line.
-- Anchor the problematic location to the smallest range that identifies the cause at the reviewed `HEAD`. List supporting locations separately when the explanation spans files.
-- **Before** is the state at the review base; **After** is the state at the reviewed `HEAD`. Not intermediate commits. Each side has its own path and range to account for renames and shifted lines.
-- Copy exact excerpts with enough surrounding code to explain the failure. Do not rewrite or invent code for either side.
-- For added code, write `New code — no before location or excerpt`. For deleted code, write `Deleted — no after location or excerpt` and anchor the problematic location to the deleted range at the base SHA, explicitly marking it as a deletion. Never invent a range for an absent side.
-
-### Severity and occurrence likelihood
-
-- **Severity:** impact when the bug occurs.
-  High: severe harm or core workflow failure.
-  Medium: meaningful disruption. Low: minor consequences.
-- **Occurrence likelihood:** frequency of the trigger in expected usage.
-  High: common. Medium: occasional. Low: rare. Unknown: insufficient context.
-  Explain the rating; do not invent percentages.
-
-Occurrence likelihood measures how likely users are to encounter the trigger in expected usage.
-
-## Style
-
-- Use backticks for identifiers, paths, and values.
-- Do not include suggested fixes.
 
 ## Don't flag
 

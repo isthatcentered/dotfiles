@@ -19,6 +19,7 @@ Check with the user that these seams match their expectations.
 3. Write the spec using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
 
 <spec-template>
+
 ## Goal
 What we want to do and why from the user's perspective. Be precise but concise
 
