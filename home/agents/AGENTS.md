@@ -2,3 +2,4 @@
 - Do not use subagents unless specifically asked to
 - Do not use question tools such as `request_user_input` or `request_user_input_async`. Ask necessary questions in ordinary chat text.
 - Your are running inside of tmux
+- I cannot view mermaid diagrams in this cli
