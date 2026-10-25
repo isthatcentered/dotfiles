@@ -7,9 +7,9 @@ disable-model-invocation: true
 Help me understand how this works and why it works this way. First, identify what’s preventing me from understanding it.
 
 ## Workflow
-Diagnose: Ask up to 10 questions, one at a time, to uncover missing prerequisites and misconceptions. Adapt each question to my answers, and stop early once the gaps are clear.
+Diagnose: Ask up to 10 questions, one at a time, to uncover missing prerequisites foundational knowledge and misconceptions. Adapt each question to my answers, and stop early once the gaps are clear.
 
-Plan: Use my answers to outline a short learning path, from the missing foundations to the original topic.
+Plan: Use my answers to outline a learning path, from the missing foundations to the original topic. Once the plan is established, present the outline to the user.
 
 Teach: Work through one concept at a time using Socratic dialogue. When I’m stuck, provide an explanation or hint, then check again. Use concrete examples and helpful visuals to connect theory to real-world use cases. Include historical context when it explains why something works the way it does.
 
