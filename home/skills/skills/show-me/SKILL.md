@@ -1,12 +1,11 @@
 ---
 name: show-me
-description: Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts.
-disable-model-invocation: true
+description: Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts. 
 ---
 
 Help the user understand the current topic of conversation visually. Skip the preamble and keep prose brief. Pick the smallest view that makes the key point clear.
 
-- Show logic or an algorithm as pseudocode:
+## Show logic or an algorithm as pseudocode:
 
 ```text
 on(save)
@@ -16,7 +15,7 @@ on(save)
   return fresh result
 ```
 
-- Show runtime control flow as a call tree:
+## Show runtime control flow as a call tree:
 
 ```text
 submitForm
@@ -26,7 +25,7 @@ submitForm
   navigateToSession
 ```
 
-- Show UI structure as a component tree, including state and module boundaries that matter:
+## Show UI structure as a component tree, including state and module boundaries that matter:
 
 ```tsx
 <SessionPage> (apps/example/src/routes/session.tsx)
@@ -35,7 +34,7 @@ submitForm
     <RunSkillButton> (packages/ui)
 ```
 
-- Show file responsibility or a broad refactor as a shallow file tree:
+## Show file responsibility or a broad refactor as a shallow file tree:
 
 ```text
 src/
@@ -44,7 +43,7 @@ src/
 └── transport/      # sends API requests
 ```
 
-- Show component interaction, control flow, or data flow with Mermaid:
+## Show component interaction, control flow, or data flow with Mermaid:
 
 ```mermaid
 sequenceDiagram
@@ -56,9 +55,29 @@ sequenceDiagram
     Daemon-->>UI: stream result
 ```
 
-- Use `diff` when the point is what changes and the surrounding shape already exists. Match the diff shape to the topic.
 
-For a component change:
+## Show test changes as a diff:
+```diff
+ auth.test.ts
++  rejects expired token
+-  accepts legacy token
+-  bad password
+   some unchanged test
++  rejects bad password              # renamed
+-  signs in: checks session exists
++  signs in: checks session expiry   #  now checks session expiry
+
+ cart.test.ts
++  rounds total
+   some unchanged test
+```
+
+For edited tests, add a short explanation when the name alone doesn't communicate the change. Show the full test list per touched file, not just the touched ones.
+
+
+## Use `diff` when the point is what changes and the surrounding shape already exists. Match the diff shape to the topic.
+
+### For a component change:
 
 ```diff
  <SessionPage>
@@ -69,7 +88,7 @@ For a component change:
 +    <SkillResultCard />
 ```
 
-For a file-layout change:
+### For a file-layout change:
 
 ```diff
  src/
@@ -82,7 +101,8 @@ For a file-layout change:
 +    └── stream.ts
 ```
 
-For a call-tree or call-stack change:
+
+### For a call-tree or call-stack change:
 
 ```diff
  submitForm
@@ -95,7 +115,7 @@ For a call-tree or call-stack change:
 +    subscribeToEvents
 ```
 
-For a state or control-flow change:
+### For a state or control-flow change:
 
 ```diff
  on(save)
@@ -106,7 +126,7 @@ For a state or control-flow change:
 +  invalidate cache
 ```
 
-- Show the whole block when most of it is new, when omitted context would hide ownership or order, or when the user needs a copyable target shape:
+## Show the whole block when most of it is new, when omitted context would hide ownership or order, or when the user needs a copyable target shape:
 
 ```ts
 function expandSkill(command: string): string {
@@ -115,13 +135,13 @@ function expandSkill(command: string): string {
 }
 ```
 
-- For a visual UI, layout, state comparison, or concept too dense for Mermaid, write one focused HTML file — a diagram, an infographic, or a short slide deck, whichever fits the point. Match the product's colors, type, spacing, and components; use real labels and data; support desktop and mobile. Then open it for the user:
+## For a visual UI, layout, state comparison, or concept too dense for Mermaid, write one focused HTML file — a diagram, an infographic, or a short slide deck, whichever fits the point. Match the product's colors, type, spacing, and components; use real labels and data; support desktop and mobile. Then open it for the user:
 
 ```
 Bash(open path/to/show-me-{description}.html)
 ```
 
-### guidance
+## guidance
 
 Place each visual next to the short text it supports. Keep only the calls, files, props, states, and boundaries needed to answer the user's current question or the options to resolve the current discussion point.
 
