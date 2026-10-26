@@ -202,7 +202,7 @@ binds {
     CTRL+Shift+1                        { screenshot; }
     CTRL+Shift+2                        { screenshot-screen; }
     CTRL+Shift+3                        { screenshot-window; }
-    CTRL+Shift+4                        { screenshot; }
+    CTRL+Shift+4                        { spawn-sh "python3 ~/.config/niri/screenshot-satty.py"; }
 
     // ─── Emergency Escape Key ───
     // Use this when a fullscreen app blocks your keybinds.
