@@ -75,3 +75,8 @@ export KEYTIMEOUT=1
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Keep the CLI matching the Rex server ahead of Nix and other PATH entries.
+if [[ -n "$REX_BIN_DIR" ]]; then
+  export PATH="$REX_BIN_DIR:$PATH"
+fi

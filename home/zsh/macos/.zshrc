@@ -271,3 +271,8 @@ eval "$(atuin init zsh)"
 
 # Generated for envman. Do not edit.
 [ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
+
+# Keep the CLI matching the Rex server ahead of Nix and other PATH entries.
+if [[ -n "$REX_BIN_DIR" ]]; then
+  export PATH="$REX_BIN_DIR:$PATH"
+fi

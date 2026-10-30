@@ -111,6 +111,45 @@ Result:
 ~/.config/nvim → <repository>/home/nvim/nvim
 ```
 
+### Rex
+
+`home/rex/manage.json` links `home/rex/rex` to `~/.config/rex` on macOS and
+Linux. Nix's Home Manager activation already runs this manifest manager, so it
+also recreates the Rex link. Edit `home/rex/rex/init.lua`, then run
+`rex config check` and `rex config reload` on the machine running the Rex server.
+Rex does not watch the file for changes. The macOS app includes the CLI and adds
+it to terminals opened inside Rex; the zsh configs preserve `REX_BIN_DIR` at the
+front of PATH when present.
+
+Shortcuts follow `home/tmux/.tmux.conf`. Press **Ctrl+B**, release it, then:
+
+| Key | Action |
+| --- | --- |
+| `c`, `n`, `p`, `,` | New, next, previous, rename tab |
+| `0`–`9` | Select tab by tmux's zero-based position (Rex labels tabs from 1) |
+| `%`, `"` | Split right, split down |
+| `h`, `j`, `k`, `l` | Focus left, down, up, right |
+| `o` | Focus next pane |
+| `Alt+h/j/k/l` | Resize left, down, up, right |
+| `z`, `x` | Zoom, close pane |
+| `(`, `)` | Previous, next session |
+| `w`, `s` | Session picker (Rex's counterpart to choosing a session) |
+| `$` | Rename session |
+| `Ctrl+B` | Send Ctrl+B to the terminal |
+| `r` | Enter repeat mode for navigation and resizing; Escape or Enter exits |
+
+Rex has no timed equivalent to tmux's `repeat-time 1000`; repeat mode stays
+active until explicitly exited. Resize steps are 5 percent of a split, rather
+than tmux's 5 terminal cells. Session order follows Rex, and the session picker
+does not reproduce tmux's window tree. Copy-mode vi bindings, smart Neovim
+handoff, mouse settings, status/border styling, and TPM/resurrect/continuum
+plugins have no direct equivalent and are not ported. Existing Rex Cmd-based
+shortcuts remain available. Shortcuts recorded in the app take precedence over
+the config file.
+
+Reference: [Rex key sequences](https://www.superlogical.com/rex/docs/customize/key-sequences)
+and [key modes](https://www.superlogical.com/rex/docs/customize/key-modes).
+
 ### Platform-specific Zsh
 
 Linux and macOS use separate containers with the same target but different contents:
