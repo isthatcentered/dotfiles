@@ -23,7 +23,7 @@ What this PR as a whole achieves (bullet points)
 ## Change stack
 Group commits by logical change; for each group, explain the overall purpose and resulting behavior, then present the changes using the $show-me skill.
 
-## Techincal approach
+## Technical approach
 $show-me the changes
 
 ## User impact

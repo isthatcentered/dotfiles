@@ -43,6 +43,7 @@ def main():
                 "--fullscreen", "current-screen",
                 "--initial-tool", "crop",
                 "--early-exit", "copy",
+                "--copy-command", "wl-copy",
                 "--output-filename", str(output_directory / f"Screenshot_{timestamp}.png"),
             ],
             check=True,
