@@ -264,8 +264,6 @@ eval "$(direnv hook zsh)"
 # Scaleway CLI autocomplete initialization.
 eval "$(scw autocomplete script shell=zsh)"
 
-. "$HOME/.atuin/bin/env"
-
 eval "$(atuin init zsh)"
 
 # Generated for envman. Do not edit.
