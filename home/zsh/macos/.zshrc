@@ -263,7 +263,6 @@ eval "$(direnv hook zsh)"
 
 # Scaleway CLI autocomplete initialization.
 eval "$(scw autocomplete script shell=zsh)"
-source /Users/edouardpenin/.local/share/leaf/completions/_leaf
 
 . "$HOME/.atuin/bin/env"
 
