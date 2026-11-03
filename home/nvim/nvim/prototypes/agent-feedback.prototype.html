@@ -1,0 +1,333 @@
+<!doctype html>
+<!-- THROWAWAY behavioral prototype: can visual selection -> private feedback -> collect/reset feel native?
+     HTML requested explicitly; a small keyboard simulator, NOT a Neovim emulator. No config is loaded.
+     Open this file directly. State is deliberately memory-only. See agent-feedback.NOTES.md. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neovim agent feedback — throwaway prototype</title>
+<style>
+:root { color-scheme: dark; font-family: var(--font-sans, system-ui); color: var(--foreground, #d9dee8); }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input { font: inherit; }
+button { cursor: pointer; border: 1px solid var(--border, #394253); border-radius: 5px; padding: 7px 10px; background: var(--secondary, #252d3b); color: inherit; }
+button:hover { border-color: var(--primary, #93b4fa); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--primary, #93b4fa); color: var(--primary-foreground, #141c2c); }
+small, .muted { color: var(--muted-foreground, #9aa7b9); }
+small { font-size: 12px; }
+p { margin: 8px 0 14px; line-height: 1.5; }
+h2 { font-size: 16px; margin: 0 0 8px; }
+kbd { font-family: var(--font-mono, monospace); font-size: 12px; padding: 2px 4px; border: 1px solid var(--border, #394253); border-radius: 3px; }
+.tools, .tabs, .status, .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.tools { margin: 12px 0; }
+.tools small { margin-left: auto; }
+.terminal { background: var(--code-background, #161c27); border: 1px solid var(--border, #394253); border-radius: var(--radius, 8px); overflow: hidden; font: 13px/1.65 var(--font-mono, ui-monospace, monospace); }
+.tabs { padding: 8px; border-bottom: 1px solid var(--border, #394253); }
+.tabs button { font: inherit; padding: 3px 8px; }
+.tabs button.active { color: var(--primary, #93b4fa); border-color: var(--primary, #93b4fa); }
+.tabs small { margin-left: auto; }
+#editor { padding: 12px 0; overflow-x: auto; outline: none; min-height: 280px; }
+#editor:focus-visible { box-shadow: inset 0 0 0 2px var(--ring, #93b4fa); }
+.row { display: flex; min-width: max-content; height: 23px; }
+.sign { color: var(--warning, #e8ba68); width: 22px; text-align: center; flex-shrink: 0; }
+.number { color: var(--muted-foreground, #9aa7b9); width: 30px; text-align: right; padding-right: 12px; flex-shrink: 0; }
+.code { white-space: pre; padding-right: 22px; flex: 1; }
+.char { cursor: text; }
+.marked { background: color-mix(in srgb, var(--warning, #e8ba68) 22%, transparent); }
+.selected { background: var(--primary, #93b4fa); color: var(--primary-foreground, #141c2c); }
+.cursor { outline: 1px solid var(--foreground, #d9dee8); outline-offset: -1px; }
+.line-selected .code { background: var(--primary, #93b4fa); color: var(--primary-foreground, #141c2c); }
+.line-marked .code { background: color-mix(in srgb, var(--warning, #e8ba68) 15%, transparent); }
+.line-marked .marked { background: transparent; }
+.line-selected.line-marked .code { background: var(--primary, #93b4fa); }
+.status { background: var(--secondary, #252d3b); padding: 4px 10px; }
+#mode { color: var(--primary, #93b4fa); font-weight: 700; }
+#position { margin-left: auto; }
+.command { padding: 8px 10px; min-height: 42px; }
+#message { white-space: normal; }
+#prompt { display: flex; gap: 8px; align-items: center; }
+#prompt[hidden], [hidden] { display: none !important; }
+#comment { flex: 1; min-width: 40px; background: transparent; color: inherit; border: none; outline: none; }
+#picker { border-top: 1px solid var(--border, #394253); padding: 10px; }
+#picker button { display: block; text-align: left; width: 100%; margin: 5px 0; font: inherit; white-space: normal; }
+.below { margin-top: 14px; }
+.actions { margin-bottom: 8px; }
+.actions .primary { margin-right: auto; }
+#range { font: 12px/1.5 var(--font-mono, monospace); display: block; margin-top: 9px; }
+details { border-top: 1px solid var(--border, #394253); padding: 12px 0; }
+summary { cursor: pointer; font-size: 13px; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 var(--font-mono, monospace); max-height: 250px; overflow: auto; background: var(--code-background, #161c27); padding: 12px; border-radius: 6px; }
+#exportBox { margin-top: 14px; }
+#exportText { width: 100%; height: 180px; resize: vertical; background: var(--code-background, #161c27); color: inherit; border: 1px solid var(--border, #394253); font: 12px/1.5 var(--font-mono, monospace); padding: 10px; }
+.steps { font-size: 13px; }
+.steps span { display: inline-block; margin: 4px 12px 4px 0; }
+a { color: var(--primary, #93b4fa); }
+@media (max-width: 450px) { .terminal { font-size: 11px; } .tools small { margin-left: 0; } button { padding: 6px 8px; } }
+</style>
+</head>
+<body>
+<p><strong>Private feedback, attached to code.</strong> Select text, leave a comment, collect once. No tags, no inserted code comments. <small>Throwaway interaction mock · not installed in Neovim</small></p>
+<div class="steps"><span>① Click code to place the cursor</span><span>② <kbd>v</kbd> or <kbd>Shift V</kbd>, then <kbd>h j k l</kbd></span><span>③ <kbd>Space</kbd> <kbd>Shift R</kbd>, type, <kbd>Enter</kbd></span></div>
+<div class="tools" aria-label="Browser shortcuts for simulated Neovim actions">
+  <button id="visualChar">v · select text</button>
+  <button id="visualLine">V · select lines</button>
+  <button id="add">Space R · comment</button>
+  <small>Buttons mirror the keys below.</small>
+</div>
+<section class="terminal" aria-label="Simulated Neovim">
+  <div class="tabs" id="tabs"></div>
+  <div id="editor" tabindex="0" role="application" aria-label="Code simulator. v or Shift V selects; h j k l moves; Space Shift R comments; Escape cancels."></div>
+  <div class="status"><span id="mode">NORMAL</span><span id="fileState">[unmodified]</span><span id="pending">0 feedback</span><span id="position">4:1</span></div>
+  <div id="picker" hidden></div>
+  <div class="command">
+    <form id="prompt" hidden><label for="comment">Feedback:</label><input id="comment" autocomplete="off" placeholder="Type a comment…"><small>Enter save · Esc cancel</small></form>
+    <span id="message" role="status">Click the code, then try V j j → Space Shift-R.</span>
+  </div>
+</section>
+<small id="range"></small>
+<div class="below">
+  <div class="actions">
+    <button class="primary" id="collect">Space rc · copy JSON & clear</button>
+    <button id="list">Space rr · list feedback</button>
+  </div>
+  <small>Collects <strong>all files</strong> in this session. Amber = saved feedback; blue = active Visual selection. A <strong>!</strong> sign marks each range’s first line.</small>
+</div>
+<section id="exportBox" hidden>
+  <h2 id="exportTitle">Collected JSON</h2>
+  <textarea id="exportText" readonly aria-label="JSON export"></textarea>
+  <p id="copyStatus" role="status"></p>
+  <button id="manualClear" hidden>I copied the JSON — clear feedback</button>
+</section>
+<details open class="below"><summary>Live state · what would be exported now</summary><pre id="state"></pre></details>
+<details><summary>Try a moving range or a fresh session</summary>
+  <p class="muted">These are browser-only scenario controls, not proposed Neovim mappings. Insert adds a real line to this sample, then shifts attached ranges as extmarks do. Comments alone never modify source.</p>
+  <div class="actions"><button id="insert">Scenario: insert line above cursor</button><button id="restart">Scenario: close & reopen Neovim</button></div>
+</details>
+<details><summary>Real Neovim behavior vs. design choices</summary>
+  <p><strong>Native:</strong> <kbd>v</kbd> selects characters inclusively; <kbd>V</kbd> selects whole lines. <kbd>Esc</kbd> cancels, <kbd>o</kbd> swaps selection ends. Extmarks can highlight ranges, display signs and follow edits without dirtying the buffer. The prompt models default <code>vim.ui.input</code>; its appearance can change with your UI plugins.</p>
+  <p><strong>Proposed mappings:</strong> <kbd>Space R</kbd> adds feedback (Normal mode uses the current line); <kbd>Space rr</kbd> opens a quickfix-style list; <kbd>Space rc</kbd> collects and clears. Those mappings are custom behavior, not built into Neovim. Overlapping comments stay separate; no tags. Comment input is single-line for this first pass.</p>
+  <p><strong>JSON contract:</strong> paths relative to the project root; lines and UTF-8 byte columns start at 1; the end position is exclusive. A whole-line selection ends at column 1 of the following line, including an EOF boundary. Coordinates are read at collection time, so they reflect edits. Copy failure keeps feedback intact. Reloading this mock, like closing Neovim under this proposal, loses pending feedback.</p>
+  <p><strong>Scope of this simulator:</strong> <kbd>h j k l</kbd>, arrows, <kbd>0</kbd>, <kbd>$</kbd>, <kbd>gg</kbd>, <kbd>G</kbd>, <kbd>v</kbd>, <kbd>V</kbd>, <kbd>o</kbd>, <kbd>Esc</kbd> and the proposed leader keys. No counts, block selection, arbitrary editing, undo, drag selection or full Vim engine. File tabs stand in for buffer switching; they exit Visual mode. Deleting an annotated range, wiping a buffer and undo policy still need a real-Neovim implementation decision.</p>
+  <p>Grounded in Neovim <strong>v0.12.6</strong>: <a href="https://github.com/neovim/neovim/blob/v0.12.6/runtime/doc/visual.txt" target="_blank" rel="noreferrer">Visual mode</a>, <a href="https://github.com/neovim/neovim/blob/v0.12.6/runtime/doc/api.txt" target="_blank" rel="noreferrer">extmarks and signs</a>, <a href="https://github.com/neovim/neovim/blob/v0.12.6/runtime/lua/vim/ui.lua" target="_blank" rel="noreferrer">input prompt implementation</a>.</p>
+</details>
+<script>
+const samples = {
+  'src/cart.ts': [
+    'type Item = { price: number; quantity: number };',
+    '',
+    'export function total(items: Item[]) {',
+    '  let amount = 0;',
+    '  for (const item of items) {',
+    '    amount += item.price * item.quantity;',
+    '  }',
+    '  return Math.round(amount * 100) / 100;',
+    '}',
+    '',
+    'export function formatTotal(amount: number) {',
+    '  return `€${amount.toFixed(2)}`;',
+    '}',
+  ],
+  'src/cache.ts': [
+    'const cache = new Map<string, unknown>();',
+    '',
+    'export async function cached(key: string, load: () => Promise<unknown>) {',
+    '  if (cache.has(key)) {',
+    '    return cache.get(key);',
+    '  }',
+    '  const value = await load();',
+    '  cache.set(key, value);',
+    '  return value;',
+    '}',
+    '',
+    'export function clearCache() {',
+    '  cache.clear();',
+    '}',
+  ],
+};
+const $ = id => document.getElementById(id);
+const clone = value => JSON.parse(JSON.stringify(value));
+let files = clone(samples), file = Object.keys(files)[0], cursor = {row: 3, col: 0};
+let mode = 'n', anchor = null, comments = [], draft = null, prefix = '', picker = false, copying = false, desiredCol = 0;
+let exportSnapshot = null;
+const chars = line => Array.from(line);
+const compare = (a, b) => a.row - b.row || a.col - b.col;
+const copyPoint = p => ({row: p.row, col: p.col});
+const clamp = p => ({row: Math.max(0, Math.min(files[file].length - 1, p.row)), col: Math.max(0, Math.min(Math.max(0, chars(files[file][Math.max(0, Math.min(files[file].length - 1, p.row))]).length - 1), p.col))});
+function range() {
+  const a = anchor || cursor;
+  const [start, last] = compare(a, cursor) <= 0 ? [a, cursor] : [cursor, a];
+  if (mode !== 'v') return {kind: 'line', start: {row: start.row, col: 0}, end: {row: last.row + 1, col: 0}};
+  const length = chars(files[file][last.row]).length;
+  return {kind: 'character', start: copyPoint(start), end: length ? {row: last.row, col: Math.min(length, last.col + 1)} : {row: last.row + 1, col: 0}};
+}
+function position(path, p) {
+  const line = files[path][p.row] || '';
+  return {line: p.row + 1, column: new TextEncoder().encode(chars(line).slice(0, p.col).join('')).length + 1};
+}
+function payload() {
+  return {version: 1, position_encoding: 'utf-8', range_convention: '1-based, end-exclusive', comments: comments.map(c => ({file: c.file, selection: c.kind, start: position(c.file, c.start), end: position(c.file, c.end), comment: c.comment}))};
+}
+function contains(r, row, col) { return compare({row,col}, r.start) >= 0 && compare({row,col}, r.end) < 0; }
+function say(message) { $('message').textContent = message; }
+function focusEditor() { $('editor').focus({preventScroll: true}); }
+function render() {
+  $('tabs').replaceChildren();
+  for (const path of Object.keys(files)) {
+    const b = document.createElement('button');
+    b.textContent = path + (comments.filter(c => c.file === path).length ? ' •' : '');
+    b.className = path === file ? 'active' : '';
+    b.disabled = !!draft || copying;
+    b.onclick = () => { file = path; cursor = clamp({row: 3,col: 0}); desiredCol = 0; mode = 'n'; anchor = null; prefix = ''; render(); focusEditor(); };
+    $('tabs').append(b);
+  }
+  const active = draft || (mode !== 'n' ? range() : null);
+  const local = comments.filter(c => c.file === file);
+  $('editor').replaceChildren();
+  files[file].forEach((line, row) => {
+    const el = document.createElement('div'); el.className = 'row';
+    const selectedLine = active && active.kind === 'line' && row >= active.start.row && row < active.end.row;
+    if (selectedLine) el.classList.add('line-selected');
+    if (local.some(c => c.kind === 'line' && row >= c.start.row && row < c.end.row)) el.classList.add('line-marked');
+    const sign = document.createElement('span'); sign.className = 'sign';
+    const starts = local.filter(c => c.start.row === row);
+    sign.textContent = starts.length ? '!' : ' ';
+    sign.title = starts.map(c => c.comment).join('\n');
+    const num = document.createElement('span'); num.className = 'number'; num.textContent = row + 1;
+    const code = document.createElement('span'); code.className = 'code';
+    (chars(line).length ? chars(line) : [' ']).forEach((ch, col) => {
+      const cell = document.createElement('span'); cell.textContent = ch; cell.className = 'char';
+      if (local.some(c => contains(c, row, col))) cell.classList.add('marked');
+      if (active && contains(active, row, col)) cell.classList.add('selected');
+      if (row === cursor.row && col === cursor.col) cell.classList.add('cursor');
+      cell.onclick = () => { if (draft || copying) return; cursor = {row,col}; desiredCol = col; mode = 'n'; anchor = null; prefix = ''; render(); focusEditor(); };
+      code.append(cell);
+    });
+    el.append(sign, num, code); $('editor').append(el);
+  });
+  $('mode').textContent = draft ? 'INPUT' : mode === 'V' ? 'VISUAL LINE' : mode === 'v' ? 'VISUAL' : 'NORMAL';
+  $('position').textContent = `${cursor.row + 1}:${position(file, cursor).column}${prefix ? '  ' + prefix.replaceAll(' ', '<Space>') : ''}`;
+  $('pending').textContent = `${comments.length} feedback`;
+  $('fileState').textContent = JSON.stringify(files[file]) === JSON.stringify(samples[file]) ? '[unmodified]' : '[+] sample edit';
+  const r = active || range();
+  const start = position(file, r.start), end = position(file, r.end);
+  $('range').textContent = `${active ? 'Selected' : 'Current line'}: ${file} · ${start.line}:${start.column} → ${end.line}:${end.column} (end-exclusive)`;
+  $('state').textContent = JSON.stringify(payload(), null, 2);
+  $('collect').disabled = comments.length === 0 || !!draft || copying;
+  ['visualChar','visualLine','add','insert','restart','list'].forEach(id => $(id).disabled = !!draft || copying);
+  $('picker').hidden = !picker;
+  if (picker) {
+    $('picker').replaceChildren();
+    const label = document.createElement('small'); label.textContent = 'Feedback list — quickfix-style buffer · click a location to jump · Esc closes'; $('picker').append(label);
+    comments.forEach(c => {
+      const b = document.createElement('button');
+      b.textContent = `${c.file}|${position(c.file,c.start).line}:${position(c.file,c.start).column}| ${c.comment}`;
+      b.onclick = () => { file = c.file; cursor = copyPoint(c.start); desiredCol = cursor.col; mode = 'n'; anchor = null; picker = false; render(); focusEditor(); };
+      $('picker').append(b);
+    });
+    if (!comments.length) $('picker').append(document.createTextNode(' No feedback yet.'));
+  }
+}
+function visual(kind) {
+  if (draft || copying) return;
+  if (mode === kind) { mode = 'n'; anchor = null; }
+  else { if (mode === 'n') anchor = copyPoint(cursor); mode = kind; }
+  prefix = ''; render(); focusEditor();
+}
+function beginComment() {
+  if (copying || draft) return;
+  draft = {...range(), file}; mode = 'n'; anchor = null; prefix = '';
+  $('prompt').hidden = false; $('message').hidden = true; $('comment').value = '';
+  render(); $('comment').focus();
+}
+function finishComment(save) {
+  const text = $('comment').value.trim();
+  if (save && text) comments.push({...draft, comment: text});
+  say(save && text ? 'Feedback saved in memory. Source unchanged by this action.' : 'Cancelled. No feedback added.');
+  draft = null; $('prompt').hidden = true; $('message').hidden = false;
+  render(); focusEditor();
+}
+function clearCollected(snapshot) {
+  // Remove only the comments represented in this export, even after a manual copy delay.
+  comments = comments.filter(c => !snapshot.includes(c));
+  exportSnapshot = null; mode = 'n'; anchor = null; picker = false; prefix = '';
+  $('manualClear').hidden = true;
+  render();
+}
+async function collect() {
+  if (!comments.length || draft || copying) return;
+  const snapshot = comments.slice();
+  const json = JSON.stringify(payload(), null, 2);
+  copying = true; prefix = ''; render();
+  $('exportBox').hidden = false; $('exportText').value = json;
+  let copied = false;
+  try { await navigator.clipboard.writeText(json); copied = true; } catch (_) {
+    try { $('exportText').focus(); $('exportText').select(); copied = document.execCommand('copy'); } catch (_) {}
+  }
+  copying = false;
+  $('exportTitle').textContent = copied ? 'Last collected JSON · feedback cleared' : 'JSON ready · feedback NOT cleared';
+  $('copyStatus').textContent = copied ? `Copied ${snapshot.length} comment(s) to your clipboard. All exported marks removed.` : 'This browser blocked clipboard access. Select the JSON, copy it manually, then use the button below. Your feedback is still intact.';
+  if (copied) {
+    clearCollected(snapshot); say(`Copied ${snapshot.length} comment(s). Feedback and signs cleared.`); focusEditor();
+  } else {
+    exportSnapshot = snapshot; $('manualClear').hidden = false; render();
+  }
+}
+$('prompt').onsubmit = e => { e.preventDefault(); finishComment(true); };
+$('comment').onkeydown = e => { if (e.key === 'Escape') { e.preventDefault(); finishComment(false); } };
+$('visualChar').onclick = () => visual('v'); $('visualLine').onclick = () => visual('V');
+$('add').onclick = beginComment; $('collect').onclick = collect;
+$('list').onclick = () => { picker = !picker; mode = 'n'; anchor = null; prefix = ''; render(); focusEditor(); };
+$('manualClear').onclick = () => { if (exportSnapshot) clearCollected(exportSnapshot); $('exportTitle').textContent = 'Last collected JSON · feedback cleared'; $('copyStatus').textContent = 'Marked as manually copied. Exported feedback removed; any newer feedback is kept.'; say('Exported feedback cleared.'); focusEditor(); };
+$('insert').onclick = () => {
+  const row = cursor.row;
+  files[file].splice(row, 0, '// scenario: a line inserted above the cursor');
+  comments.filter(c => c.file === file).forEach(c => {
+    // Whole-line insertion at (row,0): start has forward gravity; end has backward gravity.
+    if (c.start.row >= row) c.start.row++;
+    if (c.end.row > row || (c.end.row === row && c.end.col > 0)) c.end.row++;
+  });
+  cursor.row++; mode = 'n'; anchor = null; prefix = '';
+  say('Sample source edited. Attached positions shifted; collect uses the new positions.'); render(); focusEditor();
+};
+$('restart').onclick = () => {
+  files = clone(samples); comments = []; draft = null; exportSnapshot = null; file = Object.keys(files)[0]; cursor = {row: 3,col: 0}; desiredCol = 0; mode = 'n'; anchor = null; prefix = ''; picker = false;
+  $('exportBox').hidden = true; $('manualClear').hidden = true;
+  say('Fresh session. Pending feedback is gone. Your system clipboard is not changed.'); render(); focusEditor();
+};
+$('editor').onkeydown = e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || draft || copying) return;
+  const key = e.key;
+  if (key === 'Tab') return;
+  e.preventDefault();
+  if (key === 'Escape') { mode = 'n'; anchor = null; prefix = ''; picker = false; say('Normal mode. Pending feedback kept.'); render(); return; }
+  if (prefix.startsWith(' ')) {
+    prefix += key;
+    if (prefix === ' R') { prefix = ''; beginComment(); return; }
+    if (prefix === ' rc') { prefix = ''; collect(); return; }
+    if (prefix === ' rr') { prefix = ''; $('list').click(); return; }
+    if (prefix !== ' r') { say('Unmapped leader sequence. Use Space Shift-R, Space r c, or Space r r.'); prefix = ''; }
+    render(); return;
+  }
+  if (key === ' ') { prefix = ' '; render(); return; }
+  if (key === 'v' || key === 'V') { prefix = ''; visual(key); return; }
+  const firstNonblank = row => Math.max(0, files[file][row].search(/\S/));
+  if (key === 'g') { if (prefix === 'g') { cursor = {row: 0,col: firstNonblank(0)}; desiredCol = cursor.col; prefix = ''; } else prefix = 'g'; render(); return; }
+  prefix = '';
+  if (key === 'o' && anchor) { const prev = cursor; cursor = anchor; anchor = prev; desiredCol = cursor.col; }
+  else if (key === 'j' || key === 'ArrowDown') cursor = clamp({row: cursor.row + 1,col: desiredCol});
+  else if (key === 'k' || key === 'ArrowUp') cursor = clamp({row: cursor.row - 1,col: desiredCol});
+  else if (key === 'h' || key === 'ArrowLeft') { cursor = clamp({...cursor, col: cursor.col - 1}); desiredCol = cursor.col; }
+  else if (key === 'l' || key === 'ArrowRight') { cursor = clamp({...cursor, col: cursor.col + 1}); desiredCol = cursor.col; }
+  else if (key === '0') { cursor.col = 0; desiredCol = 0; }
+  else if (key === '$') { cursor.col = Math.max(0, chars(files[file][cursor.row]).length - 1); desiredCol = Infinity; }
+  else if (key === 'G') { const row = files[file].length - 1; cursor = {row,col: firstNonblank(row)}; desiredCol = cursor.col; }
+  else say('Not simulated. Use h/j/k/l, arrows, 0, $, gg, G, v/V, o, Esc or the leader mappings.');
+  render();
+};
+render();
+</script>
+</body>
+</html>
