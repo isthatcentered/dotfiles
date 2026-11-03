@@ -1,0 +1,73 @@
+*agent-feedback.txt*  Private, in-memory feedback for coding agents
+
+Select code with v (characters) or V (whole lines), then press <leader>R.
+Type a comment and press Enter. Escape or blank input cancels. In Normal
+mode, <leader>R comments on the current line. The leader is Space.
+
+Feedback never inserts code comments, modifies the file, or adds undo entries.
+Amber highlights show saved ranges, with a ! sign on each range's first line.
+Ranges follow edits; overlapping comments are kept separately. No tags.
+
+MAPPINGS                                        *agent-feedback-mappings*
+
+    <leader>R       Add feedback in Normal or Visual mode.
+    <leader>rr      List all pending feedback in quickfix; Enter jumps to it.
+    <leader>rq      Alias for the feedback quickfix list.
+    <leader>rc      Copy all pending feedback as JSON, then clear it.
+    <leader>rd      Discard every feedback range under the current cursor.
+
+Use <leader>rr to read comments without collecting them. <leader>rc gathers
+feedback from all loaded file buffers, not just the current file. It removes
+the exported feedback and its decorations only after copying succeeds.
+An empty collection leaves the clipboard unchanged. A failed copy keeps the
+feedback so you can fix the clipboard provider and retry.
+
+JSON                                            *agent-feedback-json*
+
+The export has version=1, position_encoding="utf-8",
+range_convention="1-based, end-exclusive", and a comments array. Each comment:
+>
+    {
+      "project_root": "/absolute/project/root",
+      "file": "src/example.ts",
+      "selection": "line",
+      "start": { "line": 4, "column": 1 },
+      "end": { "line": 8, "column": 1 },
+      "comment": "Use integer cents here."
+    }
+<
+Lines and UTF-8 byte columns start at 1. The end position is exclusive:
+the example covers lines 4 through 7. Whole-line ranges end at column 1 of
+the next line, which may be the boundary just past the end of the file.
+Characterwise selections use selection="character". Endpoints come from
+current extmark positions at collection time, not the original selection.
+
+The root is the nearest Git root when feedback is added, or the current
+working directory for non-Git files. Paths inside that root are relative;
+others remain absolute. project_root disambiguates comments across projects
+and stays stable if you change working directory before collection.
+
+LIFETIME AND EDITS                              *agent-feedback-lifetime*
+
+Feedback is memory-only. Normal buffer switching preserves it. Closing
+Neovim loses it. Deleting, wiping or explicitly unloading a buffer discards
+that buffer's feedback with a notice: collect before deleting buffers.
+
+If all text in a range is deleted, the feedback is retained but collection
+is blocked to avoid exporting a misleading location. Undo restores the
+range. Alternatively use <leader>rr, Enter on the deleted-range entry, and
+<leader>rd to discard it. The rest of the feedback is kept.
+
+The comment prompt is single-line and uses vim.ui.input. Named ordinary
+file buffers, characterwise and linewise selections are supported; block
+selections and unnamed/special buffers are not. Inserting text exactly at
+the start or exclusive end of a range keeps that insertion outside it.
+
+In tmux, collection waits for "tmux load-buffer -w -" to succeed before
+clearing feedback, matching the configured tmux clipboard. Outside tmux,
+it uses the + register and checks clipboard readback.
+
+Highlight groups: AgentFeedback and AgentFeedbackSign. A colorscheme can
+override them; defaults are installed after ColorScheme events.
+
+vim:tw=78:ts=4:ft=help:norl:
