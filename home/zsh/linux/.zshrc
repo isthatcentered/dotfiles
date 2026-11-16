@@ -53,6 +53,7 @@ export PATH="/home/isthatcentered/.local/bin:$PATH"
 alias codex='codex --sandbox danger-full-access'
 alias sol='codex --model gpt-6-sol --config model_reasoning_effort=high'
 alias claude='claude --dangerously-skip-permissions'
+alias clauda='command clauda --dangerously-skip-permissions'
 
 eval "$(direnv hook zsh)"
 
@@ -75,6 +76,17 @@ export KEYTIMEOUT=1
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# pnpm
+export PNPM_HOME='/home/isthatcentered/.local/share/pnpm'
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+# pnpm end
+
+# Generated for envman. Do not edit.
+[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
 
 # Keep the CLI matching the Rex server ahead of Nix and other PATH entries.
 if [[ -n "$REX_BIN_DIR" ]]; then

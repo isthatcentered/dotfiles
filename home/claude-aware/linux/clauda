@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Share customization, never account state, MCP credentials, or conversations.
+default_config="$HOME/.claude"
+aware_config="$HOME/.claude-aware"
+mkdir -p -m 700 "$aware_config"
+
+for entry in CLAUDE.md settings.json keybindings.json skills agents commands rules hooks plugins output-styles; do
+  source_path="$default_config/$entry"
+  target_path="$aware_config/$entry"
+  [[ -e "$source_path" ]] || continue
+
+  if [[ -e "$target_path" || -L "$target_path" ]]; then
+    if [[ "$target_path" -ef "$source_path" ]]; then
+      continue
+    fi
+    printf 'clauda: refusing to replace existing customization: %s\n' "$target_path" >&2
+    exit 1
+  fi
+  ln -s "$source_path" "$target_path"
+done
+
+# Scope the account selection to this process, including in concurrent tmux panes.
+export CLAUDE_CONFIG_DIR="$aware_config"
+exec claude "$@"
