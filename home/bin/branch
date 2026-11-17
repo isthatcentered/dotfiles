@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: branch <branch-name>
+
+Update the local default branch from origin and create a new branch from it.
+The default branch is read from origin's HEAD, not assumed to be main or master.
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 1
+}
+
+if [[ $# -eq 1 && ( $1 == --help || $1 == -h ) ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 1 ]]; then
+  usage >&2
+  exit 1
+fi
+
+branch_name=$1
+
+[[ $(git rev-parse --is-inside-work-tree 2>/dev/null) == true ]] || die 'Not inside a Git worktree.'
+git check-ref-format --branch "$branch_name" >/dev/null 2>&1 || die "Invalid branch name: $branch_name"
+# Require a literal branch name, not checkout shorthand such as @{-1}.
+git check-ref-format "refs/heads/$branch_name" >/dev/null 2>&1 || die "Use a literal branch name: $branch_name"
+
+if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+  die "Branch already exists: $branch_name"
+fi
+
+if [[ -n $(git status --porcelain) ]]; then
+  die 'Working tree has uncommitted changes. Commit or stash them before creating a branch.'
+fi
+
+git remote get-url origin >/dev/null 2>&1 || die 'No origin remote configured.'
+default_ref=$(git ls-remote --symref origin HEAD | awk '$1 == "ref:" && $3 == "HEAD" { print $2 }')
+[[ $default_ref == refs/heads/* ]] || die "Could not determine origin's default branch."
+default_branch=${default_ref#refs/heads/}
+[[ $branch_name != "$default_branch" ]] || die 'The new branch must differ from the default branch.'
+remote_ref="refs/remotes/origin/$default_branch"
+
+git fetch origin "+$default_ref:$remote_ref"
+
+if git show-ref --verify --quiet "refs/heads/$default_branch"; then
+  git switch "$default_branch"
+else
+  git switch --no-track --create "$default_branch" "$remote_ref"
+fi
+
+git rebase "$remote_ref"
+git switch --no-track --create "$branch_name"

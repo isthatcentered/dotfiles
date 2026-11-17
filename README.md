@@ -150,6 +150,16 @@ the config file.
 Reference: [Rex key sequences](https://www.superlogical.com/rex/docs/customize/key-sequences)
 and [key modes](https://www.superlogical.com/rex/docs/customize/key-modes).
 
+### Shared commands
+
+`home/bin/manage.json` links its commands into `~/.local/bin` on macOS and
+Linux. Both Zsh configs add that directory to `PATH`.
+
+Run `branch <branch-name>` from anywhere inside a Git worktree to fetch `origin`'s
+advertised default branch, rebase the local default branch onto it, and create
+the requested branch. It does not assume the default is named `main` or
+`master`, and refuses dirty worktrees or an existing destination branch.
+
 ### Platform-specific Zsh
 
 Linux and macOS use separate containers with the same target but different contents:

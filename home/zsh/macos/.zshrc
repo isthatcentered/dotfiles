@@ -94,9 +94,6 @@ eval "$(fzf --zsh)"
 
 
 # Functions
-function branch {
-  git checkout -b $1
-}
 function point {
   git add .
   git commit
@@ -239,7 +236,7 @@ export PATH="$PNPM_HOME:$PATH"
 export PATH="/Users/edouardpenin/.config/herd-lite/bin:$PATH"
 export PHP_INI_SCAN_DIR="/Users/edouardpenin/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 export PATH="/Users/edouardpenin/Test/lua/bin:/Users/edouardpenin/Test/mybin:/Users/edouardpenin/Test:$HOME/Library/Python/3.9/bin:$PATH"
-export PATH="/Users/edouardpenin/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 
 
