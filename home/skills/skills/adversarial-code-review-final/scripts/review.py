@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Clone a branch, run agent CLIs, and print findings grouped by agent session.
+"""Publish a local branch, clone it, and print findings grouped by agent session.
 
 Each run retains timestamped events and process output in scripts/.logs/.
 """
@@ -270,11 +270,50 @@ def reviewer_command(reviewer, schema_path, output_path):
             "--json-schema", schema_path.read_text()]
 
 
-def review(repo, branch, reviewers, timeout, logger):
+def git_output(arguments, cwd, name, workers, logger):
+    worker = start_worker(["git", *arguments], cwd, logger.directory / name,
+                          name, workers, logger)
+    wait_for([worker], DEFAULT_TIMEOUT_SECONDS, logger)
+    return worker.stdout_path.read_text().rstrip("\n")
+
+
+def publish_branch(repo, branch, source, workers, logger):
+    source = Path(git_output(["rev-parse", "--show-toplevel"], source,
+                             "source-root", workers, logger))
+    if branch is None:
+        branch = git_output(["branch", "--show-current"], source,
+                            "current-branch", workers, logger)
+        if not branch:
+            raise ReviewError("HEAD is detached; select a local branch with --branch")
+    ref = f"refs/heads/{branch}"
+    git_output(["check-ref-format", ref], source, "validate-branch", workers, logger)
+    try:
+        commit = git_output(["rev-parse", "--verify", f"{ref}^{{commit}}"], source,
+                            "source-tip", workers, logger)
+    except ReviewError as error:
+        raise ReviewError(f"Could not resolve local branch {branch!r}: {error}") from error
+    dirty = git_output(["status", "--porcelain", "--untracked-files=normal"], source,
+                       "source-status", workers, logger)
+    if dirty:
+        logger.write("source.uncommitted", "Uncommitted changes are not included in the review; "
+                     "only committed code is published", source=str(source), branch=branch)
+    logger.write("source.prepared", f"Publishing local branch {branch} at {commit}",
+                 source=str(source), branch=branch, commit=commit, repo=repo)
+    # An explicit commit/refspec avoids HEAD, upstream, and push.default ambiguity.
+    # Disable config-driven extra publication without changing the user's config.
+    git_output(["-c", "push.autoSetupRemote=false", "push", "--no-follow-tags",
+                "--recurse-submodules=no", "--", repo, f"{commit}:{ref}"],
+               source, "push", workers, logger)
+    return branch
+
+
+def review(repo, branch, reviewers, timeout, logger, source):
     workers = []
     with logger.step("prepare_checkout"):
         temporary = tempfile.TemporaryDirectory(prefix="adversarial-review-")
     try:
+        with logger.step("publish_branch"):
+            branch = publish_branch(repo, branch, source, workers, logger)
         root = Path(temporary.name)
         checkout = root / "repo"
         clone = start_worker(["git", "clone", "--quiet", "--single-branch", "--no-tags",
@@ -282,6 +321,9 @@ def review(repo, branch, reviewers, timeout, logger):
                               "--", repo, str(checkout)], root, logger.directory / "clone",
                              "clone", workers, logger)
         wait_for([clone], DEFAULT_TIMEOUT_SECONDS, logger)
+        commit = git_output(["rev-parse", "HEAD"], checkout, "cloned-tip", workers, logger)
+        logger.write("checkout.ready", f"Reviewing cloned branch {branch} at {commit}",
+                     branch=branch, commit=commit)
         with logger.step("write_schema"):
             schema_path = root / "schema.json"
             schema_path.write_text(json.dumps(OUTPUT_SCHEMA))
@@ -344,8 +386,12 @@ def interrupt(signum, _frame):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", required=True, type=nonempty, help="Repository URL to clone")
-    parser.add_argument("--branch", required=True, type=nonempty, help="Branch to check out")
+    parser.add_argument("--repo", required=True, type=nonempty,
+                        help="Repository URL to push to and clone from")
+    parser.add_argument("--source", type=nonempty, default=".",
+                        help="Local checkout path (default: current working directory)")
+    parser.add_argument("--branch", type=nonempty,
+                        help="Local branch to publish and review (default: current branch)")
     parser.add_argument("--reviewers", required=True, type=reviewer_list,
                         help="JSON array of {agent: codex|claude, model: string}")
     parser.add_argument("--timeout", type=positive_seconds, default=DEFAULT_TIMEOUT_SECONDS,
@@ -355,11 +401,12 @@ def main(argv=None):
     signal.signal(signal.SIGTERM, interrupt)
     logger = None
     try:
-        logger = RunLog(args.branch)
+        logger = RunLog(args.branch or "current-branch")
         logger.write("run.started", f"Review logs: {logger.directory}",
                      run_id=logger.directory.name, branch=args.branch, repo=args.repo,
-                     reviewers=args.reviewers, timeout_seconds=args.timeout)
-        results = review(args.repo, args.branch, args.reviewers, args.timeout, logger)
+                     source=args.source, reviewers=args.reviewers, timeout_seconds=args.timeout)
+        results = review(args.repo, args.branch, args.reviewers, args.timeout, logger,
+                         Path(args.source).resolve())
         with logger.step("write_output", reviewer_count=len(results)):
             print(json.dumps(results, ensure_ascii=False, indent=2), flush=True)
         logger.write("run.finished", "Review succeeded", status="succeeded",

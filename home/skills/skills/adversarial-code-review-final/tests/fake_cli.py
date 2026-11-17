@@ -24,6 +24,7 @@ def main():
               "schema": schema, "cwd": os.getcwd(), "pid": os.getpid(),
               "session_id": str(uuid.uuid4()),
               "skip_prompt_history": os.environ.get("CLAUDE_CODE_SKIP_PROMPT_HISTORY"),
+              "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
               "started": time.monotonic(), "source": Path("app.py").read_text()}
     if model == "empty-session":
         record["session_id"] = ""

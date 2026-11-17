@@ -39,6 +39,10 @@ class ReviewTests(unittest.TestCase):
         self.git("commit", "-qam", "feature")
         (self.repo / "app.py").write_text("uncommitted user change\n")
         (self.repo / "untracked.txt").write_text("untracked user change\n")
+        self.remote = self.root / "remote with spaces.git"
+        subprocess.run(["git", "clone", "--bare", "--quiet", str(self.repo), str(self.remote)],
+                       check=True, capture_output=True)
+        self.remote_git("config", "uploadpack.allowFilter", "true")
         self.scratch = self.root / "temporary dirs"
         self.scratch.mkdir()
         self.records = self.root / "records"
@@ -57,10 +61,17 @@ class ReviewTests(unittest.TestCase):
     def git(self, *args):
         return subprocess.check_output(["git", "-C", str(self.repo), *args], text=True).strip()
 
+    def remote_git(self, *args):
+        return subprocess.check_output(["git", "--git-dir", str(self.remote), *args],
+                                       text=True).strip()
+
     def invocation(self, reviewers, branch="feature/example", extra=()):
         # file:// exercises Git transport and filtering instead of local hardlink cloning.
-        command = [sys.executable, str(self.script), "--repo", self.repo.as_uri(), "--branch", branch,
+        command = [sys.executable, str(self.script), "--repo", self.remote.as_uri(),
+                   "--source", str(self.repo),
                    "--reviewers", json.dumps(reviewers), *extra]
+        if branch is not None:
+            command.extend(["--branch", branch])
         env = {**os.environ, "PATH": str(self.tools) + os.pathsep + os.environ["PATH"],
                "TMPDIR": str(self.scratch), "REVIEW_TEST_RECORDS": str(self.records),
                "REVIEW_TEST_SESSIONS": str(self.sessions), "CLAUDE_CODE_SKIP_PROMPT_HISTORY": "1",
@@ -164,16 +175,18 @@ class ReviewTests(unittest.TestCase):
         self.assertTrue(all(event["timestamp"].endswith("+00:00") for event in events))
         elapsed = [event["elapsed_seconds"] for event in events]
         self.assertEqual(elapsed, sorted(elapsed))
-        processes = [e for e in events if e["event"] == "process.finished"]
+        processes = [e for e in events if e["event"] == "process.finished"
+                     and (e["agent"] or e["process"] in ("push", "clone"))]
         self.assertEqual([e["process"] for e in processes],
-                         ["clone", "reviewer 2 (codex, fast)", "reviewer 3 (claude, middle)",
+                         ["push", "clone", "reviewer 2 (codex, fast)", "reviewer 3 (claude, middle)",
                           "reviewer 1 (codex, slow)"])
         self.assertTrue(all(e["duration_seconds"] > 0 and e["exit_code"] == 0
                             for e in processes))
         self.assertGreaterEqual(processes[-1]["duration_seconds"], 0.6)
-        self.assertLess(processes[1]["duration_seconds"], processes[-1]["duration_seconds"])
-        started = [e for e in events if e["event"] == "process.started"]
-        self.assertEqual(len(started), 4)
+        self.assertLess(processes[2]["duration_seconds"], processes[-1]["duration_seconds"])
+        started = [e for e in events if e["event"] == "process.started"
+                   and (e["agent"] or e["process"] in ("push", "clone"))]
+        self.assertEqual(len(started), 5)
         self.assertEqual({e["pid"] for e in started}, {e["pid"] for e in processes})
         self.assertEqual({e["sessionId"] for e in events if e["event"] == "review.collected"},
                          {group["sessionId"] for group in groups})
@@ -279,6 +292,133 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(groups[0]["agent"], "claude")
         self.assertEqual(len(groups[0]["findings"]), 2)
         self.assertEqual(self.read_records()[0]["source"], "main branch\n")
+        self.assertEqual(self.git("branch", "--show-current"), "feature/example")
+        self.assert_cleaned()
+
+    def test_missing_remote_branch_is_created_before_review(self):
+        self.remote_git("update-ref", "-d", "refs/heads/feature/example")
+        commit = self.git("rev-parse", "feature/example")
+        result = self.run_review([{"agent": "codex", "model": "one"}])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.remote_git("rev-parse", "feature/example"), commit)
+        self.assertEqual(self.read_records()[0]["commit"], commit)
+        _, events = self.read_run_log()
+        push_end = next(e for e in events if e["event"] == "process.finished"
+                        and e["process"] == "push")
+        clone_start = next(e for e in events if e["event"] == "process.started"
+                           and e["process"] == "clone")
+        self.assertLess(push_end["elapsed_seconds"], clone_start["elapsed_seconds"])
+        self.assert_cleaned()
+
+    def test_latest_local_commit_updates_outdated_remote_branch(self):
+        old_commit = self.remote_git("rev-parse", "feature/example")
+        self.git("commit", "--allow-empty", "-qm", "Latest local commit")
+        commit = self.git("rev-parse", "feature/example")
+        self.assertNotEqual(old_commit, commit)
+        result = self.run_review([{"agent": "claude", "model": "one"}])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.remote_git("rev-parse", "feature/example"), commit)
+        self.assertEqual(self.read_records()[0]["commit"], commit)
+        self.assert_cleaned()
+
+    def test_current_branch_and_source_default_to_working_directory(self):
+        nested = self.repo / "nested directory"
+        nested.mkdir()
+        command, env = self.invocation([{"agent": "codex", "model": "one"}], branch=None)
+        source_index = command.index("--source")
+        del command[source_index:source_index + 2]
+        result = subprocess.run(command, cwd=nested, env=env, capture_output=True,
+                                text=True, timeout=15)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.read_records()[0]["commit"], self.git("rev-parse", "HEAD"))
+        self.assert_cleaned()
+
+    def test_detached_head_requires_explicit_local_branch(self):
+        self.git("checkout", "--detach", "-q")
+        result = self.run_review([{"agent": "codex", "model": "one"}], branch=None)
+        self.assert_failed(result)
+        self.assertIn("HEAD is detached", result.stderr)
+        self.assertEqual(self.read_records(), [])
+        result = self.run_review([{"agent": "codex", "model": "one"}])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.git("branch", "--show-current"), "")
+        self.assert_cleaned()
+
+    def test_source_must_be_a_local_checkout(self):
+        result = self.run_review([{"agent": "codex", "model": "one"}],
+                                 extra=("--source", str(self.root)))
+        self.assert_failed(result)
+        self.assertIn("not a git repository", result.stderr)
+        self.assertEqual(self.read_records(), [])
+        _, events = self.read_run_log()
+        self.assertFalse(any(e.get("process") == "push" for e in events))
+
+    def test_publication_preserves_dirty_files_index_and_config_without_extra_tags(self):
+        staged = self.repo / "staged.txt"
+        staged.write_text("staged content\n")
+        self.git("add", "staged.txt")
+        staged.write_text("unstaged content\n")
+        self.git("config", "push.autoSetupRemote", "true")
+        self.git("config", "push.followTags", "true")
+        self.git("tag", "-am", "Do not publish this tag", "local-only-tag")
+        config = (self.repo / ".git" / "config").read_bytes()
+        status = self.git("status", "--porcelain")
+        staged_diff = self.git("diff", "--cached")
+        unstaged_diff = self.git("diff")
+        result = self.run_review([{"agent": "codex", "model": "one"}])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Uncommitted changes are not included", result.stderr)
+        self.assertEqual((self.repo / ".git" / "config").read_bytes(), config)
+        self.assertEqual(self.git("status", "--porcelain"), status)
+        self.assertEqual(self.git("diff", "--cached"), staged_diff)
+        self.assertEqual(self.git("diff"), unstaged_diff)
+        self.assertEqual(self.remote_git("tag", "--list"), "")
+        self.assertEqual((self.repo / "untracked.txt").read_text(), "untracked user change\n")
+        self.assert_cleaned()
+
+    def test_remote_ahead_or_diverged_rejects_push_without_review_or_reconciliation(self):
+        local_commit = self.git("rev-parse", "feature/example")
+        for parent in (local_commit, self.git("rev-parse", "main")):
+            with self.subTest(parent=parent):
+                remote_commit = self.git("commit-tree", f"{local_commit}^{{tree}}", "-p", parent,
+                                         "-m", "Remote-only commit")
+                self.git("push", "--quiet", str(self.remote),
+                         f"{remote_commit}:refs/heads/remote-only-{parent}")
+                self.remote_git("update-ref", "refs/heads/feature/example", remote_commit)
+                status = self.git("status", "--porcelain")
+                result = self.run_review([{"agent": "codex", "model": "one"}])
+                self.assert_failed(result)
+                self.assertIn("rejected", result.stderr)
+                self.assertEqual(self.read_records(), [])
+                self.assertEqual(self.remote_git("rev-parse", "feature/example"), remote_commit)
+                self.assertEqual(self.git("rev-parse", "feature/example"), local_commit)
+                self.assertEqual(self.git("status", "--porcelain"), status)
+                directory, events = self.read_run_log()
+                self.assertFalse((directory / "clone").exists())
+                self.assertFalse(any(e.get("agent") for e in events))
+
+    def test_review_uses_cloned_tip_when_remote_advances_after_push(self):
+        local_commit = self.git("rev-parse", "feature/example")
+        remote_commit = self.git("commit-tree", f"{local_commit}^{{tree}}", "-p", local_commit,
+                                 "-m", "Concurrent remote advancement")
+        self.git("push", "--quiet", str(self.remote), f"{remote_commit}:refs/heads/concurrent")
+        real_git = shutil.which("git")
+        wrapper = self.tools / "git"
+        wrapper.write_text(
+            f"#!{sys.executable}\nimport os, subprocess, sys\n"
+            "if sys.argv[1] == 'clone':\n"
+            f"    subprocess.run([{real_git!r}, '--git-dir', {str(self.remote)!r}, "
+            f"'update-ref', 'refs/heads/feature/example', {remote_commit!r}], check=True)\n"
+            f"os.execv({real_git!r}, [{real_git!r}, *sys.argv[1:]])\n")
+        wrapper.chmod(0o755)
+        result = self.run_review([{"agent": "codex", "model": "one"}])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.read_records()[0]["commit"], remote_commit)
+        _, events = self.read_run_log()
+        published = next(e for e in events if e["event"] == "source.prepared")
+        cloned = next(e for e in events if e["event"] == "checkout.ready")
+        self.assertEqual(published["commit"], local_commit)
+        self.assertEqual(cloned["commit"], remote_commit)
         self.assert_cleaned()
 
     def test_repeated_models_are_independent_reviewers(self):
@@ -435,14 +575,15 @@ class ReviewTests(unittest.TestCase):
         self.assertIn("claude", result.stderr)
         result = self.run_review([{"agent": "codex", "model": "one"}], branch="missing/branch")
         self.assert_failed(result)
+        self.assertIn("local branch 'missing/branch'", result.stderr)
         self.assertEqual(self.read_records(), [])
 
     def test_required_inputs_are_nonempty_and_reviewers_are_well_formed(self):
         base = [sys.executable, str(self.script)]
         valid = '[{"agent":"codex","model":"one"}]'
-        cases = [[], ["--repo", "repo", "--reviewers", valid],
-                 ["--repo", "repo", "--branch", "main"],
+        cases = [[], ["--repo", "repo", "--branch", "main"],
                  ["--repo", "repo", "--branch", " ", "--reviewers", valid],
+                 ["--repo", "repo", "--source", " ", "--reviewers", valid],
                  ["--repo", "", "--branch", "main", "--reviewers", valid]]
         for value in ("[]", "{}", "invalid JSON", '[{"agent":"other","model":"one"}]',
                       '[{"agent":"codex","model":""}]', '[{"agent":"codex"}]'):
