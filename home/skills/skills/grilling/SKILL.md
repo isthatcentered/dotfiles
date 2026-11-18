@@ -10,15 +10,13 @@ Work the tree in **rounds**. The **frontier** is every decision whose prerequisi
 Format a round like so:
 
 ```
-❓ **Q1** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
+1. **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
 
-➡️ <your recommended answer>
+<your recommended answer>
 
----
+2. **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
 
-❓ **Q2** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
-
-➡️ <your recommended answer>
+<your recommended answer>
 ```
 
 Word each question so "yes" accepts your recommended answer.
@@ -28,3 +26,8 @@ Each round the user answers reshapes the tree: settled decisions push the fronti
 Finding _facts_ is your job, never the user's. When a frontier question needs a fact from the environment (filesystem, tools, etc.), dispatch a sub-agent with a fresh context window to find it; don't ask the user for anything you could look up yourself. Don't block on it: a running exploration is an unsettled prerequisite, so only the questions downstream of it wait for the sub-agent to report; ask the rest of the frontier now. The _decisions_ are the user's: put each to them and wait.
 
 The session is done when the frontier is empty: every branch of the design tree visited, nothing left silently assumed. Do not act on it until the user confirms you have reached a shared understanding.
+
+Do not use sub-agents to explore the codebase.
+
+Work the tree in rounds. Keep the frontier (decisions whose prerequisites are settled) in a max-heap keyed by fan-out: how many open decisions transitively depend on it. Each round, pop only the top tier, the decisions that unblock the most, and leave the rest queued. Leaves (fan-out 0: naming, formats, implementation) are asked only when nothing with dependents remains.
+

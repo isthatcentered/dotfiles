@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 This skill takes the current conversation context and codebase understanding and produces a spec (you may know this document as a PRD). 
 
-Write the spec using the template below, then publish it to the issue tracker with the `ready-to-implement` label. If there are any related or blocking issues in wp, link them to this one with the correct link (blocking/parent/related/etc).
+Write the spec using the template below, then publish it to the issue tracker with the `ready-to-implement` label. If there are any related or blocking issues in wp, link them to this one with the correct link (blocking/parent/related/etc). Do not acquire the issue.
 
 Issues and PRDs are tracked locally using the `wp` cli. 
 
