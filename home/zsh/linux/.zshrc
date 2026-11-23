@@ -12,6 +12,7 @@ COMPLETION_WAITING_DOTS=true
 [[ -z "${plugins[*]}" ]] && plugins=(git fzf extract)
 source "$ZSH/oh-my-zsh.sh"
 
+export EDITOR=nvim
 export HISTCONTROL=ignoreboth
 export HISTORY_IGNORE='(\&|[bf]g|c|clear|history|exit|q|pwd|* --help)'
 export LESS_TERMCAP_md="$(tput bold 2>/dev/null; tput setaf 2 2>/dev/null)"
