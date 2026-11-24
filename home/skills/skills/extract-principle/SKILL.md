@@ -3,6 +3,17 @@ name: extract-principle
 description: Use when invoked by the user
 disable-model-invocation: true
 ---
+Be assertive: must, not should
+Start witht the intent
+
+<template>
+# {principle_name}
+
+{intent}
+
+{how to verify}
+</template>
+
 The user presented you with an issue or a principle. your goal is to clarify it. 
 
 ## 1. Understand the intent

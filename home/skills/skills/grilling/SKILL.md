@@ -29,5 +29,5 @@ The session is done when the frontier is empty: every branch of the design tree 
 
 Do not use sub-agents to explore the codebase.
 
-Work the tree in rounds. Keep the frontier (decisions whose prerequisites are settled) in a max-heap keyed by fan-out: how many open decisions transitively depend on it. Each round, pop only the top tier, the decisions that unblock the most, and leave the rest queued. Leaves (fan-out 0: naming, formats, implementation) are asked only when nothing with dependents remains.
-
+/principle-escalate-by-impact $principle-escalate-by-impact
+/principle-lean-by-design $principle-lean-by-design

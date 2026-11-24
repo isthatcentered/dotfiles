@@ -94,6 +94,10 @@ if [[ -n "$REX_BIN_DIR" ]]; then
   export PATH="$REX_BIN_DIR:$PATH"
 fi
 
+
+# Added by Antigravity CLI installer
+export PATH="/home/isthatcentered/.local/bin:$PATH"
+
 # Nudge until today's recall review is logged (see the recall skill)
 zmodload -F zsh/stat b:zstat
 if [[ -d ~/Test/learnings && "$(zstat -F %F +mtime ~/Test/learnings/reviews.md 2>/dev/null)" != "$(date +%F)" ]]; then
