@@ -1,10 +1,10 @@
 ---
-name: principle-pin-the-scenario-randomize-the-noize
+name: principle-pin-the-scenario-randomize-the-noise
 description: Use when invoked by the user
 disable-model-invocation: true
 ---
 
-# Pin the scenario, randomize the noize
+# Pin the scenario, randomize the noise
 
 Tests must make obvious what a scenario depends on, and prove that nothing else affects it.
 

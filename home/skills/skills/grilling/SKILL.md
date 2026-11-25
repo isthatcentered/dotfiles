@@ -30,4 +30,4 @@ The session is done when the frontier is empty: every branch of the design tree 
 Do not use sub-agents to explore the codebase.
 
 /principle-escalate-by-impact $principle-escalate-by-impact
-/principle-lean-by-design $principle-lean-by-design
+/narrow-scope-done-right $narrow-scope-done-right
