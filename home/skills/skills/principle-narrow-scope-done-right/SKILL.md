@@ -1,5 +1,5 @@
 ---
-name: narrow-scope-done-right
+name: principle-narrow-scope-done-right
 description: Use when invoked by the user
 disable-model-invocation: true
 ---
